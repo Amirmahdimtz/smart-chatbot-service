@@ -89,6 +89,8 @@ class Phase01ContractsTests(unittest.TestCase):
             acceptance = json.loads(acceptance_path.read_text(encoding="utf-8"))
             req["status"] = "APPROVED"
             arch["status"] = "APPROVED"
+            for decision in arch["open_decisions"]:
+                decision["owner_confirmed"] = True
             for approval in (req["approval"], arch["approval"]):
                 approval.update({key: "APPROVED" for key in approval})
             for scenario in req["scenarios"]:
@@ -111,6 +113,9 @@ class Phase01ContractsTests(unittest.TestCase):
             ).replace(
                 "**Marker:** PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION",
                 "**Marker:** PHASE_01_COMPLETE_READY_FOR_PHASE_02",
+            ).replace(
+                "| 01 | IMPLEMENTED_AWAITING_VERIFICATION |",
+                "| 01 | CLOSED |",
             )
             progress_path.write_text(progress, encoding="utf-8")
             self.assertEqual(validate(temp)["acceptance_gates"], 8)
