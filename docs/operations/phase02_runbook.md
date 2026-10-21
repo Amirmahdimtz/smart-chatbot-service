@@ -8,7 +8,7 @@ This release provides HTTP runtime foundation and authentication/authorization e
 
 The supported local Python version is 3.12. Run the commands from the repository root (the directory containing `requirements-dev.txt`). For an **existing clone**, use `git switch main` and `git pull --ff-only`; **do not clone again inside it**. For a fresh clone only, run `git clone https://github.com/Amirmahdimtz/smart-chatbot-service.git` from the intended parent directory, then `cd smart-chatbot-service`.
 
-PowerShell script execution policy may prevent running `Activate.ps1`. **Activation is optional:** using the interpreter and tools within `.venv\\Scripts` directly avoids changing execution policy, avoids installing packages globally, and makes the test environment reproducible. Never change machine-wide execution policy merely for the project.
+PowerShell script execution policy may prevent running `Activate.ps1`. **Activation is optional:** using the interpreter and tools within `.venv\Scripts` directly avoids changing execution policy, avoids installing packages globally, and makes the test environment reproducible. Never change machine-wide execution policy merely for the project.
 
 ```powershell
 git switch main
@@ -17,19 +17,19 @@ git rev-parse HEAD
 git status --short
 py -3.12 -m venv .venv
 
-.\\.venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt
-.\\.venv\\Scripts\\python.exe -c "import sys; print(sys.executable)"
-.\\.venv\\Scripts\\python.exe -m pip check
-.\\.venv\\Scripts\\python.exe -m compileall -q src tests scripts
-.\\.venv\\Scripts\\python.exe scripts/validate_phase01.py
-.\\.venv\\Scripts\\python.exe -O scripts/validate_phase01.py
-.\\.venv\\Scripts\\python.exe -m pytest -q
-.\\.venv\\Scripts\\ruff.exe check src tests
-.\\.venv\\Scripts\\ruff.exe format --check src tests
-.\\.venv\\Scripts\\pip-audit.exe -r requirements.txt --strict
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -c "import sys; print(sys.executable)"
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m compileall -q src tests scripts
+.\.venv\Scripts\python.exe scripts/validate_phase01.py
+.\.venv\Scripts\python.exe -O scripts/validate_phase01.py
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\ruff.exe check src tests
+.\.venv\Scripts\ruff.exe format --check src tests
+.\.venv\Scripts\pip-audit.exe -r requirements.txt --strict
 ```
 
-Confirm that `sys.executable` resolves inside `.venv\\Scripts`, not the system-wide Python installation. The expected Phase 02 test baseline is **23 passing tests**; a framework deprecation warning about `starlette.testclient`/`httpx` is presently non-blocking and must be tracked, not misreported as a failed test.
+Confirm that `sys.executable` resolves inside `.venv\Scripts`, not the system-wide Python installation. The expected Phase 02 test baseline is **23 passing tests**; a framework deprecation warning about `starlette.testclient`/`httpx` is presently non-blocking and must be tracked, not misreported as a failed test.
 
 Before binding an HTTP port, inspect it instead of killing an unknown process:
 
@@ -43,7 +43,7 @@ If port 5000 is occupied, use another **verified available** local port; port `5
 ```powershell
 $env:SCB_ENV = "development"
 $env:SCB_ZONE = "public"
-.\\.venv\\Scripts\\python.exe -m uvicorn src.host.app:app --host 127.0.0.1 --port 5051 --no-access-log
+.\.venv\Scripts\python.exe -m uvicorn src.host.app:app --host 127.0.0.1 --port 5051 --no-access-log
 ```
 
 Do not consider the process running until Uvicorn reports `Uvicorn running on http://127.0.0.1:5051`. A subsequent `WinError 10048` means the process failed to bind; pick an available port and retry without changing application code.
@@ -54,7 +54,7 @@ In a second PowerShell terminal:
 $base = "http://127.0.0.1:5051/api/v1/health_check"
 foreach ($endpoint in @("live", "startup", "ready", "metrics")) {
     try {
-        $response = Invoke-WebRequest "$base/$endpoint"
+        $response = Invoke-WebRequest -UseBasicParsing "$base/$endpoint"
         "$endpoint : $([int]$response.StatusCode)"
     }
     catch {
@@ -68,7 +68,7 @@ foreach ($endpoint in @("live", "startup", "ready", "metrics")) {
 }
 ```
 
-Expected without an approved IdP: **live=200, startup=200, ready=503, metrics=401**. If the test identity provider is explicitly approved/configured with HTTPS JWKS and correct issuer/audience, readiness may become 200. The service is **not production-ready** merely because liveness and startup succeed. Stop the Uvicorn process with Ctrl+C.
+Expected without an approved IdP: **live=200, startup=200, ready=503, metrics=401**. Windows PowerShell 5.1 may prompt about HTML parsing if `-UseBasicParsing` is omitted; this option avoids that client-side prompt for the local checks. If the test identity provider is explicitly approved/configured with HTTPS JWKS and correct issuer/audience, readiness may become 200. The service is **not production-ready** merely because liveness and startup succeed. Stop the Uvicorn process with Ctrl+C.
 
 To inspect a bound port **without copying placeholders containing angle brackets**, run:
 

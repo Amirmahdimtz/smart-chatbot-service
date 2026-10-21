@@ -70,3 +70,25 @@ The owner supplied a subsequent PowerShell transcript from the same local reposi
 **Resolution:** virtual-environment isolation and regression test evidence are now verified from owner logs (Category B). The PowerShell PID inspection syntax is `Get-Process -Id 7356` for that historical PID, or use the updated runbook's dynamic PID lookup; literal angle brackets must not be included. For runtime HTTP smoke tests, use an available loopback port and report the four actual HTTP codes. No runtime code changes, database changes, Qdrant operations or production credentials were required.
 
 **Outstanding:** Category B real loopback HTTP smoke test, Category C IdP/SSO/Vault/network/isolation/operational evidence, and formal approvals. Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 acceptance gates are not altered. No personal filesystem path or OS account identifier has been retained in this note.
+
+## Owner-reported Windows HTTP smoke verification — 2026-10-21
+
+The owner provided an additional PowerShell transcript from the previously tested local checkout. The **exact checkout SHA at this HTTP run was not reprinted**, so only the earlier confirmed source SHA (`916a0031eb43b5806ffbb29cfc859a12fe246f2e`) is known. This is **owner-provided execution evidence**, not an HTTP request or Windows command executed by this assistant.
+
+- `Get-Process -Id 7356`: the existing port-5000 listener was identified as `com.docker.backend` (Docker Desktop). The process was inspected, not stopped.
+- `Get-NetTCPConnection -LocalPort 5051 -State Listen`: no listener was reported before starting this service.
+- With `SCB_ENV=development`, `SCB_ZONE=public`, and `.venv` Python, Uvicorn reported successful application startup and `Uvicorn running on http://127.0.0.1:5051`.
+- A separate PowerShell terminal queried `http://127.0.0.1:5051/api/v1/health_check`. Actual observed HTTP statuses:
+
+| Endpoint | Observed HTTP code | Expected development code | Result |
+|---|---:|---:|---|
+| `/live` | 200 | 200 | **PASS** — liveness |
+| `/startup` | 200 | 200 | **PASS** — startup |
+| `/ready` | 503 | 503 | **PASS** — expected **not ready** without configured IdP (not production readiness) |
+| `/metrics`, unauthenticated | 401 | 401 | **PASS** — unauthenticated access denied; authorized retrieval not verified |
+
+Windows PowerShell displayed its legacy `Invoke-WebRequest` content-parsing security prompt for successful responses; the operator acknowledged it for each response. This was a **PowerShell client warning**, not a server error. The runbook now uses `-UseBasicParsing` to suppress the legacy client prompt.
+
+**Disposition:** the previously pending **Category B virtual-environment plus local HTTP smoke test is now evidenced as PASS**, limited to the documented development configuration and unauthenticated metrics request. No organizational IAM/SSO, Vault, dual-deployment Public/Internal isolation, TLS, authorized metrics read or operational HA/DR behavior was verified by this run. Runtime, dependency, and test-source files were **not modified** for this evidence update.
+
+**Open gate:** Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 approvals are unchanged. This latest transcript did **not** include a fresh `git rev-parse HEAD`; matching an exact commit should be reconfirmed before formal acceptance.
