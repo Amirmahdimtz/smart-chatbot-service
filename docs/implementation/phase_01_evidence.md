@@ -53,3 +53,13 @@ Real PostgreSQL and Qdrant deployments, self-hosted LLM/embedding/reranker GPU/V
 ## Rollback and incident guidance
 
 Documentation-only change can be reverted in a new forward commit after owner review; no database/index migration exists to roll back. Never force-push. If sensitive content is leaked, initiate response and rotate immediately; reversion alone does not remove history.
+
+## Phase 01 follow-up remediation (2026-10-21)
+
+**Baseline:** `42480bdbb113ebeef26ff3a1fbe228ce5e106a50`. Root cause from independent audit: validation relied on `assert` (disabled by Python `-O`), required perpetual pending states and lacked an approval-evidence transition. All 20 decisions had unconfirmed role ownership and null calendar due dates; knowledge source inventory and security/repository approval had not been received.
+
+**Changes:** Added [acceptance gate register](phase_01_acceptance.json), [approval workflow](approval_workflow.md), [knowledge inventory status](../requirements/source_inventory.md), [ADR-0003](../decisions/ADR-0003-acceptance-governance.md); converted validator checks to explicit exceptions, added negative tests, and recorded provisional milestone-based deadlines for decisions. Missing calendar deadlines and owner identities are not fabricated. No Runtime, migration, Qdrant or Agent integration implemented.
+
+**New Python test evidence:** pending execution on final commit by owner workstation or reproducible runner. Earlier 6/6 user-reported Python test result applies only to SHA `a6bb585d0dbed97366b9822b0d8efd30aad9ebf2`. Connector-side contract/static checks must be reported separately from Python execution.
+
+**Security and governance blockers:** Repository public disclosure review, signed architecture/product/security/domain approvals, representative knowledge inventory or signed deferred intake, and branch policy verification. Public/Internal/HR isolation remains an unimplemented Phase 02+ security control, not a tested deployment property. Phase 01 status remains `IMPLEMENTED_AWAITING_VERIFICATION`.
