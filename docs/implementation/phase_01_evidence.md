@@ -81,3 +81,16 @@ Documentation-only change can be reverted in a new forward commit after owner re
 
 **Scope note:** Verification of the actual GitHub contents was structural and read-only. Python execution was against an isolated synthetic fixture generated solely for test validation, not a checkout of the GitHub repository, because the current execution environment could not resolve `github.com` for `git clone`. The prior actual Windows test transcript covered only the earlier source state. No runtime, DB/Qdrant, GPU, Agent or organizational infrastructure test has been performed.
 
+
+### Closure-gate hardening verification
+
+Follow-up source revision through `6311d47ac9cbcea5361ef1658ee0ecaa084b34d7` also checks the Phase 01 status table against the acceptance JSON and requires explicitly confirmed decision ownership before closure. The test-only legitimate-`CLOSED` transition sets fixture-only review information and confirms the state machine accepts a complete record without allowing the live repository to close.
+
+- `python scripts/validate_phase01.py`: **PASS** on the isolated synthetic fixture, 7 scenarios / 21 requirements / 9 policies / 20 decisions / 8 gates.
+- `python -m unittest discover -s tests -v`: **12/12 PASS**, isolated synthetic fixture, including negative tests.
+- `python -O -m unittest discover -s tests -v`: **12/12 PASS**, isolated synthetic fixture.
+- `python -m py_compile scripts/validate_phase01.py tests/test_phase01_contracts.py`: **PASS** for locally authored byte-matched sources.
+- GitHub persisted-content inspection: 20 files, 42 relative documentation links, all 21 requirement/test/security mappings and eight pending gate records **PASS** using separate connector-side structural checks.
+- `python` against a newly cloned live GitHub `main`: **NOT RUN** in the current environment. Workstation evidence from the owner is still required for this revision.
+- Remaining independent approvals G-01 through G-07 and workstation verification G-08: **NOT APPROVED**. Do not issue the Phase 02 readiness marker.
+
