@@ -2,7 +2,7 @@
 
 Enterprise-grade, on-premises smart chatbot service for documented Persian-language knowledge retrieval and controlled organizational workflows.
 
-**Status:** Phase 01 — requirements and architecture contract in progress. No runtime application has been implemented.
+**Status:** Phase 01 — IMPLEMENTED_AWAITING_VERIFICATION; owner sign-offs and workstation checks pending. No runtime application has been implemented.
 
 ## Architecture baseline
 
