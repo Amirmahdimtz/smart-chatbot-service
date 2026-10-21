@@ -27,9 +27,24 @@ GitHub API read/write and source inspection: **PERFORMED**. Tool-side structural
 - Python validator and 6 `unittest` methods: **NOT EXECUTED** via connector; user-workstation verification still required.
 - Tests on PostgreSQL, Qdrant, self-hosted models, GPU, Agent and on-prem network: **NOT EXECUTED**; not in Phase 01 runtime scope.
 
-## Category B (workstation)
+## Category B (workstation; execution reported by project owner)
 
-Run `python scripts/validate_phase01.py` and `python -m unittest discover -s tests -v` from repository root; send sanitized terminal transcript and `git rev-parse HEAD`. Exact OS instructions provided separately to project owner.
+**Evidence source:** PowerShell console transcript supplied by the project owner on 2026-10-21. This run was performed on the owner's Windows workstation, **not** directly in the GitHub connector or by ChatGPT. No personally identifying local filesystem paths are stored in this repository.
+
+**Validated source commit:** `a6bb585d0dbed97366b9822b0d8efd30aad9ebf2` on `main`.
+
+| Command/check | User-reported result |
+|---|---|
+| `git clone` followed by `git switch main` | Successful; tracking `origin/main` |
+| `git rev-parse HEAD` | `a6bb585d0dbed97366b9822b0d8efd30aad9ebf2` |
+| `py -3 -m py_compile scripts/validate_phase01.py tests/test_phase01_contracts.py` | No error output; next commands executed |
+| `py -3 scripts/validate_phase01.py` | `PHASE_01_CONTRACT_VALIDATION_OK` with 10 linked Markdown files, 20 open decisions, 9 policies, 21 requirements and 7 scenarios |
+| `py -3 -m unittest discover -s tests -v` | All six cases `ok`; `Ran 6 tests in 1.159s`; `OK` |
+| `git status --short` | Empty output; clean working tree |
+
+**Category B status: REPORTED_PASS** for Phase 01 Python syntax/contract/unittest checks and Git checkout hygiene. No user-reported errors requiring a code correction. These findings do not demonstrate runtime imports, Dependency Injection, FastAPI behavior, live database/model integrations, or independent security review.
+
+**Remaining Phase 01 acceptance:** Architecture, Security, Product and relevant Domain Owner sign-off; traceability/policy review against real approved sources; security classification and repository governance decisions. Keep `IMPLEMENTED_AWAITING_VERIFICATION` until those evidence gates have been completed.
 
 ## Category C (on-prem future, NOT RUN)
 
