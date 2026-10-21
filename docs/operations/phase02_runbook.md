@@ -70,7 +70,15 @@ foreach ($endpoint in @("live", "startup", "ready", "metrics")) {
 
 Expected without an approved IdP: **live=200, startup=200, ready=503, metrics=401**. If the test identity provider is explicitly approved/configured with HTTPS JWKS and correct issuer/audience, readiness may become 200. The service is **not production-ready** merely because liveness and startup succeed. Stop the Uvicorn process with Ctrl+C.
 
-To investigate a bound port, retrieve the `OwningProcess` PID above and inspect it with `Get-Process -Id <actual integer PID>`; do not terminate a process until its owner/purpose is confirmed. Keep logs sanitized: share the Git SHA, exit codes, test summary and observed HTTP statuses, not local account names, full filesystem paths, tokens or IdP addresses.
+To inspect a bound port **without copying placeholders containing angle brackets**, run:
+
+```powershell
+$listener = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue
+$listener | Select-Object LocalAddress, LocalPort, OwningProcess
+$listener | ForEach-Object { Get-Process -Id $_.OwningProcess }
+```
+
+Alternatively, if the current observed PID is `7356`, the syntax is `Get-Process -Id 7356` (**not** `Get-Process -Id <7356>`). PIDs may change between checks. Do not terminate a process until its owner/purpose is confirmed. Keep logs sanitized: share the Git SHA, exit codes, test summary and observed HTTP statuses, not local account names, full filesystem paths, tokens or IdP addresses.
 
 ## Docker / two-zone configuration
 

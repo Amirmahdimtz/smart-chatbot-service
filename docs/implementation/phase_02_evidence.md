@@ -52,3 +52,21 @@ Implementation is at most `IMPLEMENTED_AWAITING_VERIFICATION` after verified Git
 **Root-cause disposition:** both observed blockers are local environment/process conflicts, not reproduced application defects. No production code change is justified by this transcript. Follow the updated [Phase 02 Windows runbook](../operations/phase02_runbook.md): invoke `.venv\\Scripts\\python.exe` directly and run Uvicorn on an available port, then capture observed HTTP responses. Never terminate an unknown PID or change machine-wide PowerShell policy.
 
 **Remaining Category B evidence:** successful `.venv`-isolated install/tests and live loopback HTTP response probes. **Category C** (real IAM/SSO, Vault, firewall isolation, distributed limits, load, HA/restore) remains NOT_RUN; approvals remain outstanding. Phase 02 stays `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 G-01–G-08 remain unchanged.
+
+## Follow-up owner-reported Windows isolation verification — 2026-10-21
+
+The owner supplied a subsequent PowerShell transcript from the same local repository working directory. No new checkout SHA was shown in this transcript; the earlier confirmed **runtime source checkout** was `916a0031eb43b5806ffbb29cfc859a12fe246f2e`. Do not infer that the newer docs-only commit was already pulled.
+
+| Verification | Observed result |
+|---|---|
+| `.\\.venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt` | **PASS**, installed pinned dev requirements in the virtual environment |
+| Virtual interpreter identity (`sys.executable`) | **PASS**, path terminates in the repository's `.venv\\Scripts\\python.exe` |
+| `.\\.venv\\Scripts\\python.exe -m pip check` | **PASS**, `No broken requirements found.` |
+| `.\\.venv\\Scripts\\python.exe -m pytest -q` | **23/23 PASS** in **28.43 s**, with one known non-blocking Starlette test-client deprecation warning |
+| Local port 5000 listener inspection | Confirmed `127.0.0.1:5000` occupied by a Windows process; no kill/restart performed |
+| `Get-Process -Id <7356>` | PowerShell **ParserError** because the literal angle brackets were pasted; this is a shell syntax error, not an application failure |
+| Alternate-port Uvicorn startup and live/startup/ready/metrics HTTP status checks | **NOT_RUN / NO_EVIDENCE** |
+
+**Resolution:** virtual-environment isolation and regression test evidence are now verified from owner logs (Category B). The PowerShell PID inspection syntax is `Get-Process -Id 7356` for that historical PID, or use the updated runbook's dynamic PID lookup; literal angle brackets must not be included. For runtime HTTP smoke tests, use an available loopback port and report the four actual HTTP codes. No runtime code changes, database changes, Qdrant operations or production credentials were required.
+
+**Outstanding:** Category B real loopback HTTP smoke test, Category C IdP/SSO/Vault/network/isolation/operational evidence, and formal approvals. Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 acceptance gates are not altered. No personal filesystem path or OS account identifier has been retained in this note.
