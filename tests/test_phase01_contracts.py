@@ -35,6 +35,12 @@ class Phase01ContractsTests(unittest.TestCase):
         self.assertTrue(all(p["status"] == "CANDIDATE_NOT_IMPLEMENTED"
                             for p in self.arch["api_boundaries"]))
 
+    def test_no_premature_phase_closure(self):
+        from scripts.validate_phase01 import ROOT
+        progress = (ROOT / "docs/implementation/progress.md").read_text(encoding="utf-8")
+        self.assertNotIn("PHASE_01_COMPLETE_READY_FOR_PHASE_02", progress)
+        self.assertIn("PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION", progress)
+
     def test_no_deferred_decision_claimed_closed(self):
         self.assertTrue(all(d["status"] == "OPEN" for d in self.arch["open_decisions"]))
         self.assertTrue(all(not d["owner_confirmed"] for d in self.arch["open_decisions"]))

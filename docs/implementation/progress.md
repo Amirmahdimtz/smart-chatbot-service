@@ -12,7 +12,7 @@
 - Evaluation: [evaluation](../evaluation/evaluation_plan.md); [development workflow](development_workflow.md).
 - Automated contracts: `scripts/validate_phase01.py`, `tests/test_phase01_contracts.py`. Execution claims/limits in [Phase 01 evidence](phase_01_evidence.md).
 - Security/architecture/product/domain approval: **AWAITING_APPROVAL**. No approved real corpora/SSO/HR policy/model/hardware/Agent contract.
-- `CLOSED`: **No**. Marker `PHASE_01_COMPLETE_READY_FOR_PHASE_02` deliberately **not issued**.
+- `CLOSED`: **No**. Marker Final completion marker deliberately **not issued**.
 
 ## Phase status
 

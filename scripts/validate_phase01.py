@@ -78,6 +78,9 @@ def validate() -> dict[str, int]:
     assert len({decision["id"] for decision in decisions}) == len(decisions) >= 16
     assert all(d["status"] == "OPEN" and d["decision_criteria"] and d["proposed_owner"]
                and d["affected_phases"] and d["evidence_required"] for d in decisions)
+    progress = (ROOT / "docs/implementation/progress.md").read_text(encoding="utf-8")
+    assert "PHASE_01_COMPLETE_READY_FOR_PHASE_02" not in progress, "Closure marker cannot precede sign-off"
+    assert "PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION" in progress
     for path in REQUIRED_FILES:
         assert (ROOT / path).is_file(), f"Missing required file: {path}"
     md_count = 0
