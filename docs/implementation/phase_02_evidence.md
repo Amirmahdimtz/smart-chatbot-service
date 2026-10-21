@@ -30,3 +30,25 @@ Implementation is at most `IMPLEMENTED_AWAITING_VERIFICATION` after verified Git
 - Baseline-to-code-source compare: 35 paths affected (31 added, four modified, none deleted), seven forward-only commits; prior Phase 01 contracts, approvals, migrations and production data not modified. One prior Phase 01 test file was formatting-only adjusted to satisfy repository-wide lint.
 - This evidence-document-only follow-up commit does not change runtime, configuration, dependencies or tests; its own workflow result must be checked separately before claiming that final documentation SHA passed CI.
 - GitHub Actions evidence is actual CI, not a completed organizational IdP/Vault/network or production release test. Formal Phase 01 approvals remain pending.
+
+## Owner-reported Windows workstation run — 2026-10-21
+
+**Source:** project owner supplied an actual Windows PowerShell transcript from a checkout of `main` at `916a0031eb43b5806ffbb29cfc859a12fe246f2e`. Evidence in this section is **owner-reported**, not commands run by this assistant.
+
+| Verification | Observed result |
+|---|---|
+| `git clone`, `switch main`, `pull --ff-only` | Success; checkout HEAD exactly matches source SHA above; working tree clean |
+| `py -3.12 -m venv .venv` | Success creating the environment |
+| `Activate.ps1` | **BLOCKED** by Windows PowerShell Execution Policy (`PSSecurityException`) |
+| `python -m pip install -r requirements-dev.txt` | Install command succeeded, but transcript resolved installed packages under system-wide Python; `.venv` was **not activated**, so isolation was not verified |
+| `python -m compileall -q src scripts tests` | PASS |
+| `python scripts/validate_phase01.py` and `python -O scripts/validate_phase01.py` | PASS; 8 gates, 19 linked Markdown files, 20 decisions, 9 policies, 21 requirements and 7 scenarios |
+| `python -m pytest -q` | **23/23 PASS** in 51.09s; one non-blocking `StarletteDeprecationWarning` for `httpx` |
+| `ruff check src tests`, `ruff format --check src tests` | PASS, 15 files reported already formatted |
+| `pip-audit -r requirements.txt --strict` | PASS: no known vulnerabilities returned at time of audit |
+| `python -m uvicorn ... --port 5000` | Startup completed but **binding FAILED** with Windows `WinError 10048` (local port occupied); graceful shutdown followed |
+| Windows live/startup/ready/metrics HTTP responses | **NOT_RUN / NO_EVIDENCE** because the server failed to bind |
+
+**Root-cause disposition:** both observed blockers are local environment/process conflicts, not reproduced application defects. No production code change is justified by this transcript. Follow the updated [Phase 02 Windows runbook](../operations/phase02_runbook.md): invoke `.venv\\Scripts\\python.exe` directly and run Uvicorn on an available port, then capture observed HTTP responses. Never terminate an unknown PID or change machine-wide PowerShell policy.
+
+**Remaining Category B evidence:** successful `.venv`-isolated install/tests and live loopback HTTP response probes. **Category C** (real IAM/SSO, Vault, firewall isolation, distributed limits, load, HA/restore) remains NOT_RUN; approvals remain outstanding. Phase 02 stays `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 G-01–G-08 remain unchanged.
