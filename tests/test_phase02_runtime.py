@@ -73,8 +73,15 @@ def test_discovery_is_deterministic_and_singletons_are_per_app(monkeypatch):
     monkeypatch.delenv("SCB_AUDIENCE", raising=False)
     a = create_app()
     b = create_app()
-    assert len(a.routes) == 4
-    assert [r.path for r in a.routes] == [r.path for r in b.routes]
+    paths = {
+        "/api/v1/health_check/live": 200,
+        "/api/v1/health_check/startup": 200,
+        "/api/v1/health_check/ready": 503,
+        "/api/v1/health_check/metrics": 401,
+    }
+    with TestClient(a) as left, TestClient(b) as right:
+        assert {path: left.get(path).status_code for path in paths} == paths
+        assert {path: right.get(path).status_code for path in paths} == paths
     assert a.state.container.resolve(ConfigReader) is a.state.container.resolve(ConfigReader)
     assert a.state.container.resolve(ConfigReader) is not b.state.container.resolve(ConfigReader)
     container = bootstrap_di()
