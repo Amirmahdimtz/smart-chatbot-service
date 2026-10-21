@@ -72,10 +72,10 @@
       "id": "G-08",
       "description": "Verify final SHA using compile, validator, unit and negative tests",
       "owner_role": "Technical Verifier",
-      "status": "RECHECK_REQUIRED",
+      "status": "AWAITING_APPROVAL",
       "approved_by": null,
       "approved_at": null,
-      "evidence_ref": null
+      "evidence_ref": "docs/implementation/phase_01_workstation_verification.md"
     }
   ],
   "limitations": "Structural validation never authenticates human signoff; real approval records required."
