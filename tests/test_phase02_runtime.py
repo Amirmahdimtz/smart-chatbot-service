@@ -22,8 +22,10 @@ from src.infrastructure.utils.config_reader import ConfigReader, ConfigurationEr
 def identity():
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public = private.public_key().public_numbers()
+
     def encode(n):
         return base64.urlsafe_b64encode(n.to_bytes((n.bit_length() + 7) // 8, "big")).rstrip(b"=").decode()
+
     jwks = {
         "keys": [
             {"kty": "RSA", "use": "sig", "alg": "RS256", "kid": "key-a", "n": encode(public.n), "e": encode(public.e)}
