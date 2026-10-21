@@ -75,6 +75,46 @@ class Phase01ContractsTests(unittest.TestCase):
         self._mutate_contract("docs/architecture/architecture_contract.json",
                               lambda d: d["agent_integration"].update(endpoints=["/fake-agent"]))
 
+    def test_valid_closed_state_is_supported(self) -> None:
+        """Only test fixtures may synthesize approvals; never change real records."""
+        with tempfile.TemporaryDirectory() as folder:
+            temp = Path(folder)
+            shutil.copytree(ROOT / "docs", temp / "docs")
+            shutil.copy2(ROOT / "README.md", temp / "README.md")
+            req_path = temp / "docs/requirements/requirements_contract.json"
+            arch_path = temp / "docs/architecture/architecture_contract.json"
+            acceptance_path = temp / "docs/implementation/phase_01_acceptance.json"
+            req = json.loads(req_path.read_text(encoding="utf-8"))
+            arch = json.loads(arch_path.read_text(encoding="utf-8"))
+            acceptance = json.loads(acceptance_path.read_text(encoding="utf-8"))
+            req["status"] = "APPROVED"
+            arch["status"] = "APPROVED"
+            for approval in (req["approval"], arch["approval"]):
+                approval.update({key: "APPROVED" for key in approval})
+            for scenario in req["scenarios"]:
+                scenario["status"] = "APPROVED"
+            for requirement in req["requirements"]:
+                requirement["approval_status"] = "APPROVED"
+            for gate in acceptance["gates"]:
+                gate.update(status="APPROVED", approved_by="Test Fixture",
+                            approved_at="2026-10-21T12:00:00Z",
+                            evidence_ref="docs/implementation/phase_01_evidence.md")
+            acceptance["phase_status"] = "CLOSED"
+            req_path.write_text(json.dumps(req, ensure_ascii=False), encoding="utf-8")
+            arch_path.write_text(json.dumps(arch, ensure_ascii=False), encoding="utf-8")
+            acceptance_path.write_text(json.dumps(acceptance, ensure_ascii=False), encoding="utf-8")
+            progress_path = temp / "docs/implementation/progress.md"
+            progress = progress_path.read_text(encoding="utf-8")
+            progress = progress.replace(
+                "**Status After:** IMPLEMENTED_AWAITING_VERIFICATION",
+                "**Status After:** CLOSED",
+            ).replace(
+                "**Marker:** PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION",
+                "**Marker:** PHASE_01_COMPLETE_READY_FOR_PHASE_02",
+            )
+            progress_path.write_text(progress, encoding="utf-8")
+            self.assertEqual(validate(temp)["acceptance_gates"], 8)
+
     def test_pending_phase_marker_is_consistent(self) -> None:
         progress = (ROOT / "docs/implementation/progress.md").read_text(encoding="utf-8")
         self.assertIn("**Marker:** PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION", progress)
