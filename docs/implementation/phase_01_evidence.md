@@ -94,3 +94,10 @@ Follow-up source revision through `6311d47ac9cbcea5361ef1658ee0ecaa084b34d7` als
 - `python` against a newly cloned live GitHub `main`: **NOT RUN** in the current environment. Workstation evidence from the owner is still required for this revision.
 - Remaining independent approvals G-01 through G-07 and workstation verification G-08: **NOT APPROVED**. Do not issue the Phase 02 readiness marker.
 
+## Workstation rerun received — 2026-10-21
+
+The project owner supplied full Windows PowerShell output from the actual `main` checkout at commit `dd8e4dcf149fe59102a72030dc4b562642a6bb0a`. The commands were run on the owner's machine, not on the GitHub connector. The sanitized command-by-command evidence is recorded in [Phase 01 workstation verification](phase_01_workstation_verification.md).
+
+**Actual owner-reported results:** Python compilation without errors; two invocations of `PHASE_01_CONTRACT_VALIDATION_OK` (normal and optimized); `Ran 12 tests` and `OK` in both `unittest` runs (2.032s and 2.094s); `git status --short` empty; checkout SHA matches the pre-evidence `main` head. No Python code changed in the subsequent documentation-only evidence commits.
+
+**G-08 disposition:** execution evidence obtained, technical-verifier attribution/approval still pending; `AWAITING_APPROVAL` in the acceptance register. This is not a formal security or architecture approval. G-01 through G-07 still lack authorized evidence. No Phase 01 `CLOSED` claim is made. Any earlier PENDING reference above is a historical state that has been superseded by this section.
