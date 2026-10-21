@@ -10,15 +10,15 @@
 - Contract: [requirements](../requirements/requirements_contract.json), [architecture](../architecture/architecture_contract.json), [system](../architecture/system_architecture.md), [deployment](../architecture/deployment_architecture.md), [security](../security/data_access_matrix.md).
 - Decisions: [ADR-0001](../decisions/ADR-0001-architecture-baseline.md), [ADR-0002](../decisions/ADR-0002-initialization-workflow.md), [ADR-0003](../decisions/ADR-0003-acceptance-governance.md); 20 deferred decisions with provisional phase-gate milestones, not confirmed owners or calendar deadlines, in the architecture contract.
 - Evaluation: [evaluation](../evaluation/evaluation_plan.md); [development workflow](development_workflow.md); [source inventory (not yet supplied)](../requirements/source_inventory.md).
-- Automated contracts: `scripts/validate_phase01.py`, `tests/test_phase01_contracts.py`. Workstation evidence from the project owner on 2026-10-21: Python compile without errors, contract validator PASS, 6/6 unittests PASS, and clean Git tree at `a6bb585d0dbed97366b9822b0d8efd30aad9ebf2`; full reported commands/results in [Phase 01 evidence](phase_01_evidence.md).
-- Gate register: [phase 01 acceptance](phase_01_acceptance.json), [owner approval workflow](approval_workflow.md). Eight gates defined; all pending real accountable reviews/reverification. Security/architecture/product/domain approval: **AWAITING_APPROVAL**. No approved real corpora/SSO/HR policy/model/hardware/Agent contract.
+- Automated contracts: `scripts/validate_phase01.py`, `tests/test_phase01_contracts.py`. Owner-reported [Windows workstation verification](phase_01_workstation_verification.md) on `dd8e4dcf149fe59102a72030dc4b562642a6bb0a`: Python compile PASS, validator PASS (normal and `-O`), 12/12 unittests PASS (normal and `-O`), clean Git tree. Earlier 6/6 baseline and execution limitations are in [Phase 01 evidence](phase_01_evidence.md).
+- Gate register: [phase 01 acceptance](phase_01_acceptance.json), [owner approval workflow](approval_workflow.md). Eight gates defined; G-08 has reproducible, owner-reported PASS test evidence, but formal Technical Verifier approval is still pending. G-01–G-07 require responsible-owner action. Security/architecture/product/domain approval: **AWAITING_APPROVAL**. No approved real corpora/SSO/HR policy/model/hardware/Agent contract.
 - `CLOSED`: **No**. Final completion marker deliberately **not issued**.
 
 ## Phase status
 
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
-| 01 | IMPLEMENTED_AWAITING_VERIFICATION | Prior workstation Python tests PASS on earlier SHA; revised validator/tests need rerun on latest commit; formal source inventory, policy, repository governance and accountable approvals pending |
+| 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
 | 02 | NOT_STARTED | Phase 01 approval / approved exceptions |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
@@ -31,4 +31,4 @@ Architecture Owner; Security Owner; Product Owner; Religious Content Lead; HR Po
 
 ## Next action
 
-Rerun updated Phase 01 validator and negative tests against the final main SHA, then collect attributable owner review of contracts, Public repository security, open decision governance and real source inventory. Do not issue the complete marker or begin Phase 02 until all approved gates can be verified. Phase 15 still depends on the external Agent.
+Workstation compile, validator and 12/12 negative/unit tests were reported PASS for the validated SHA. Obtain attributable acceptance decisions and evidence for G-01–G-07, plus formal Technical Verifier sign-off for G-08; resolve the public repository classification, decision governance and source inventory (or authorized deferrals). Phase 02 has not started. No completion marker until all gates are actually approved.
