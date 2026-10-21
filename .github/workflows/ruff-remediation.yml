@@ -1,0 +1,25 @@
+name: Ruff remediation patch
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install ruff==0.15.5
+      - name: Render reviewable style patch
+        shell: bash
+        run: |
+          ruff check --fix src tests || true
+          ruff format src tests
+          echo 'SCB_RUFF_PATCH_START'
+          git diff -- src tests | base64 -w 120
+          echo
+          echo 'SCB_RUFF_PATCH_END'
+          ruff check src tests || true
