@@ -180,7 +180,11 @@ def validate(root: Path = ROOT) -> dict[str, int]:
            "Progress status does not match acceptance status")
     expected_marker = COMPLETE if declared_status == "CLOSED" else "PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION"
     ensure(f"**Marker:** {expected_marker}" in progress, "Phase marker does not match status")
+    ensure(bool(re.search(rf"^\|\s*01\s*\|\s*{re.escape(declared_status)}\s*\|", progress, re.MULTILINE)),
+           "Phase 01 summary table does not match acceptance status")
     if declared_status == "CLOSED":
+        ensure(all(d["owner_confirmed"] is True for d in decisions.values()),
+               "Open decision ownership has not been confirmed")
         ensure(req_status == arch_status == "APPROVED", "Contracts not approved")
         ensure(all(v == "APPROVED" for v in req["approval"].values()) and
                all(v == "APPROVED" for v in arch["approval"].values()),
