@@ -1,0 +1,1299 @@
+{
+  "contract_id": "SCB-REQ-001",
+  "version": "0.1.0",
+  "status": "PROPOSED_AWAITING_APPROVAL",
+  "date": "2026-10-21",
+  "source_documents": [
+    "Service_Architecture_Guide_FA.md",
+    "Smart_Chatbot_Implementation_Plan_FA.md"
+  ],
+  "repository_baseline": "EMPTY_REPOSITORY_PRE_PHASE_01",
+  "audience": "Contract baseline; no operational system is asserted",
+  "scenarios": [
+    {
+      "id": "UC-REL",
+      "feature": "religious_qa",
+      "implementation_phase": 12,
+      "approval_owner": "Religious Content Lead",
+      "actors": [
+        "Public user",
+        "Religious expert",
+        "Knowledge publisher"
+      ],
+      "roles": [
+        "public_reader",
+        "domain_expert",
+        "publisher"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-REL-001",
+          "statement": "Answer religious questions using currently approved evidence and real citations",
+          "test_id": "TEST-REL-001",
+          "security_policy_id": "SEC-01"
+        },
+        {
+          "id": "REQ-REL-002",
+          "statement": "Distinguish competing authoritative opinions without invented certainty",
+          "test_id": "TEST-REL-002",
+          "security_policy_id": "SEC-08"
+        },
+        {
+          "id": "REQ-REL-003",
+          "statement": "Abstain or escalate to expert when evidence is missing or ambiguous",
+          "test_id": "TEST-REL-003",
+          "security_policy_id": "SEC-09"
+        }
+      ],
+      "data_requirements": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "knowledge_sources": [
+        "approved religious texts",
+        "expert-reviewed answers",
+        "versioned FAQs"
+      ],
+      "authorization_boundaries": [
+        "SEC-01",
+        "SEC-08",
+        "SEC-09"
+      ],
+      "workflow": [
+        "resolve public context",
+        "filter published evidence",
+        "retrieve and validate citations",
+        "compose grounded answer or abstain",
+        "queue expert review when needed"
+      ],
+      "external_dependencies": [
+        "domain-approved corpus",
+        "expert reviewers",
+        "self-hosted RAG and inference"
+      ],
+      "failure_scenarios": [
+        "missing source => abstain",
+        "outdated or revoked source => exclude",
+        "conflicting opinions => present source-specific disagreement",
+        "untrusted document instructions => ignore"
+      ],
+      "acceptance_criteria": [
+        "all displayed citations resolve to approved public versions",
+        "no HR/internal source leaks in negative tests",
+        "unanswerable question produces abstention/escalation"
+      ],
+      "test_strategy": [
+        "gold questions/citation provenance",
+        "conflict and revocation negative tests",
+        "cross-deployment access and injection tests"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    },
+    {
+      "id": "UC-HR-1",
+      "feature": "hr_matching",
+      "implementation_phase": 16,
+      "approval_owner": "HR Policy Owner",
+      "actors": [
+        "Authorized HR specialist",
+        "Hiring manager",
+        "Human approver"
+      ],
+      "roles": [
+        "hr_match_reader",
+        "hr_decision_maker"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-HR-1-001",
+          "statement": "Rank permitted candidates for a position only after mandatory job constraints",
+          "test_id": "TEST-HR-1-001",
+          "security_policy_id": "SEC-02"
+        },
+        {
+          "id": "REQ-HR-1-002",
+          "statement": "Explain each recommendation using authorized job/profile evidence",
+          "test_id": "TEST-HR-1-002",
+          "security_policy_id": "SEC-06"
+        },
+        {
+          "id": "REQ-HR-1-003",
+          "statement": "Ensure no automated hiring decision or personnel mutation",
+          "test_id": "TEST-HR-1-003",
+          "security_policy_id": "SEC-09"
+        }
+      ],
+      "data_requirements": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "knowledge_sources": [
+        "HR position catalog",
+        "verified skill records",
+        "authorized personnel system"
+      ],
+      "authorization_boundaries": [
+        "SEC-02",
+        "SEC-06",
+        "SEC-09"
+      ],
+      "workflow": [
+        "authorize HR purpose",
+        "apply eligibility hard constraints",
+        "rank authorized candidates",
+        "explain criteria",
+        "human review and decision"
+      ],
+      "external_dependencies": [
+        "HR data contracts",
+        "human HR owner",
+        "phase 15 real Agent integration where required"
+      ],
+      "failure_scenarios": [
+        "unavailable HR data => no ranking",
+        "restricted employee => exclude",
+        "stale criteria => refresh",
+        "Agent unavailable => no execution"
+      ],
+      "acceptance_criteria": [
+        "ineligible candidates never suggested",
+        "role-specific evidence/audit available",
+        "no side effect without approved workflow"
+      ],
+      "test_strategy": [
+        "constraint and fairness review",
+        "403 on unrelated personnel",
+        "stale profile and approval replay"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    },
+    {
+      "id": "UC-HR-2",
+      "feature": "hr_matching",
+      "implementation_phase": 16,
+      "approval_owner": "HR Policy Owner",
+      "actors": [
+        "Authorized talent specialist",
+        "Employee",
+        "Human approver"
+      ],
+      "roles": [
+        "hr_talent_reader",
+        "profile_subject"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-HR-2-001",
+          "statement": "Recommend eligible positions for an authorized person's verified skills",
+          "test_id": "TEST-HR-2-001",
+          "security_policy_id": "SEC-02"
+        },
+        {
+          "id": "REQ-HR-2-002",
+          "statement": "Explain qualification gaps and proposed growth steps",
+          "test_id": "TEST-HR-2-002",
+          "security_policy_id": "SEC-05"
+        },
+        {
+          "id": "REQ-HR-2-003",
+          "statement": "Protect the profile from unauthorized managers and avoid automatic appointment",
+          "test_id": "TEST-HR-2-003",
+          "security_policy_id": "SEC-06"
+        }
+      ],
+      "data_requirements": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "knowledge_sources": [
+        "HR role catalog",
+        "authorized personnel records",
+        "training catalog"
+      ],
+      "authorization_boundaries": [
+        "SEC-02",
+        "SEC-05",
+        "SEC-06"
+      ],
+      "workflow": [
+        "verify actor and purpose",
+        "load authorized profile",
+        "filter eligible roles",
+        "rank and explain gaps",
+        "submit recommendation for human consideration"
+      ],
+      "external_dependencies": [
+        "HR consent/legal basis",
+        "approved career data",
+        "Agent contract if a downstream action is needed"
+      ],
+      "failure_scenarios": [
+        "expired consent => block personal data access",
+        "missing eligibility => abstain",
+        "unauthorized manager => 403"
+      ],
+      "acceptance_criteria": [
+        "no prohibited or unauthorized profiles read",
+        "clear evidence for each role",
+        "position changes not executed automatically"
+      ],
+      "test_strategy": [
+        "role eligibility fixtures",
+        "consent withdrawal",
+        "unauthorized disclosure and no-write tests"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    },
+    {
+      "id": "UC-HR-3",
+      "feature": "hr_transfer",
+      "implementation_phase": 16,
+      "approval_owner": "HR Policy Owner",
+      "actors": [
+        "Authorized HR transfer officer",
+        "Unit manager",
+        "Human approver"
+      ],
+      "roles": [
+        "hr_transfer_reader",
+        "transfer_approver"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-HR-3-001",
+          "statement": "Suggest transfers considering organizational constraints and vacancies",
+          "test_id": "TEST-HR-3-001",
+          "security_policy_id": "SEC-02"
+        },
+        {
+          "id": "REQ-HR-3-002",
+          "statement": "Expose conflicting priorities and uncertainty with source context",
+          "test_id": "TEST-HR-3-002",
+          "security_policy_id": "SEC-06"
+        },
+        {
+          "id": "REQ-HR-3-003",
+          "statement": "Require formal authorization before any transfer execution",
+          "test_id": "TEST-HR-3-003",
+          "security_policy_id": "SEC-07"
+        }
+      ],
+      "data_requirements": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "knowledge_sources": [
+        "organizational chart",
+        "transfer rules",
+        "authorized staffing reports"
+      ],
+      "authorization_boundaries": [
+        "SEC-02",
+        "SEC-06",
+        "SEC-07"
+      ],
+      "workflow": [
+        "verify purpose",
+        "collect vacancy/capacity constraints",
+        "generate explainable transfer proposals",
+        "review organizational effects",
+        "human approval and controlled downstream execution only later"
+      ],
+      "external_dependencies": [
+        "HR source systems",
+        "current unit capacity",
+        "Agent and destination authorizations for actual transfer"
+      ],
+      "failure_scenarios": [
+        "capacity data outdated => block proposal or flag for review",
+        "policy conflict => escalate",
+        "unavailable Agent => proposed only"
+      ],
+      "acceptance_criteria": [
+        "violated hard constraints yield no actionable transfer",
+        "approval owner documented",
+        "no unaudited transfer"
+      ],
+      "test_strategy": [
+        "constraints/capacity change",
+        "Agent unavailable/no-op",
+        "unauthorized approval/replay"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    },
+    {
+      "id": "UC-RES",
+      "feature": "research",
+      "implementation_phase": 13,
+      "approval_owner": "Research Office Lead",
+      "actors": [
+        "Researcher",
+        "Research reviewer"
+      ],
+      "roles": [
+        "research_reader",
+        "research_reviewer"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-RES-001",
+          "statement": "Retrieve comparable prior cases with real provenance",
+          "test_id": "TEST-RES-001",
+          "security_policy_id": "SEC-04"
+        },
+        {
+          "id": "REQ-RES-002",
+          "statement": "Distinguish observed prior outcome from speculative proposed solution",
+          "test_id": "TEST-RES-002",
+          "security_policy_id": "SEC-08"
+        },
+        {
+          "id": "REQ-RES-003",
+          "statement": "State contextual differences, confidence limitations and contradictory evidence",
+          "test_id": "TEST-RES-003",
+          "security_policy_id": "SEC-09"
+        }
+      ],
+      "data_requirements": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "knowledge_sources": [
+        "approved research reports",
+        "lessons learned",
+        "project outcomes"
+      ],
+      "authorization_boundaries": [
+        "SEC-04",
+        "SEC-08",
+        "SEC-09"
+      ],
+      "workflow": [
+        "authorize research scope",
+        "retrieve comparable authorized cases",
+        "compare contexts/outcomes",
+        "propose conditional options",
+        "provide sources and caveats"
+      ],
+      "external_dependencies": [
+        "research corpus",
+        "research domain expert",
+        "retrieval and citation engine"
+      ],
+      "failure_scenarios": [
+        "insufficient comparable evidence => abstain",
+        "restricted case => exclude",
+        "outdated conclusion => flag"
+      ],
+      "acceptance_criteria": [
+        "traceable real cases accompany recommendations",
+        "no causal claim from correlation alone",
+        "confidential cases cannot leak"
+      ],
+      "test_strategy": [
+        "case retrieval gold set",
+        "cross-classification deny",
+        "unsupported conclusion/expired report"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    },
+    {
+      "id": "UC-DEV",
+      "feature": "personal_development",
+      "implementation_phase": 14,
+      "approval_owner": "Employee Privacy Owner",
+      "actors": [
+        "Employee",
+        "Authorized coach",
+        "Privacy approver"
+      ],
+      "roles": [
+        "profile_owner",
+        "delegated_coach"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-DEV-001",
+          "statement": "Produce an editable goal-based development plan from permitted inputs",
+          "test_id": "TEST-DEV-001",
+          "security_policy_id": "SEC-05"
+        },
+        {
+          "id": "REQ-DEV-002",
+          "statement": "Record milestones and progress only within the subject's allowed scope",
+          "test_id": "TEST-DEV-002",
+          "security_policy_id": "SEC-03"
+        },
+        {
+          "id": "REQ-DEV-003",
+          "statement": "Enforce consent and privacy boundaries independent from HR hiring",
+          "test_id": "TEST-DEV-003",
+          "security_policy_id": "SEC-09"
+        }
+      ],
+      "data_requirements": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "knowledge_sources": [
+        "verified training resources",
+        "employee-authorized learning history"
+      ],
+      "authorization_boundaries": [
+        "SEC-05",
+        "SEC-03",
+        "SEC-09"
+      ],
+      "workflow": [
+        "verify ownership/consent",
+        "read permitted goals and catalog",
+        "propose editable plan",
+        "persist user-confirmed milestones in later phase",
+        "revoke access on consent withdrawal"
+      ],
+      "external_dependencies": [
+        "approved learning catalog",
+        "privacy policy",
+        "conversation support"
+      ],
+      "failure_scenarios": [
+        "withdrawn consent => block/delete per policy",
+        "unauthorized manager => deny",
+        "course withdrawn => revise recommendation"
+      ],
+      "acceptance_criteria": [
+        "employee controls stored plan",
+        "no implicit HR disclosure",
+        "consent revocation effective"
+      ],
+      "test_strategy": [
+        "ownership/403",
+        "consent revocation",
+        "concurrent updates and stale catalog"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    },
+    {
+      "id": "UC-TASK",
+      "feature": "task_allocation",
+      "implementation_phase": 17,
+      "approval_owner": "Authorized Operations Manager",
+      "actors": [
+        "Team lead",
+        "Assigned staff",
+        "Human approver"
+      ],
+      "roles": [
+        "task_proposer",
+        "task_approver"
+      ],
+      "functional_requirements": [
+        {
+          "id": "REQ-TASK-001",
+          "statement": "Extract task candidates, dependencies and deadlines from authorized plans",
+          "test_id": "TEST-TASK-001",
+          "security_policy_id": "SEC-06"
+        },
+        {
+          "id": "REQ-TASK-002",
+          "statement": "Suggest assignees based on permitted workload and skills",
+          "test_id": "TEST-TASK-002",
+          "security_policy_id": "SEC-07"
+        },
+        {
+          "id": "REQ-TASK-003",
+          "statement": "Require explicit authorized approval and destination-side permission before any assignment",
+          "test_id": "TEST-TASK-003",
+          "security_policy_id": "SEC-08"
+        }
+      ],
+      "data_requirements": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "knowledge_sources": [
+        "approved plans",
+        "organization structure",
+        "authorized workload registry"
+      ],
+      "authorization_boundaries": [
+        "SEC-06",
+        "SEC-07",
+        "SEC-08"
+      ],
+      "workflow": [
+        "authorize plan",
+        "extract cited tasks",
+        "check constraints/capacity",
+        "prepare explainable draft allocations",
+        "human approves",
+        "Agent acts only once contract and permission are live"
+      ],
+      "external_dependencies": [
+        "capacity registry",
+        "human approval",
+        "phase 15 Agent real E2E"
+      ],
+      "failure_scenarios": [
+        "missing workload => no assignment",
+        "duplicate request => idempotent outcome",
+        "Agent unavailable => draft only",
+        "approval stale => block"
+      ],
+      "acceptance_criteria": [
+        "each task references authorized source",
+        "no side-effect without approval",
+        "duplicate/replayed requests cannot double-assign"
+      ],
+      "test_strategy": [
+        "task extraction and constraints",
+        "approval 403/replay",
+        "Agent failure and concurrent capacity changes"
+      ],
+      "status": "PROPOSED_AWAITING_APPROVAL"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "REQ-REL-001",
+      "statement": "Answer religious questions using currently approved evidence and real citations",
+      "feature": "religious_qa",
+      "data_refs": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "security_policy_id": "SEC-01",
+      "test_id": "TEST-REL-001",
+      "phase": 12,
+      "owner": "Religious Content Lead",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-REL-002",
+      "statement": "Distinguish competing authoritative opinions without invented certainty",
+      "feature": "religious_qa",
+      "data_refs": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "security_policy_id": "SEC-08",
+      "test_id": "TEST-REL-002",
+      "phase": 12,
+      "owner": "Religious Content Lead",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-REL-003",
+      "statement": "Abstain or escalate to expert when evidence is missing or ambiguous",
+      "feature": "religious_qa",
+      "data_refs": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-REL-003",
+      "phase": 12,
+      "owner": "Religious Content Lead",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-1-001",
+      "statement": "Rank permitted candidates for a position only after mandatory job constraints",
+      "feature": "hr_matching",
+      "data_refs": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-02",
+      "test_id": "TEST-HR-1-001",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-1-002",
+      "statement": "Explain each recommendation using authorized job/profile evidence",
+      "feature": "hr_matching",
+      "data_refs": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-HR-1-002",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-1-003",
+      "statement": "Ensure no automated hiring decision or personnel mutation",
+      "feature": "hr_matching",
+      "data_refs": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-HR-1-003",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-2-001",
+      "statement": "Recommend eligible positions for an authorized person's verified skills",
+      "feature": "hr_matching",
+      "data_refs": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "security_policy_id": "SEC-02",
+      "test_id": "TEST-HR-2-001",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-2-002",
+      "statement": "Explain qualification gaps and proposed growth steps",
+      "feature": "hr_matching",
+      "data_refs": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "security_policy_id": "SEC-05",
+      "test_id": "TEST-HR-2-002",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-2-003",
+      "statement": "Protect the profile from unauthorized managers and avoid automatic appointment",
+      "feature": "hr_matching",
+      "data_refs": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-HR-2-003",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-3-001",
+      "statement": "Suggest transfers considering organizational constraints and vacancies",
+      "feature": "hr_transfer",
+      "data_refs": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-02",
+      "test_id": "TEST-HR-3-001",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-3-002",
+      "statement": "Expose conflicting priorities and uncertainty with source context",
+      "feature": "hr_transfer",
+      "data_refs": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-HR-3-002",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-HR-3-003",
+      "statement": "Require formal authorization before any transfer execution",
+      "feature": "hr_transfer",
+      "data_refs": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-07",
+      "test_id": "TEST-HR-3-003",
+      "phase": 16,
+      "owner": "HR Policy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-RES-001",
+      "statement": "Retrieve comparable prior cases with real provenance",
+      "feature": "research",
+      "data_refs": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "security_policy_id": "SEC-04",
+      "test_id": "TEST-RES-001",
+      "phase": 13,
+      "owner": "Research Office Lead",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-RES-002",
+      "statement": "Distinguish observed prior outcome from speculative proposed solution",
+      "feature": "research",
+      "data_refs": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "security_policy_id": "SEC-08",
+      "test_id": "TEST-RES-002",
+      "phase": 13,
+      "owner": "Research Office Lead",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-RES-003",
+      "statement": "State contextual differences, confidence limitations and contradictory evidence",
+      "feature": "research",
+      "data_refs": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-RES-003",
+      "phase": 13,
+      "owner": "Research Office Lead",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-DEV-001",
+      "statement": "Produce an editable goal-based development plan from permitted inputs",
+      "feature": "personal_development",
+      "data_refs": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "security_policy_id": "SEC-05",
+      "test_id": "TEST-DEV-001",
+      "phase": 14,
+      "owner": "Employee Privacy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-DEV-002",
+      "statement": "Record milestones and progress only within the subject's allowed scope",
+      "feature": "personal_development",
+      "data_refs": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "security_policy_id": "SEC-03",
+      "test_id": "TEST-DEV-002",
+      "phase": 14,
+      "owner": "Employee Privacy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-DEV-003",
+      "statement": "Enforce consent and privacy boundaries independent from HR hiring",
+      "feature": "personal_development",
+      "data_refs": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-DEV-003",
+      "phase": 14,
+      "owner": "Employee Privacy Owner",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-TASK-001",
+      "statement": "Extract task candidates, dependencies and deadlines from authorized plans",
+      "feature": "task_allocation",
+      "data_refs": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-TASK-001",
+      "phase": 17,
+      "owner": "Authorized Operations Manager",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-TASK-002",
+      "statement": "Suggest assignees based on permitted workload and skills",
+      "feature": "task_allocation",
+      "data_refs": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "security_policy_id": "SEC-07",
+      "test_id": "TEST-TASK-002",
+      "phase": 17,
+      "owner": "Authorized Operations Manager",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    },
+    {
+      "id": "REQ-TASK-003",
+      "statement": "Require explicit authorized approval and destination-side permission before any assignment",
+      "feature": "task_allocation",
+      "data_refs": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "security_policy_id": "SEC-08",
+      "test_id": "TEST-TASK-003",
+      "phase": 17,
+      "owner": "Authorized Operations Manager",
+      "approval_status": "AWAITING_DOMAIN_APPROVAL"
+    }
+  ],
+  "traceability": [
+    {
+      "requirement_id": "REQ-REL-001",
+      "feature": "religious_qa",
+      "data": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "security_policy_id": "SEC-01",
+      "test_id": "TEST-REL-001",
+      "phase": 12,
+      "owner": "Religious Content Lead"
+    },
+    {
+      "requirement_id": "REQ-REL-002",
+      "feature": "religious_qa",
+      "data": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "security_policy_id": "SEC-08",
+      "test_id": "TEST-REL-002",
+      "phase": 12,
+      "owner": "Religious Content Lead"
+    },
+    {
+      "requirement_id": "REQ-REL-003",
+      "feature": "religious_qa",
+      "data": [
+        "approved_answer",
+        "document_version",
+        "knowledge_chunk",
+        "answer_citation",
+        "expert_review"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-REL-003",
+      "phase": 12,
+      "owner": "Religious Content Lead"
+    },
+    {
+      "requirement_id": "REQ-HR-1-001",
+      "feature": "hr_matching",
+      "data": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-02",
+      "test_id": "TEST-HR-1-001",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-1-002",
+      "feature": "hr_matching",
+      "data": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-HR-1-002",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-1-003",
+      "feature": "hr_matching",
+      "data": [
+        "approved_position_profile",
+        "permitted_employee_profile",
+        "skills_catalog",
+        "constraint_evidence",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-HR-1-003",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-2-001",
+      "feature": "hr_matching",
+      "data": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "security_policy_id": "SEC-02",
+      "test_id": "TEST-HR-2-001",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-2-002",
+      "feature": "hr_matching",
+      "data": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "security_policy_id": "SEC-05",
+      "test_id": "TEST-HR-2-002",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-2-003",
+      "feature": "hr_matching",
+      "data": [
+        "permitted_employee_profile",
+        "approved_position_profile",
+        "learning_history",
+        "eligibility_rules"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-HR-2-003",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-3-001",
+      "feature": "hr_transfer",
+      "data": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-02",
+      "test_id": "TEST-HR-3-001",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-3-002",
+      "feature": "hr_transfer",
+      "data": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-HR-3-002",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-HR-3-003",
+      "feature": "hr_transfer",
+      "data": [
+        "approved_organization_structure",
+        "permitted_staffing_record",
+        "vacancy",
+        "transfer_policy",
+        "approval_record"
+      ],
+      "security_policy_id": "SEC-07",
+      "test_id": "TEST-HR-3-003",
+      "phase": 16,
+      "owner": "HR Policy Owner"
+    },
+    {
+      "requirement_id": "REQ-RES-001",
+      "feature": "research",
+      "data": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "security_policy_id": "SEC-04",
+      "test_id": "TEST-RES-001",
+      "phase": 13,
+      "owner": "Research Office Lead"
+    },
+    {
+      "requirement_id": "REQ-RES-002",
+      "feature": "research",
+      "data": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "security_policy_id": "SEC-08",
+      "test_id": "TEST-RES-002",
+      "phase": 13,
+      "owner": "Research Office Lead"
+    },
+    {
+      "requirement_id": "REQ-RES-003",
+      "feature": "research",
+      "data": [
+        "research_case",
+        "versioned_experience",
+        "source_citation",
+        "classification"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-RES-003",
+      "phase": 13,
+      "owner": "Research Office Lead"
+    },
+    {
+      "requirement_id": "REQ-DEV-001",
+      "feature": "personal_development",
+      "data": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "security_policy_id": "SEC-05",
+      "test_id": "TEST-DEV-001",
+      "phase": 14,
+      "owner": "Employee Privacy Owner"
+    },
+    {
+      "requirement_id": "REQ-DEV-002",
+      "feature": "personal_development",
+      "data": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "security_policy_id": "SEC-03",
+      "test_id": "TEST-DEV-002",
+      "phase": 14,
+      "owner": "Employee Privacy Owner"
+    },
+    {
+      "requirement_id": "REQ-DEV-003",
+      "feature": "personal_development",
+      "data": [
+        "learning_goal",
+        "approved_training_catalog",
+        "milestone",
+        "progress_event",
+        "consent"
+      ],
+      "security_policy_id": "SEC-09",
+      "test_id": "TEST-DEV-003",
+      "phase": 14,
+      "owner": "Employee Privacy Owner"
+    },
+    {
+      "requirement_id": "REQ-TASK-001",
+      "feature": "task_allocation",
+      "data": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "security_policy_id": "SEC-06",
+      "test_id": "TEST-TASK-001",
+      "phase": 17,
+      "owner": "Authorized Operations Manager"
+    },
+    {
+      "requirement_id": "REQ-TASK-002",
+      "feature": "task_allocation",
+      "data": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "security_policy_id": "SEC-07",
+      "test_id": "TEST-TASK-002",
+      "phase": 17,
+      "owner": "Authorized Operations Manager"
+    },
+    {
+      "requirement_id": "REQ-TASK-003",
+      "feature": "task_allocation",
+      "data": [
+        "approved_instruction",
+        "task_candidate",
+        "dependency",
+        "capacity_snapshot",
+        "approval_record",
+        "execution_audit"
+      ],
+      "security_policy_id": "SEC-08",
+      "test_id": "TEST-TASK-003",
+      "phase": 17,
+      "owner": "Authorized Operations Manager"
+    }
+  ],
+  "security_policies": [
+    {
+      "id": "SEC-01",
+      "name": "Public publication gate",
+      "rule": "Public retrieval only from explicitly approved/public/current document versions; never internal HR or unreleased sources."
+    },
+    {
+      "id": "SEC-02",
+      "name": "HR purpose-scoped access",
+      "rule": "HR personnel/profile/position data requires authenticated authorized staff, approved purpose and minimal attributes; human decides."
+    },
+    {
+      "id": "SEC-03",
+      "name": "Conversation ownership",
+      "rule": "Principal may read only owned or explicitly delegated conversations; no cross-user retrieval."
+    },
+    {
+      "id": "SEC-04",
+      "name": "Research source restriction",
+      "rule": "Research sources filtered by classification, unit, confidentiality and version; evidence authorization rechecked."
+    },
+    {
+      "id": "SEC-05",
+      "name": "Consent and development privacy",
+      "rule": "Learning profile and long-term memory require approved legal basis/consent; managers do not implicitly inherit access."
+    },
+    {
+      "id": "SEC-06",
+      "name": "Approved actions",
+      "rule": "No position change/task assignment without approver authority, fresh resource checks, destination authorization and audit."
+    },
+    {
+      "id": "SEC-07",
+      "name": "Agent deny by default",
+      "rule": "External Agent absent; no side-effecting call until signed contract, service identity, approval and integration verification."
+    },
+    {
+      "id": "SEC-08",
+      "name": "Grounding and source safety",
+      "rule": "Untrusted retrieved content cannot issue instructions; only validated, currently published, authorized citations may ground answers."
+    },
+    {
+      "id": "SEC-09",
+      "name": "Data minimization and logging",
+      "rule": "Mask confidential prompts, personnel records and secrets in logs, traces, agent requests and evaluation samples."
+    }
+  ],
+  "approval": {
+    "product_owner": "AWAITING_APPROVAL",
+    "security_owner": "AWAITING_APPROVAL",
+    "architecture_owner": "AWAITING_APPROVAL",
+    "domain_owners": "AWAITING_APPROVAL"
+  }
+}

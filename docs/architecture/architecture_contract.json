@@ -1,0 +1,612 @@
+{
+  "contract_id": "SCB-ARCH-001",
+  "version": "0.1.0",
+  "status": "PROPOSED_AWAITING_ARCHITECTURE_AND_SECURITY_APPROVAL",
+  "date": "2026-10-21",
+  "source_documents": [
+    "Service_Architecture_Guide_FA.md",
+    "Smart_Chatbot_Implementation_Plan_FA.md"
+  ],
+  "platform": {
+    "language": "Python",
+    "web_framework": "FastAPI",
+    "style": "Modular Monolith",
+    "layers": [
+      "Host",
+      "Application",
+      "Core",
+      "Infrastructure"
+    ],
+    "postgresql_flow": [
+      "Controller",
+      "Service",
+      "Repository",
+      "PsqlDbContext"
+    ],
+    "persistence": "PostgreSQL",
+    "retrieval_index": "Qdrant",
+    "pgvector_permitted": false,
+    "inference": "Self-hosted on-premises",
+    "codebase": "Single shared codebase; separate public/internal deployments"
+  },
+  "coding_rules": {
+    "controller_path": "src/application/{feature}/{feature}_controller.py",
+    "dto_path": "src/application/{feature}/dtos/{feature}_dto.py",
+    "service_path": "src/core/services/{feature}/{feature}_service.py",
+    "repository_path": "src/infrastructure/repositories/{feature}/{feature}_repository.py",
+    "model_path": "src/infrastructure/models/",
+    "dependency_injection": "Constructor injection with @inject, auto-discovery, no unnecessary manual registration",
+    "async_suffix": "_async",
+    "singleton_providers": [
+      "PsqlDbContext",
+      "ConfigReader",
+      "VaultService"
+    ],
+    "session_lifecycle": "Never share AsyncSession across requests; use scoped sessions",
+    "migration": "Versioned Alembic migration; model registered in metadata",
+    "no_extra_architecture": [
+      "DDD",
+      "CQRS",
+      "Hexagonal",
+      "UseCase layer"
+    ]
+  },
+  "modules": [
+    {
+      "name": "host",
+      "layer": "Host",
+      "responsibility": "Bootstrap, configuration, startup/shutdown; phase 02"
+    },
+    {
+      "name": "http_application",
+      "layer": "Application",
+      "responsibility": "Thin FastAPI controllers, DTOs, route discovery and HTTP authorization mapping"
+    },
+    {
+      "name": "chat_and_conversation",
+      "layer": "Core",
+      "responsibility": "Orchestrate conversations and grounded responses without SQL/HTTP concerns"
+    },
+    {
+      "name": "knowledge_ingestion",
+      "layer": "Core",
+      "responsibility": "Lifecycle, document versioning, chunking and approval workflows"
+    },
+    {
+      "name": "retrieval_answer",
+      "layer": "Core",
+      "responsibility": "Persian normalization, hybrid retrieval strategy, reranking, citation and abstention"
+    },
+    {
+      "name": "religious_qa",
+      "layer": "Core",
+      "responsibility": "Approved religious sources, disagreement and expert referral"
+    },
+    {
+      "name": "hr_matching",
+      "layer": "Core",
+      "responsibility": "HR matching proposals, eligibility and human review; no auto personnel changes"
+    },
+    {
+      "name": "hr_transfer",
+      "layer": "Core",
+      "responsibility": "Policy-constrained transfer proposals; execution only with approval"
+    },
+    {
+      "name": "research",
+      "layer": "Core",
+      "responsibility": "Evidence-rich comparison of prior organizational experiences"
+    },
+    {
+      "name": "personal_development",
+      "layer": "Core",
+      "responsibility": "Consent-bound employee development planning"
+    },
+    {
+      "name": "task_allocation",
+      "layer": "Core",
+      "responsibility": "Draft task breakdown and approval-governed allocation"
+    },
+    {
+      "name": "repositories",
+      "layer": "Infrastructure",
+      "responsibility": "SQLAlchemy models/queries via PsqlDbContext and BaseRepository"
+    },
+    {
+      "name": "qdrant_provider",
+      "layer": "Infrastructure",
+      "responsibility": "Actual Qdrant I/O and index lifecycle later; no phase 01 client"
+    },
+    {
+      "name": "model_providers",
+      "layer": "Infrastructure",
+      "responsibility": "Self-hosted LLM, embeddings and reranker I/O later"
+    },
+    {
+      "name": "agent_provider",
+      "layer": "Infrastructure",
+      "responsibility": "Future secured external Agent boundary; no implementation/API assumed"
+    }
+  ],
+  "data_contract": {
+    "postgresql_role": "Authoritative publication, access, document versions, conversations, consent and audits",
+    "qdrant_role": "Rebuildable scope-filtered retrieval index, never authoritative for publication/authz",
+    "logical_entities": [
+      "conversation",
+      "message",
+      "knowledge_source",
+      "knowledge_document",
+      "document_version",
+      "knowledge_chunk",
+      "index_manifest",
+      "ingestion_job",
+      "approved_answer",
+      "answer_citation",
+      "approval_request",
+      "agent_operation",
+      "audit_event",
+      "feedback",
+      "user_preferences"
+    ],
+    "document_states": [
+      "draft",
+      "processing",
+      "awaiting_approval",
+      "published",
+      "revoked",
+      "superseded",
+      "failed"
+    ],
+    "versioning": "Immutable identity and checksum per approved document version; references map to canonical chunk and source span",
+    "revocation": "PostgreSQL revoke commits before Qdrant cleanup; every candidate must pass latest publication and ACL validation",
+    "consistency": "Manifest/reconciliation and retryable index update; fail closed on metadata unavailability",
+    "note": "Logical entities only; no SQL migration or final schema approved"
+  },
+  "security": {
+    "policy_ids": [
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "SEC-04",
+      "SEC-05",
+      "SEC-06",
+      "SEC-07",
+      "SEC-08",
+      "SEC-09"
+    ],
+    "zones": [
+      "public",
+      "internal"
+    ],
+    "deployment_separation": [
+      "network",
+      "database",
+      "Qdrant credentials/collections or clusters",
+      "secrets",
+      "identity",
+      "logs",
+      "models when security requires"
+    ],
+    "authorization": "Authenticate, then RBAC/ABAC before search and reauthorize candidates before response",
+    "public_internal": "No direct Public path to Internal HR, PostgreSQL, Qdrant, Agent or private inference",
+    "human_review": "Mandatory for personnel-impacting actions and task execution",
+    "retrieved_text": "Untrusted input: ignore embedded instructions",
+    "logging": "Minimize PII/secrets; auditable security events"
+  },
+  "rag_pipeline": [
+    "authenticate",
+    "resolve domain and principal",
+    "authorize and load owned conversation",
+    "normalize Persian query",
+    "dense and sparse/lexical retrieval with scope filter",
+    "fusion",
+    "reranking",
+    "metadata and publication revalidation",
+    "evidence sufficiency and abstention",
+    "self-hosted inference",
+    "grounding and citation validation",
+    "persist authorized result"
+  ],
+  "agent_integration": {
+    "status": "BLOCKED_EXTERNAL_NOT_IMPLEMENTED",
+    "phase": 15,
+    "chatbot_owns": [
+      "user context",
+      "RAG",
+      "conversation",
+      "policy precheck",
+      "consent",
+      "human approval coordination"
+    ],
+    "agent_owns": [
+      "specialized tools",
+      "destination interactions under its own authorization"
+    ],
+    "required_contract_fields": [
+      "contract_version",
+      "correlation_id",
+      "idempotency_key",
+      "actor_proof",
+      "authorized_scope",
+      "operation",
+      "validated_input",
+      "deadline",
+      "approval_reference",
+      "status",
+      "result",
+      "evidence",
+      "error_code",
+      "remote_execution_id"
+    ],
+    "requirements": [
+      "mTLS or approved service identity",
+      "destination-side authorization",
+      "bounded timeout",
+      "safe retry and deduplication",
+      "callback signature/replay safety if applicable",
+      "audit trace",
+      "human approval for high impact"
+    ],
+    "endpoints": [],
+    "note": "No endpoint, transport or Agent implementation has been provided or verified"
+  },
+  "api_boundaries": [
+    {
+      "method": "POST",
+      "route": "/api/v1/chat/messages",
+      "module": "chat",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/chat/messages/stream",
+      "module": "chat",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/conversation/{id}",
+      "module": "conversation",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/conversation/{id}/messages",
+      "module": "conversation",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/knowledge/documents",
+      "module": "knowledge",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/knowledge/documents/{id}",
+      "module": "knowledge",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/knowledge/documents/{id}/publish",
+      "module": "knowledge",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/feedback/",
+      "module": "feedback",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/approval/requests/{id}/decision",
+      "module": "approval",
+      "status": "CANDIDATE_NOT_IMPLEMENTED"
+    }
+  ],
+  "decision_records": [
+    "ADR-0001",
+    "ADR-0002"
+  ],
+  "open_decisions": [
+    {
+      "id": "D-01",
+      "decision": "Concurrent users, QPS, bursts",
+      "status": "OPEN",
+      "proposed_owner": "Product Owner + SRE",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        2,
+        18
+      ],
+      "decision_criteria": "Measured traffic profiles and load scenarios",
+      "evidence_required": true
+    },
+    {
+      "id": "D-02",
+      "decision": "LLM and quantization/model serving",
+      "status": "OPEN",
+      "proposed_owner": "ML Lead + Security",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        9,
+        18
+      ],
+      "decision_criteria": "Persian gold-set faithfulness, latency, VRAM, license and reproducibility",
+      "evidence_required": true
+    },
+    {
+      "id": "D-03",
+      "decision": "Embedding model, reranker compatibility and dimensions",
+      "status": "OPEN",
+      "proposed_owner": "ML Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        4,
+        7,
+        8
+      ],
+      "decision_criteria": "Retrieval gold set, nDCG/Recall and actual model dimensionality",
+      "evidence_required": true
+    },
+    {
+      "id": "D-04",
+      "decision": "Dense/sparse selection and fusion/rerank parameters",
+      "status": "OPEN",
+      "proposed_owner": "ML Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        7,
+        8
+      ],
+      "decision_criteria": "Sparse-vs-dense ablation and latency with security filters",
+      "evidence_required": true
+    },
+    {
+      "id": "D-05",
+      "decision": "PostgreSQL/Qdrant/inference node counts and HA/DR",
+      "status": "OPEN",
+      "proposed_owner": "SRE + Infrastructure Owner",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        2,
+        4,
+        18
+      ],
+      "decision_criteria": "Approved availability tier, RPO/RTO, failure-domain tests and cost",
+      "evidence_required": true
+    },
+    {
+      "id": "D-06",
+      "decision": "Knowledge corpus volume, format and growth/retention",
+      "status": "OPEN",
+      "proposed_owner": "Knowledge Owner",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        5,
+        6,
+        18
+      ],
+      "decision_criteria": "Representative inventory, sampling and retention policy",
+      "evidence_required": true
+    },
+    {
+      "id": "D-07",
+      "decision": "Enterprise IdP/SSO, token claims and identity mapping",
+      "status": "OPEN",
+      "proposed_owner": "Security + IAM Owner",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        2,
+        14,
+        16
+      ],
+      "decision_criteria": "Actual IdP protocol, claims, rotation, authn/authz test environment",
+      "evidence_required": true
+    },
+    {
+      "id": "D-08",
+      "decision": "Data classification, HR consent, ACL, retention and deletion",
+      "status": "OPEN",
+      "proposed_owner": "Legal + Security + HR",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        2,
+        3,
+        14,
+        16
+      ],
+      "decision_criteria": "Signed data governance policy and authorization matrix",
+      "evidence_required": true
+    },
+    {
+      "id": "D-09",
+      "decision": "External AI Agent API/transport/authorization",
+      "status": "OPEN",
+      "proposed_owner": "Agent Team + Tech Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        15,
+        16,
+        17
+      ],
+      "decision_criteria": "Delivered versioned contract, test environment and real E2E",
+      "evidence_required": true
+    },
+    {
+      "id": "D-10",
+      "decision": "Persian OCR engine and accepted formats",
+      "status": "OPEN",
+      "proposed_owner": "Knowledge Owner + ML Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        5,
+        6
+      ],
+      "decision_criteria": "Labeled scanned/digital corpus and extract quality/resource benchmark",
+      "evidence_required": true
+    },
+    {
+      "id": "D-11",
+      "decision": "Durable job backend, queue and worker model",
+      "status": "OPEN",
+      "proposed_owner": "SRE + Tech Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        5
+      ],
+      "decision_criteria": "Operational load and failure/recovery validation",
+      "evidence_required": true
+    },
+    {
+      "id": "D-12",
+      "decision": "SLA/SLO, retrieval accuracy and acceptance thresholds",
+      "status": "OPEN",
+      "proposed_owner": "Product Owner + SRE + Domain Leads",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        7,
+        9,
+        18
+      ],
+      "decision_criteria": "Gold-set baseline, latency traffic model and signed SLO objectives",
+      "evidence_required": true
+    },
+    {
+      "id": "D-13",
+      "decision": "GPU model, VRAM, concurrency and capacity",
+      "status": "OPEN",
+      "proposed_owner": "Infrastructure + ML Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        9,
+        18
+      ],
+      "decision_criteria": "Real serving load, KV/cache, TTFT and VRAM measurements",
+      "evidence_required": true
+    },
+    {
+      "id": "D-14",
+      "decision": "Reranker selection/version",
+      "status": "OPEN",
+      "proposed_owner": "ML Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        8
+      ],
+      "decision_criteria": "Persian quality uplift, latency, licensing and machine footprint",
+      "evidence_required": true
+    },
+    {
+      "id": "D-15",
+      "decision": "Shared or isolated inference across security zones",
+      "status": "OPEN",
+      "proposed_owner": "Security + Infrastructure",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        2,
+        9
+      ],
+      "decision_criteria": "Memory/request isolation proof and explicit risk approval",
+      "evidence_required": true
+    },
+    {
+      "id": "D-16",
+      "decision": "HTTP request/response schema, pagination, streaming protocol",
+      "status": "OPEN",
+      "proposed_owner": "API Owner + Tech Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        2,
+        9,
+        10
+      ],
+      "decision_criteria": "Contract review, OpenAPI validation and client requirements",
+      "evidence_required": true
+    },
+    {
+      "id": "D-17",
+      "decision": "Knowledge publishers, approved corpora and content stewardship",
+      "status": "OPEN",
+      "proposed_owner": "Product Owner + Knowledge Owners",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        5,
+        11,
+        12,
+        13
+      ],
+      "decision_criteria": "Approved source inventory, classifications, reviewers and lifecycle",
+      "evidence_required": true
+    },
+    {
+      "id": "D-18",
+      "decision": "Repository protection, required reviews and CI governance",
+      "status": "OPEN",
+      "proposed_owner": "Repository Admin + Tech Lead",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        1,
+        2
+      ],
+      "decision_criteria": "Branch rules, CODEOWNERS/CI plan and owner approval",
+      "evidence_required": true
+    },
+    {
+      "id": "D-19",
+      "decision": "Public data publication/withdrawal approval authority",
+      "status": "OPEN",
+      "proposed_owner": "Security + Content Publishing Owner",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        5,
+        7,
+        11
+      ],
+      "decision_criteria": "Signed release matrix and revocation race test",
+      "evidence_required": true
+    },
+    {
+      "id": "D-20",
+      "decision": "Backup/restore topology, RPO/RTO and recovery acceptance",
+      "status": "OPEN",
+      "proposed_owner": "SRE + Security",
+      "owner_confirmed": false,
+      "due_date": null,
+      "affected_phases": [
+        3,
+        4,
+        18
+      ],
+      "decision_criteria": "Restore drills, incident policy and budget",
+      "evidence_required": true
+    }
+  ],
+  "approval": {
+    "architecture_owner": "AWAITING_APPROVAL",
+    "security_owner": "AWAITING_APPROVAL",
+    "product_owner": "AWAITING_APPROVAL"
+  },
+  "scope_phase01": "Contracts and recorded decisions only; runtime/API/DB/index/provider implementation intentionally absent"
+}
