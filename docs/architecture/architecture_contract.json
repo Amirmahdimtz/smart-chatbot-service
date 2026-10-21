@@ -323,7 +323,11 @@
         18
       ],
       "decision_criteria": "Measured traffic profiles and load scenarios",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_02_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-02",
@@ -337,7 +341,11 @@
         18
       ],
       "decision_criteria": "Persian gold-set faithfulness, latency, VRAM, license and reproducibility",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_09_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-03",
@@ -352,7 +360,11 @@
         8
       ],
       "decision_criteria": "Retrieval gold set, nDCG/Recall and actual model dimensionality",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_04_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-04",
@@ -366,7 +378,11 @@
         8
       ],
       "decision_criteria": "Sparse-vs-dense ablation and latency with security filters",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_07_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-05",
@@ -381,7 +397,11 @@
         18
       ],
       "decision_criteria": "Approved availability tier, RPO/RTO, failure-domain tests and cost",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_02_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-06",
@@ -396,7 +416,11 @@
         18
       ],
       "decision_criteria": "Representative inventory, sampling and retention policy",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_05_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-07",
@@ -411,7 +435,11 @@
         16
       ],
       "decision_criteria": "Actual IdP protocol, claims, rotation, authn/authz test environment",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_02_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-08",
@@ -427,7 +455,11 @@
         16
       ],
       "decision_criteria": "Signed data governance policy and authorization matrix",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_02_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-09",
@@ -442,7 +474,11 @@
         17
       ],
       "decision_criteria": "Delivered versioned contract, test environment and real E2E",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_15_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-10",
@@ -456,7 +492,11 @@
         6
       ],
       "decision_criteria": "Labeled scanned/digital corpus and extract quality/resource benchmark",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_05_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-11",
@@ -469,7 +509,11 @@
         5
       ],
       "decision_criteria": "Operational load and failure/recovery validation",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_05_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-12",
@@ -484,7 +528,11 @@
         18
       ],
       "decision_criteria": "Gold-set baseline, latency traffic model and signed SLO objectives",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_07_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-13",
@@ -498,7 +546,11 @@
         18
       ],
       "decision_criteria": "Real serving load, KV/cache, TTFT and VRAM measurements",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_09_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-14",
@@ -511,7 +563,11 @@
         8
       ],
       "decision_criteria": "Persian quality uplift, latency, licensing and machine footprint",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_08_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-15",
@@ -525,7 +581,11 @@
         9
       ],
       "decision_criteria": "Memory/request isolation proof and explicit risk approval",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_02_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-16",
@@ -540,7 +600,11 @@
         10
       ],
       "decision_criteria": "Contract review, OpenAPI validation and client requirements",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_02_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-17",
@@ -556,7 +620,11 @@
         13
       ],
       "decision_criteria": "Approved source inventory, classifications, reviewers and lifecycle",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_05_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-18",
@@ -570,7 +638,11 @@
         2
       ],
       "decision_criteria": "Branch rules, CODEOWNERS/CI plan and owner approval",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_01_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-19",
@@ -585,7 +657,11 @@
         11
       ],
       "decision_criteria": "Signed release matrix and revocation race test",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_05_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     },
     {
       "id": "D-20",
@@ -600,7 +676,11 @@
         18
       ],
       "decision_criteria": "Restore drills, incident policy and budget",
-      "evidence_required": true
+      "evidence_required": true,
+      "due_milestone": "BEFORE_PHASE_03_DEPENDENCY_GATE",
+      "deadline_basis": "PROPOSED_MILESTONE_NOT_CALENDAR_DATE",
+      "deadline_status": "AWAITING_OWNER_CONFIRMATION",
+      "decision_evidence_ref": null
     }
   ],
   "approval": {
