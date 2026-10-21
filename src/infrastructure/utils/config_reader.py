@@ -114,6 +114,19 @@ class ConfigReader:
                 import json
 
                 data["server"]["cors_origins"] = json.loads(os.environ["SCB_CORS_ORIGINS"])
+            vault = data.setdefault("vaulthc", {})
+            enabled = os.environ.get("SCB_VAULT_ENABLED")
+            if enabled is not None:
+                if enabled.lower() not in {"true", "false"}:
+                    raise ValueError("Invalid Vault enable flag")
+                vault["enabled"] = enabled.lower() == "true"
+            for name, field in (
+                ("SCB_VAULT_ADDRESS", "address"),
+                ("SCB_VAULT_MOUNT", "mount"),
+                ("SCB_VAULT_STARTUP_CHECK_PATH", "startup_check_path"),
+            ):
+                if name in os.environ:
+                    vault[field] = os.environ[name]
             self.settings = Settings.model_validate(data)
         except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError):
             raise ConfigurationError() from None

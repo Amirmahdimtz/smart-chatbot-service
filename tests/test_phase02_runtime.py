@@ -198,3 +198,22 @@ def test_development_without_idp_is_not_ready(monkeypatch):
         assert http.get("/api/v1/health_check/live").status_code == 200
         assert http.get("/api/v1/health_check/ready").status_code == 503
         assert http.get("/api/v1/health_check/metrics").status_code == 401
+
+
+def test_vault_configuration_fails_closed(monkeypatch):
+    monkeypatch.setenv("SCB_ENV", "development")
+    monkeypatch.setenv("SCB_VAULT_ENABLED", "invalid")
+    with pytest.raises(ConfigurationError):
+        create_app()
+
+    monkeypatch.setenv("SCB_VAULT_ENABLED", "true")
+    monkeypatch.setenv("SCB_VAULT_ADDRESS", "http://vault.example.invalid")
+    monkeypatch.setenv("SCB_VAULT_STARTUP_CHECK_PATH", "health")
+    monkeypatch.setenv("SCB_VAULT_TOKEN", "test")
+    with pytest.raises(ConfigurationError):
+        create_app()
+
+    monkeypatch.setenv("SCB_VAULT_ADDRESS", "https://vault.example.invalid")
+    monkeypatch.delenv("SCB_VAULT_TOKEN", raising=False)
+    with pytest.raises(ConfigurationError):
+        create_app()
