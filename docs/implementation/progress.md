@@ -10,15 +10,15 @@
 - Contract: [requirements](../requirements/requirements_contract.json), [architecture](../architecture/architecture_contract.json), [system](../architecture/system_architecture.md), [deployment](../architecture/deployment_architecture.md), [security](../security/data_access_matrix.md).
 - Decisions: [ADR-0001](../decisions/ADR-0001-architecture-baseline.md), [ADR-0002](../decisions/ADR-0002-initialization-workflow.md); 20 deferred decisions stored in architecture contract.
 - Evaluation: [evaluation](../evaluation/evaluation_plan.md); [development workflow](development_workflow.md).
-- Automated contracts: `scripts/validate_phase01.py`, `tests/test_phase01_contracts.py`. Execution claims/limits in [Phase 01 evidence](phase_01_evidence.md).
+- Automated contracts: `scripts/validate_phase01.py`, `tests/test_phase01_contracts.py`. Workstation evidence from the project owner on 2026-10-21: Python compile without errors, contract validator PASS, 6/6 unittests PASS, and clean Git tree at `a6bb585d0dbed97366b9822b0d8efd30aad9ebf2`; full reported commands/results in [Phase 01 evidence](phase_01_evidence.md).
 - Security/architecture/product/domain approval: **AWAITING_APPROVAL**. No approved real corpora/SSO/HR policy/model/hardware/Agent contract.
-- `CLOSED`: **No**. Marker Final completion marker deliberately **not issued**.
+- `CLOSED`: **No**. Final completion marker deliberately **not issued**.
 
 ## Phase status
 
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
-| 01 | IMPLEMENTED_AWAITING_VERIFICATION | Local tests + Traceability review + Architecture/Security/Product/Domain owner approvals |
+| 01 | IMPLEMENTED_AWAITING_VERIFICATION | Local Python tests reported PASS; formal Traceability/Policy reviews and Architecture/Security/Product/Domain owner approvals pending |
 | 02 | NOT_STARTED | Phase 01 approval / approved exceptions |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
@@ -31,4 +31,4 @@ Architecture Owner; Security Owner; Product Owner; Religious Content Lead; HR Po
 
 ## Next action
 
-Run local stdlib validator/test suite; collect approval and real source/security policies. Phase 02 **not started**. Phase 15 external readiness tracked independently; no Agent API claimed.
+Workstation Phase 01 validation has been reported PASS. Obtain formal owner approvals and approved source/security policies; record their review evidence before closing Phase 01. Phase 02 **not started**. Phase 15 external readiness tracked independently; no Agent API claimed.
