@@ -1,0 +1,82 @@
+{
+  "contract_id": "SCB-PHASE01-ACCEPTANCE",
+  "version": "0.1.0",
+  "phase": "PHASE_01",
+  "phase_status": "IMPLEMENTED_AWAITING_VERIFICATION",
+  "date": "2026-10-21",
+  "gates": [
+    {
+      "id": "G-01",
+      "description": "Approve product scope and requirement traceability",
+      "owner_role": "Product Owner",
+      "status": "AWAITING_APPROVAL",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-02",
+      "description": "Approve architecture, ADR and contract boundaries",
+      "owner_role": "Architecture Owner",
+      "status": "AWAITING_APPROVAL",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-03",
+      "description": "Approve data access matrix and public repository classification",
+      "owner_role": "Security Owner",
+      "status": "AWAITING_APPROVAL",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-04",
+      "description": "Approve all domain workflows and acceptance criteria",
+      "owner_role": "Domain Owners",
+      "status": "AWAITING_APPROVAL",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-05",
+      "description": "Review verified knowledge inventory or authorized deferral",
+      "owner_role": "Knowledge Owner",
+      "status": "AWAITING_INPUT",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-06",
+      "description": "Verify repository governance and review policies",
+      "owner_role": "Repository Admin",
+      "status": "AWAITING_DECISION",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-07",
+      "description": "Confirm decision accountability and milestone deadlines",
+      "owner_role": "Tech Lead + Product Owner",
+      "status": "AWAITING_DECISION",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    },
+    {
+      "id": "G-08",
+      "description": "Verify final SHA using compile, validator, unit and negative tests",
+      "owner_role": "Technical Verifier",
+      "status": "RECHECK_REQUIRED",
+      "approved_by": null,
+      "approved_at": null,
+      "evidence_ref": null
+    }
+  ],
+  "limitations": "Structural validation never authenticates human signoff; real approval records required."
+}
