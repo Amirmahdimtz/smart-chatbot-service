@@ -63,3 +63,21 @@ Documentation-only change can be reverted in a new forward commit after owner re
 **New Python test evidence:** pending execution on final commit by owner workstation or reproducible runner. Earlier 6/6 user-reported Python test result applies only to SHA `a6bb585d0dbed97366b9822b0d8efd30aad9ebf2`. Connector-side contract/static checks must be reported separately from Python execution.
 
 **Security and governance blockers:** Repository public disclosure review, signed architecture/product/security/domain approvals, representative knowledge inventory or signed deferred intake, and branch policy verification. Public/Internal/HR isolation remains an unimplemented Phase 02+ security control, not a tested deployment property. Phase 01 status remains `IMPLEMENTED_AWAITING_VERIFICATION`.
+
+## Follow-up verification results (tool-side and isolated fixture)
+
+**Code and contract snapshot reviewed:** `1924afd1d342503986b238822ca7760036c60e5c` (`main`, checked 2026-10-21).
+
+| Verification | Command / method | Observed outcome | Scope |
+|---|---|---|---|
+| Python syntax/compile | `python -m py_compile scripts/validate_phase01.py tests/test_phase01_contracts.py` | PASS | Locally authored byte-equivalent validator/test sources |
+| Isolated Python validator | `python scripts/validate_phase01.py` | PASS: 7 scenarios, 21 requirements, 9 policies, 20 decisions, 8 gates | **Synthetic fixtures only**; not an execution against the GitHub checkout |
+| Isolated negative/unit tests | `python -m unittest discover -s tests -v` | PASS: **12/12** in 0.023s | Synthetic fixture, including deliberate corruption and test-only approved state |
+| Optimized interpreter | `python -O scripts/validate_phase01.py` and `python -O -m unittest discover -s tests -v` | PASS; 12/12 tests | Synthetic fixtures; ensures no checks rely on `assert` |
+| Actual GitHub contract consistency | Connector read of **20 repository files** with structural verification in a V8 tool, including 42 internal links | PASS: 7 use cases, 21 trace rows, 9 policies, 20 open decisions and 8 pending approval gates; no mismatches | Actual persisted `main` content (not a Python test run) |
+| Common credential signature scan | Token/private-key pattern check across the same 20 GitHub files | Zero detected signatures | Limited heuristic; not an enterprise secret scan |
+| Final user workstation rerun | Windows PowerShell `py -3` commands on new final SHA | **PENDING** | Needed after these changes; previously submitted 6/6 result belongs to prior SHA |
+| Approval and source inventory | Security, Architecture, Product, Domain, Knowledge and Repo Governance owners | **PENDING** | No unverified signoff asserted |
+
+**Scope note:** Verification of the actual GitHub contents was structural and read-only. Python execution was against an isolated synthetic fixture generated solely for test validation, not a checkout of the GitHub repository, because the current execution environment could not resolve `github.com` for `git clone`. The prior actual Windows test transcript covered only the earlier source state. No runtime, DB/Qdrant, GPU, Agent or organizational infrastructure test has been performed.
+
