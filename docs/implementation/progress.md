@@ -19,7 +19,7 @@
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
-| 02 | NOT_STARTED | Phase 01 approval / approved exceptions |
+| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Development-only GO granted; code/tests staged; CI, SSO/Vault, on-prem isolation and owner acceptance pending — [Phase 02 progress](phase_02_progress.md) |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
@@ -32,3 +32,7 @@ Architecture Owner; Security Owner; Product Owner; Religious Content Lead; HR Po
 ## Next action
 
 Workstation compile, validator and 12/12 negative/unit tests were reported PASS for the validated SHA. Obtain attributable acceptance decisions and evidence for G-01–G-07, plus formal Technical Verifier sign-off for G-08; resolve the public repository classification, decision governance and source inventory (or authorized deferrals). Phase 02 has not started. No completion marker until all gates are actually approved.
+
+## Phase 02 development gate (2026-10-21)
+
+Phase 02 independent implementation was authorized by an explicit GO_FOR_DEVELOPMENT exception, recorded in [ADR-0004](../decisions/ADR-0004-phase02-development-gate.md). Phase 01 formal approval G-01–G-08 is **not** implied or changed. Phase 02 evidence is in [phase_02_evidence](phase_02_evidence.md); deployment guidance is in [Phase 02 runbook](../operations/phase02_runbook.md). No Phase 01 CLOSED marker and no production approval have been issued.

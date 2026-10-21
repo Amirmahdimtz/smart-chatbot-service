@@ -1,0 +1,13 @@
+api:
+  prefix: /api/v1
+server:
+  host: 127.0.0.1
+  port: 5000
+  request_timeout_seconds: 10
+  max_request_bytes: 1048576
+  rate_limit_per_minute: 120
+  cors_origins: ["http://localhost:3000"]
+auth:
+  metrics_permission: observability:read
+vaulthc:
+  enabled: false

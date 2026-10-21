@@ -1,0 +1,13 @@
+api:
+  prefix: /api/v1
+server:
+  host: 0.0.0.0
+  port: 5000
+  request_timeout_seconds: 10
+  max_request_bytes: 1048576
+  rate_limit_per_minute: 120
+  cors_origins: ["https://chat.example.invalid"]
+auth:
+  metrics_permission: observability:read
+vaulthc:
+  enabled: false

@@ -1,0 +1,23 @@
+services:
+  public-api:
+    build: ..
+    image: smart-chatbot-service:phase02
+    env_file: public.env
+    ports: ["127.0.0.1:15001:5000"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [public-api]
+    restart: unless-stopped
+  internal-api:
+    image: smart-chatbot-service:phase02
+    env_file: internal.env
+    ports: ["127.0.0.1:15002:5000"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [internal-api]
+    restart: unless-stopped
+networks:
+  public-api: {}
+  internal-api: {}

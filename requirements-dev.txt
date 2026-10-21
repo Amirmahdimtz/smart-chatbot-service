@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest==9.0.2
+ruff==0.15.5
+pip-audit==2.10.0
+cyclonedx-bom==7.3.0

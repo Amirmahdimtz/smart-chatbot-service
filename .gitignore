@@ -9,3 +9,6 @@ coverage.xml
 !.env.example
 *.pem
 *.key
+deploy/public.env
+deploy/internal.env
+sbom.json
