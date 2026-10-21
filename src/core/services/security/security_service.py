@@ -1,4 +1,5 @@
 """Server-owned deny-by-default authorization foundation."""
+
 from src.infrastructure.di.inject import inject
 from src.infrastructure.security.token_validator import Principal
 

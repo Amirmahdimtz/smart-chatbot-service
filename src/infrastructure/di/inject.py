@@ -1,4 +1,5 @@
 """Architecture-guide constructor injection with per-composition-container scoping."""
+
 from __future__ import annotations
 
 from contextvars import ContextVar
@@ -18,6 +19,7 @@ def inject(cls: T) -> T:
     @wraps(original)
     def initialize(self, *args, **kwargs):
         import inspect
+
         sig = inspect.signature(original)
         bound = sig.bind_partial(self, *args, **kwargs)
         container = _active.get()

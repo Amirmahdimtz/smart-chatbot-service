@@ -1,4 +1,5 @@
 """Schema-validated deployment configuration without secret interpolation in logs."""
+
 from __future__ import annotations
 
 import os
@@ -73,7 +74,9 @@ class Settings(StrictModel):
                 raise ValueError("CORS origins must be configured")
             if self.server.host in ("127.0.0.1", "localhost"):
                 raise ValueError("Nondevelopment host must be reachable behind ingress")
-            if not self.server.cors_origins or any(origin == "*" or not origin.startswith("https://") for origin in self.server.cors_origins):
+            if not self.server.cors_origins or any(
+                origin == "*" or not origin.startswith("https://") for origin in self.server.cors_origins
+            ):
                 raise ValueError("Secure CORS origins required")
         if any(origin == "*" for origin in self.server.cors_origins):
             raise ValueError("Wildcard CORS not permitted")
@@ -109,9 +112,10 @@ class ConfigReader:
                     auth[field] = os.environ[name]
             if "SCB_CORS_ORIGINS" in os.environ:
                 import json
+
                 data["server"]["cors_origins"] = json.loads(os.environ["SCB_CORS_ORIGINS"])
             self.settings = Settings.model_validate(data)
-        except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError) as exc:
+        except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError):
             raise ConfigurationError() from None
 
     def get(self, key: str):

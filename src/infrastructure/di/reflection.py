@@ -1,4 +1,5 @@
 """Deterministic provider discovery using architecture-guide package conventions."""
+
 from __future__ import annotations
 
 import importlib

@@ -1,4 +1,5 @@
 """OIDC/JWKS signature verification. No user-provided unsigned identity is trusted."""
+
 from __future__ import annotations
 
 import asyncio
@@ -53,8 +54,12 @@ class TokenValidator:
                 jwk_set = PyJWKSet.from_dict(body)
                 keys = {}
                 for jwk in jwk_set.keys:
-                    if (jwk.key_type == "RSA" and jwk.algorithm_name == "RS256" and
-                        jwk.public_key_use in (None, "sig") and jwk.key_id):
+                    if (
+                        jwk.key_type == "RSA"
+                        and jwk.algorithm_name == "RS256"
+                        and jwk.public_key_use in (None, "sig")
+                        and jwk.key_id
+                    ):
                         if jwk.key_id in keys:
                             raise ValueError("Duplicate key id")
                         keys[jwk.key_id] = jwk.key
@@ -82,8 +87,12 @@ class TokenValidator:
             if key is None:
                 raise AuthenticationFailed("Invalid credentials")
             claims = jwt.decode(
-                token, key=key, algorithms=["RS256"], issuer=self._cfg.issuer,
-                audience=self._cfg.audience, leeway=0,
+                token,
+                key=key,
+                algorithms=["RS256"],
+                issuer=self._cfg.issuer,
+                audience=self._cfg.audience,
+                leeway=0,
                 options={"require": ["sub", "iss", "aud", "exp", "iat", "nbf"]},
             )
             if claims.get("aud") != self._cfg.audience:
@@ -91,14 +100,18 @@ class TokenValidator:
             subject = claims["sub"]
             if not isinstance(subject, str) or not subject or len(subject) > 256:
                 raise AuthenticationFailed("Invalid credentials")
+
             def names(field):
                 value = claims.get(field, [])
-                if (not isinstance(value, list) or len(value) > 100 or
-                    any(not isinstance(x, str) or not x or len(x) > 128 for x in value)):
+                if (
+                    not isinstance(value, list)
+                    or len(value) > 100
+                    or any(not isinstance(x, str) or not x or len(x) > 128 for x in value)
+                ):
                     raise AuthenticationFailed("Invalid credentials")
                 return frozenset(value)
-            return Principal(subject, claims["iss"], self._cfg.audience,
-                             names("roles"), names("permissions"))
+
+            return Principal(subject, claims["iss"], self._cfg.audience, names("roles"), names("permissions"))
         except (InvalidTokenError, ValueError, KeyError, TypeError, AuthenticationFailed):
             raise AuthenticationFailed("Invalid credentials") from None
 

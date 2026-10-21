@@ -1,8 +1,9 @@
 """Operational endpoints. Metrics are authorization-protected."""
+
 from fastapi import APIRouter, HTTPException, Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST
 
-from src.core.services.security.security_service import PermissionDenied, SecurityService
+from src.core.services.security.security_service import SecurityService
 from src.infrastructure.di.inject import inject
 from src.infrastructure.security.token_validator import TokenValidator
 from src.infrastructure.utils.config_reader import ConfigReader
@@ -10,8 +11,7 @@ from src.infrastructure.utils.config_reader import ConfigReader
 
 @inject
 class HealthCheckController:
-    def __init__(self, security_service: SecurityService, token_validator: TokenValidator,
-                 config_reader: ConfigReader):
+    def __init__(self, security_service: SecurityService, token_validator: TokenValidator, config_reader: ConfigReader):
         self._security = security_service
         self._validator = token_validator
         self._cfg = config_reader

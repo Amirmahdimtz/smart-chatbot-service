@@ -1,4 +1,5 @@
 """ASGI enforcement of body limits, basic client limits, deadlines and headers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -22,16 +23,22 @@ class HttpSecurityMiddleware:
             await self.app(scope, receive, send)
             return
         headers = {k.lower(): v for k, v in scope.get("headers", [])}
-        headers_to_add = [(b"x-content-type-options", b"nosniff"), (b"x-frame-options", b"DENY"),
-                          (b"referrer-policy", b"no-referrer"),
-                          (b"content-security-policy", b"default-src 'none'; frame-ancestors 'none'"),
-                          (b"cache-control", b"no-store")]
+        headers_to_add = [
+            (b"x-content-type-options", b"nosniff"),
+            (b"x-frame-options", b"DENY"),
+            (b"referrer-policy", b"no-referrer"),
+            (b"content-security-policy", b"default-src 'none'; frame-ancestors 'none'"),
+            (b"cache-control", b"no-store"),
+        ]
+
         async def secured_send(message):
             if message["type"] == "http.response.start":
                 message["headers"] = list(message.get("headers", [])) + headers_to_add
             await send(message)
+
         async def reject(status, code):
             await JSONResponse({"error": code}, status_code=status)(scope, receive, secured_send)
+
         try:
             length = int(headers.get(b"content-length", b"0"))
         except ValueError:
@@ -63,6 +70,7 @@ class HttpSecurityMiddleware:
         if blocked:
             await reject(429, "rate_limited")
             return
+
         async def handle_request():
             # Buffer a bounded request body before entering handlers, including transfer-encoded bodies.
             # This closes the gap where a handler never consumes the request stream.
@@ -79,11 +87,14 @@ class HttpSecurityMiddleware:
                         raise RequestTooLarge()
                     if not event.get("more_body", False):
                         break
+
             async def replay_receive():
                 if events:
                     return events.pop(0)
                 return await receive()
+
             await self.app(scope, replay_receive, secured_send)
+
         try:
             await asyncio.wait_for(handle_request(), timeout=self.timeout)
         except RequestTooLarge:

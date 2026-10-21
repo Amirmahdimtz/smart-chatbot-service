@@ -1,4 +1,5 @@
 """Controller auto discovery: {prefix}/{feature}, deterministic and duplicate-safe."""
+
 from __future__ import annotations
 
 import importlib

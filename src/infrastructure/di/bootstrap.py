@@ -1,11 +1,12 @@
 """App-scoped DI container. No mutable global provider instances."""
+
 from __future__ import annotations
 
 import inspect
 from typing import get_type_hints
 
-from src.infrastructure.di.reflection import discover_providers
 from src.infrastructure.di.inject import _active
+from src.infrastructure.di.reflection import discover_providers
 
 
 class DependencyResolutionError(RuntimeError):
@@ -31,7 +32,10 @@ class Container:
             annotations = get_type_hints(cls.__init__)
             kwargs = {}
             for name, parameter in sig.parameters.items():
-                if name == "self" or parameter.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
+                if name == "self" or parameter.kind in (
+                    inspect.Parameter.VAR_KEYWORD,
+                    inspect.Parameter.VAR_POSITIONAL,
+                ):
                     continue
                 if parameter.default is not inspect.Parameter.empty:
                     continue

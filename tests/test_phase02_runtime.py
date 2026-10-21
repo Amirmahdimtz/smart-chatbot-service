@@ -1,10 +1,9 @@
 """Real ASGI request/lifespan and security negative tests (keys exist only in tests)."""
+
 from __future__ import annotations
 
 import base64
-import json
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
 from uuid import uuid4
 
 import httpx
@@ -23,15 +22,28 @@ from src.infrastructure.utils.config_reader import ConfigReader, ConfigurationEr
 def identity():
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public = private.public_key().public_numbers()
-    encode = lambda n: base64.urlsafe_b64encode(n.to_bytes((n.bit_length() + 7) // 8, "big")).rstrip(b"=").decode()
-    jwks = {"keys": [{"kty": "RSA", "use": "sig", "alg": "RS256", "kid": "key-a", "n": encode(public.n), "e": encode(public.e)}]}
+    def encode(n):
+        return base64.urlsafe_b64encode(n.to_bytes((n.bit_length() + 7) // 8, "big")).rstrip(b"=").decode()
+    jwks = {
+        "keys": [
+            {"kty": "RSA", "use": "sig", "alg": "RS256", "kid": "key-a", "n": encode(public.n), "e": encode(public.e)}
+        ]
+    }
 
     def token(**changes):
         now = datetime.now(UTC)
-        claims = {"iss": "https://issuer.example.test/", "aud": "scb-public", "sub": "test-subject",
-                  "iat": now, "nbf": now, "exp": now + timedelta(minutes=2), "permissions": []}
+        claims = {
+            "iss": "https://issuer.example.test/",
+            "aud": "scb-public",
+            "sub": "test-subject",
+            "iat": now,
+            "nbf": now,
+            "exp": now + timedelta(minutes=2),
+            "permissions": [],
+        }
         claims.update(changes)
         return jwt.encode(claims, private, algorithm="RS256", headers={"kid": "key-a"})
+
     return jwks, token
 
 
@@ -44,8 +56,10 @@ def client(identity, monkeypatch):
     monkeypatch.setenv("SCB_AUDIENCE", "scb-public")
     app = create_app()
     validator = app.state.container.resolve(TokenValidator)
+
     async def keys(request):
         return httpx.Response(200, json=identity[0])
+
     validator._client = httpx.AsyncClient(transport=httpx.MockTransport(keys))
     with TestClient(app) as test_client:
         yield test_client, identity[1], app
@@ -93,8 +107,10 @@ def test_401_403_and_valid_authorization(client):
 def test_token_tampering_wrong_audience_expired_future_nbf(client):
     http, token, _ = client
     url = "/api/v1/health_check/metrics"
+
     def check(t):
         assert http.get(url, headers={"Authorization": "Bearer " + t}).status_code == 401
+
     good = token(permissions=["observability:read"])
     signed, body, sig = good.split(".")
     tampered = base64.urlsafe_b64encode(b'{"sub":"intruder"}').rstrip(b"=").decode()
@@ -105,20 +121,37 @@ def test_token_tampering_wrong_audience_expired_future_nbf(client):
     check(token(nbf=datetime.now(UTC) + timedelta(minutes=5)))
     check(token(sub=""))
     check(token(permissions="observability:read"))
-    assert http.get(url, headers={"Authorization": "Bearer " + token(roles=["admin"], permissions=[])}).status_code == 403
+    assert (
+        http.get(url, headers={"Authorization": "Bearer " + token(roles=["admin"], permissions=[])}).status_code == 403
+    )
 
 
 def test_cross_zone_isolation_by_dedicated_audience(client):
     http, token, _ = client
-    assert http.get("/api/v1/health_check/metrics", headers={"Authorization": "Bearer " + token(aud="scb-internal", permissions=["observability:read"])}).status_code == 401
+    assert (
+        http.get(
+            "/api/v1/health_check/metrics",
+            headers={"Authorization": "Bearer " + token(aud="scb-internal", permissions=["observability:read"])},
+        ).status_code
+        == 401
+    )
 
 
 def test_identity_header_spoofing_and_options(client):
     http, token, _ = client
     r = http.get("/api/v1/health_check/live", headers={"x-user-id": "staff"})
     assert r.status_code == 400
-    assert http.get("/api/v1/health_check/metrics", headers={"x-role": "admin", "Authorization": "Bearer " + token(permissions=["observability:read"])}).status_code == 400
-    r = http.options("/api/v1/health_check/live", headers={"Origin": "https://attacker.invalid", "Access-Control-Request-Method": "GET"})
+    assert (
+        http.get(
+            "/api/v1/health_check/metrics",
+            headers={"x-role": "admin", "Authorization": "Bearer " + token(permissions=["observability:read"])},
+        ).status_code
+        == 400
+    )
+    r = http.options(
+        "/api/v1/health_check/live",
+        headers={"Origin": "https://attacker.invalid", "Access-Control-Request-Method": "GET"},
+    )
     assert "access-control-allow-origin" not in r.headers
 
 

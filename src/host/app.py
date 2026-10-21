@@ -1,4 +1,5 @@
 """Application factory and lifespan; no import-time network or config side effects."""
+
 from __future__ import annotations
 
 import logging
@@ -16,7 +17,7 @@ from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.observability.telemetry import HttpMetrics, SafeJsonFormatter, TelemetryMiddleware
 from src.infrastructure.security.http_security import HttpSecurityMiddleware
 from src.infrastructure.security.request_auth import RequestAuthenticationMiddleware
-from src.infrastructure.security.token_validator import AuthenticationFailed, TokenValidator
+from src.infrastructure.security.token_validator import TokenValidator
 from src.infrastructure.utils.config_reader import ConfigReader
 
 
@@ -42,8 +43,14 @@ def create_app() -> FastAPI:
             app.state.started = False
             await validator.close_async()
 
-    app = FastAPI(title="Smart Chatbot Service", version="0.2.0", lifespan=lifespan,
-                  docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(
+        title="Smart Chatbot Service",
+        version="0.2.0",
+        lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
     app.state.metrics = HttpMetrics()
     app.state.started = False
     app.state.container = container
@@ -69,11 +76,19 @@ def create_app() -> FastAPI:
     mount_controllers(app, container)
     app.add_middleware(RequestAuthenticationMiddleware, validator=validator, config=config)
     app.add_middleware(TelemetryMiddleware, metrics=app.state.metrics)
-    app.add_middleware(CORSMiddleware, allow_origins=settings.server.cors_origins,
-                       allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Correlation-ID"])
-    app.add_middleware(HttpSecurityMiddleware, max_bytes=settings.server.max_request_bytes,
-                       rate_per_minute=settings.server.rate_limit_per_minute,
-                       timeout=settings.server.request_timeout_seconds)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.server.cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Correlation-ID"],
+    )
+    app.add_middleware(
+        HttpSecurityMiddleware,
+        max_bytes=settings.server.max_request_bytes,
+        rate_per_minute=settings.server.rate_limit_per_minute,
+        timeout=settings.server.request_timeout_seconds,
+    )
     logger = logging.getLogger("scb.http")
     if not logger.handlers:
         handler = logging.StreamHandler()

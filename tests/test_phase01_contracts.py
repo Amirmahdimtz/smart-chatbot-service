@@ -1,4 +1,5 @@
 """Regression and deliberate corruption tests for Phase 01 contract gates."""
+
 from __future__ import annotations
 
 import json
@@ -8,8 +9,12 @@ import unittest
 from pathlib import Path
 
 from scripts.validate_phase01 import (
-    ARCHITECTURE, REQUIREMENTS, REQUIRED_CASES, ROOT,
-    ContractValidationError, validate,
+    ARCHITECTURE,
+    REQUIRED_CASES,
+    REQUIREMENTS,
+    ROOT,
+    ContractValidationError,
+    validate,
 )
 
 
@@ -52,28 +57,35 @@ class Phase01ContractsTests(unittest.TestCase):
                 validate(temp)
 
     def test_duplicate_trace_id_is_rejected(self) -> None:
-        self._mutate_contract("docs/requirements/requirements_contract.json",
-                              lambda d: d["traceability"].append(dict(d["traceability"][0])))
+        self._mutate_contract(
+            "docs/requirements/requirements_contract.json",
+            lambda d: d["traceability"].append(dict(d["traceability"][0])),
+        )
 
     def test_policy_reference_corruption_is_rejected(self) -> None:
-        self._mutate_contract("docs/requirements/requirements_contract.json",
-                              lambda d: d["requirements"][0].update(security_policy_id="SEC-UNKNOWN"))
+        self._mutate_contract(
+            "docs/requirements/requirements_contract.json",
+            lambda d: d["requirements"][0].update(security_policy_id="SEC-UNKNOWN"),
+        )
 
     def test_missing_decision_milestone_is_rejected(self) -> None:
-        self._mutate_contract("docs/architecture/architecture_contract.json",
-                              lambda d: d["open_decisions"][0].update(due_milestone=""))
+        self._mutate_contract(
+            "docs/architecture/architecture_contract.json", lambda d: d["open_decisions"][0].update(due_milestone="")
+        )
 
     def test_fake_approval_without_evidence_is_rejected(self) -> None:
-        self._mutate_contract("docs/implementation/phase_01_acceptance.json",
-                              lambda d: d["gates"][0].update(status="APPROVED"))
+        self._mutate_contract(
+            "docs/implementation/phase_01_acceptance.json", lambda d: d["gates"][0].update(status="APPROVED")
+        )
 
     def test_phase_closed_without_approval_is_rejected(self) -> None:
-        self._mutate_contract("docs/implementation/phase_01_acceptance.json",
-                              lambda d: d.update(phase_status="CLOSED"))
+        self._mutate_contract("docs/implementation/phase_01_acceptance.json", lambda d: d.update(phase_status="CLOSED"))
 
     def test_invalid_agent_endpoint_is_rejected(self) -> None:
-        self._mutate_contract("docs/architecture/architecture_contract.json",
-                              lambda d: d["agent_integration"].update(endpoints=["/fake-agent"]))
+        self._mutate_contract(
+            "docs/architecture/architecture_contract.json",
+            lambda d: d["agent_integration"].update(endpoints=["/fake-agent"]),
+        )
 
     def test_valid_closed_state_is_supported(self) -> None:
         """Only test fixtures may synthesize approvals; never change real records."""
@@ -98,24 +110,31 @@ class Phase01ContractsTests(unittest.TestCase):
             for requirement in req["requirements"]:
                 requirement["approval_status"] = "APPROVED"
             for gate in acceptance["gates"]:
-                gate.update(status="APPROVED", approved_by="Test Fixture",
-                            approved_at="2026-10-21T12:00:00Z",
-                            evidence_ref="docs/implementation/phase_01_evidence.md")
+                gate.update(
+                    status="APPROVED",
+                    approved_by="Test Fixture",
+                    approved_at="2026-10-21T12:00:00Z",
+                    evidence_ref="docs/implementation/phase_01_evidence.md",
+                )
             acceptance["phase_status"] = "CLOSED"
             req_path.write_text(json.dumps(req, ensure_ascii=False), encoding="utf-8")
             arch_path.write_text(json.dumps(arch, ensure_ascii=False), encoding="utf-8")
             acceptance_path.write_text(json.dumps(acceptance, ensure_ascii=False), encoding="utf-8")
             progress_path = temp / "docs/implementation/progress.md"
             progress = progress_path.read_text(encoding="utf-8")
-            progress = progress.replace(
-                "**Status After:** IMPLEMENTED_AWAITING_VERIFICATION",
-                "**Status After:** CLOSED",
-            ).replace(
-                "**Marker:** PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION",
-                "**Marker:** PHASE_01_COMPLETE_READY_FOR_PHASE_02",
-            ).replace(
-                "| 01 | IMPLEMENTED_AWAITING_VERIFICATION |",
-                "| 01 | CLOSED |",
+            progress = (
+                progress.replace(
+                    "**Status After:** IMPLEMENTED_AWAITING_VERIFICATION",
+                    "**Status After:** CLOSED",
+                )
+                .replace(
+                    "**Marker:** PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION",
+                    "**Marker:** PHASE_01_COMPLETE_READY_FOR_PHASE_02",
+                )
+                .replace(
+                    "| 01 | IMPLEMENTED_AWAITING_VERIFICATION |",
+                    "| 01 | CLOSED |",
+                )
             )
             progress_path.write_text(progress, encoding="utf-8")
             self.assertEqual(validate(temp)["acceptance_gates"], 8)

@@ -1,4 +1,5 @@
 """Real Vault KV v2 client boundary (enabled only with approved Vault configuration)."""
+
 from __future__ import annotations
 
 import os

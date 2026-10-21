@@ -1,4 +1,5 @@
 """Route-independent authentication boundary with explicit operational allowlist."""
+
 from __future__ import annotations
 
 from fastapi import Request
@@ -26,11 +27,9 @@ class RequestAuthenticationMiddleware(BaseHTTPMiddleware):
         authorization = request.headers.get("authorization", "")
         scheme, _, token = authorization.partition(" ")
         if scheme.lower() != "bearer" or not token or token.strip() != token:
-            return JSONResponse({"error": "unauthorized"}, status_code=401,
-                                headers={"WWW-Authenticate": "Bearer"})
+            return JSONResponse({"error": "unauthorized"}, status_code=401, headers={"WWW-Authenticate": "Bearer"})
         try:
             request.state.principal = await self.validator.validate_async(token)
         except AuthenticationFailed:
-            return JSONResponse({"error": "unauthorized"}, status_code=401,
-                                headers={"WWW-Authenticate": "Bearer"})
+            return JSONResponse({"error": "unauthorized"}, status_code=401, headers={"WWW-Authenticate": "Bearer"})
         return await call_next(request)
