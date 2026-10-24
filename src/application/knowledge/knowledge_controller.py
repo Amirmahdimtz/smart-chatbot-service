@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, File, Header, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
+from src.application.knowledge.upload_reader import validate_upload_async
 from src.application.knowledge.dtos.knowledge_dto import (
     DocumentVersionResponseDto,
     JobResponseDto,
@@ -45,8 +46,12 @@ class KnowledgeController:
             if (denied := disabled()) is not None:
                 return denied
             try:
-                source = await self._service.create_source_async(principal(request), payload.domain)
+                source = await self._service.create_source_async(
+                    principal(request), payload.domain, payload.max_file_bytes
+                )
                 return SourceResponseDto.model_validate(source)
+            except UploadRejected as exc:
+                return JSONResponse({"error": exc.code}, status_code=422)
             except PermissionError:
                 return JSONResponse({"error": "forbidden"}, status_code=403)
 
@@ -56,6 +61,18 @@ class KnowledgeController:
                 return denied
             try:
                 source = await self._service.get_source_async(principal(request), source_id)
+            except PermissionError:
+                return JSONResponse({"error": "forbidden"}, status_code=403)
+            if source is None:
+                return JSONResponse({"error": "not_found"}, status_code=404)
+            return SourceResponseDto.model_validate(source)
+
+        @router.post("/sources/{source_id}/disable", response_model=SourceResponseDto)
+        async def disable_source_async(source_id: UUID, request: Request):
+            if (denied := disabled()) is not None:
+                return denied
+            try:
+                source = await self._service.disable_source_async(principal(request), source_id)
             except PermissionError:
                 return JSONResponse({"error": "forbidden"}, status_code=403)
             if source is None:
@@ -76,7 +93,11 @@ class KnowledgeController:
             if (denied := disabled()) is not None:
                 return denied
             try:
-                job, _, _ = await self._service.upload_async(principal(request), source_id, file, idempotency_key)
+                limit = await self._service.source_upload_limit_async(principal(request), source_id)
+                name, content, checksum = await validate_upload_async(file, limit)
+                job, _, _ = await self._service.upload_async(
+                    principal(request), source_id, name, file.content_type, content, checksum, idempotency_key
+                )
                 return JobResponseDto.model_validate(job)
             except UploadRejected as exc:
                 code = exc.code

@@ -25,6 +25,21 @@ def upgrade() -> None:
     op.add_column("knowledge_source", sa.Column("status", sa.String(16), nullable=False, server_default="active"))
     op.create_check_constraint("ck_source_type", "knowledge_source", "source_type IN ('file')")
     op.create_check_constraint("ck_source_status", "knowledge_source", "status IN ('active', 'disabled')")
+    op.add_column(
+        "knowledge_source",
+        sa.Column("classification", sa.String(64), nullable=False, server_default="synthetic_unclassified"),
+    )
+    op.add_column(
+        "knowledge_source", sa.Column("policy_ref", sa.String(64), nullable=False, server_default="synthetic-only")
+    )
+    op.add_column("knowledge_source", sa.Column("max_file_bytes", sa.Integer()))
+    op.create_check_constraint(
+        "ck_source_synthetic_class", "knowledge_source", "classification = 'synthetic_unclassified'"
+    )
+    op.create_check_constraint("ck_source_synthetic_policy", "knowledge_source", "policy_ref = 'synthetic-only'")
+    op.create_check_constraint(
+        "ck_source_file_limit", "knowledge_source", "max_file_bytes IS NULL OR max_file_bytes >= 1024"
+    )
     op.add_column("document_version", sa.Column("safe_filename", sa.String(255)))
     op.add_column("document_version", sa.Column("content_type", sa.String(80)))
     op.add_column("document_version", sa.Column("object_key", sa.String(256)))
@@ -116,6 +131,11 @@ def downgrade() -> None:
     op.drop_constraint("uq_document_version_object_key", "document_version", type_="unique")
     for col in ("byte_size", "object_key", "content_type", "safe_filename"):
         op.drop_column("document_version", col)
+    op.drop_constraint("ck_source_file_limit", "knowledge_source", type_="check")
+    op.drop_constraint("ck_source_synthetic_policy", "knowledge_source", type_="check")
+    op.drop_constraint("ck_source_synthetic_class", "knowledge_source", type_="check")
+    for col in ("max_file_bytes", "policy_ref", "classification"):
+        op.drop_column("knowledge_source", col)
     op.drop_constraint("ck_source_status", "knowledge_source", type_="check")
     op.drop_constraint("ck_source_type", "knowledge_source", type_="check")
     op.drop_column("knowledge_source", "status")

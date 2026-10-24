@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import re
-from io import BytesIO
-
-from fastapi import UploadFile
-from pypdf import PdfReader
+import subprocess
+import sys
 
 
 class UploadRejected(RuntimeError):
@@ -30,15 +26,45 @@ def validate_filename(value: str | None) -> str:
     return value
 
 
+# PDF parsing runs in a disposable child process. A 4-second deadline kills a
+# stuck interpreter rather than abandoning a still-running parser thread.
+# POSIX runtime memory and CPU ceilings are enforced inside that child.
+_PDF_CHECK_PROGRAM = """
+import sys
+from io import BytesIO
+try:
+    import resource
+    resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
+    resource.setrlimit(resource.RLIMIT_CPU, (4, 5))
+except ImportError:
+    pass
+from pypdf import PdfReader
+payload = sys.stdin.buffer.read(5242881)
+if not payload.startswith(b'%PDF-') or b'%%EOF' not in payload[-1024:]:
+    raise SystemExit(1)
+try:
+    reader = PdfReader(BytesIO(payload), strict=True)
+    valid = not reader.is_encrypted and 1 <= len(reader.pages) <= 300
+except Exception:
+    valid = False
+raise SystemExit(0 if valid else 1)
+"""
+
+
 def _parse_pdf(data: bytes) -> None:
     try:
-        if not data.startswith(b"%PDF-") or b"%%EOF" not in data[-1024:]:
-            raise ValueError("Malformed PDF")
-        reader = PdfReader(BytesIO(data), strict=True)
-        if reader.is_encrypted or not 1 <= len(reader.pages) <= 300:
-            raise ValueError("Unsupported PDF")
-    except Exception:
+        result = subprocess.run(
+            [sys.executable, "-c", _PDF_CHECK_PROGRAM],
+            input=data,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=4,
+        )
+    except (OSError, subprocess.TimeoutExpired):
         raise UploadRejected("invalid_document") from None
+    if result.returncode != 0:
+        raise UploadRejected("invalid_document")
 
 
 def validate_content(data: bytes, content_type: str) -> None:
@@ -59,30 +85,3 @@ def validate_content(data: bytes, content_type: str) -> None:
             raise UploadRejected("invalid_document")
 
 
-async def validate_upload_async(file: UploadFile, limit: int) -> tuple[str, bytes, str]:
-    name = validate_filename(file.filename)
-    if file.content_type not in {"text/plain", "application/pdf"}:
-        raise UploadRejected("unsupported_format")
-    extension = name.rpartition(".")[2].casefold()
-    if (extension, file.content_type) not in {
-        ("txt", "text/plain"),
-        ("pdf", "application/pdf"),
-    }:
-        raise UploadRejected("content_type_mismatch")
-    content = bytearray()
-    try:
-        while True:
-            chunk = await file.read(65536)
-            if not chunk:
-                break
-            if len(content) + len(chunk) > limit:
-                raise UploadRejected("file_too_large")
-            content.extend(chunk)
-        data = bytes(content)
-        # PDF parser runs off the HTTP event loop, bounded by edge request size.
-        await asyncio.wait_for(asyncio.to_thread(validate_content, data, file.content_type), timeout=5)
-        return name, data, hashlib.sha256(data).hexdigest()
-    except TimeoutError:
-        raise UploadRejected("invalid_document") from None
-    finally:
-        await file.close()

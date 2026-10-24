@@ -5,9 +5,7 @@ from __future__ import annotations
 import re
 from uuid import UUID
 
-from fastapi import UploadFile
-
-from src.core.services.ingestion.upload_validation import UploadRejected, validate_upload_async
+from src.core.services.ingestion.upload_validation import UploadRejected
 from src.core.services.security.security_service import SecurityService
 from src.infrastructure.di.inject import inject
 from src.infrastructure.providers.storage.quarantine_storage import QuarantineStorage, StorageUnavailable
@@ -41,11 +39,26 @@ class IngestionService:
             raise PermissionError("Synthetic ingestion unavailable")
         return principal.subject, self._settings.deployment_zone
 
-    async def create_source_async(self, principal: Principal | None, domain: str):
+    async def create_source_async(
+        self, principal: Principal | None, domain: str, max_file_bytes: int | None = None
+    ):
         actor, scope = self._actor(principal)
         if not isinstance(domain, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{1,63}", domain):
             raise UploadRejected("invalid_domain")
-        return await self._repo.create_source_async(actor, scope, domain)
+        if max_file_bytes is not None and not 1024 <= max_file_bytes <= self._settings.ingestion.max_file_bytes:
+            raise UploadRejected("invalid_source_limit")
+        return await self._repo.create_source_async(actor, scope, domain, max_file_bytes)
+
+    async def disable_source_async(self, principal: Principal | None, source_id: UUID):
+        actor, scope = self._actor(principal)
+        return await self._repo.disable_source_owned_async(source_id, actor, scope)
+
+    async def source_upload_limit_async(self, principal: Principal | None, source_id: UUID) -> int:
+        actor, scope = self._actor(principal)
+        source = await self._repo.get_source_owned_async(source_id, actor, scope)
+        if source is None or source.status != "active":
+            raise PermissionError("Source unavailable")
+        return min(self._settings.ingestion.max_file_bytes, source.max_file_bytes or self._settings.ingestion.max_file_bytes)
 
     async def get_source_async(self, principal: Principal | None, source_id: UUID):
         actor, scope = self._actor(principal)
@@ -55,19 +68,24 @@ class IngestionService:
         self,
         principal: Principal | None,
         source_id: UUID,
-        file: UploadFile,
+        name: str,
+        content_type: str,
+        content: bytes,
+        checksum: str,
         idempotency_key: str,
     ):
         actor, scope = self._actor(principal)
         if not isinstance(idempotency_key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", idempotency_key):
             raise UploadRejected("invalid_idempotency_key")
-        name, content, checksum = await validate_upload_async(file, self._settings.ingestion.max_file_bytes)
+        limit = await self.source_upload_limit_async(principal, source_id)
+        if len(content) > limit:
+            raise UploadRejected("file_too_large")
         job, version, created = await self._repo.stage_async(
             source_id,
             actor,
             scope,
             name,
-            file.content_type,
+            content_type,
             len(content),
             checksum,
             idempotency_key,

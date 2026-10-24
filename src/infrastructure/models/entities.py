@@ -74,6 +74,9 @@ class KnowledgeSource(Base):
         UniqueConstraint("id", "deployment_scope", name="uq_source_id_scope"),
         CheckConstraint("source_type IN ('file')", name="ck_source_type"),
         CheckConstraint("status IN ('active', 'disabled')", name="ck_source_status"),
+        CheckConstraint("classification = 'synthetic_unclassified'", name="ck_source_synthetic_class"),
+        CheckConstraint("policy_ref = 'synthetic-only'", name="ck_source_synthetic_policy"),
+        CheckConstraint("max_file_bytes IS NULL OR max_file_bytes >= 1024", name="ck_source_file_limit"),
     )
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
     deployment_scope: Mapped[str] = mapped_column(String(8), nullable=False)
@@ -81,6 +84,9 @@ class KnowledgeSource(Base):
     domain: Mapped[str] = mapped_column(String(64), nullable=False)
     source_type: Mapped[str] = mapped_column(String(16), nullable=False, server_default="file")
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    classification: Mapped[str] = mapped_column(String(64), nullable=False, server_default="synthetic_unclassified")
+    policy_ref: Mapped[str] = mapped_column(String(64), nullable=False, server_default="synthetic-only")
+    max_file_bytes: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 

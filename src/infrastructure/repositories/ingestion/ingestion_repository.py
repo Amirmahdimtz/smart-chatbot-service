@@ -47,9 +47,15 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             )
         )
 
-    async def create_source_async(self, actor: str, scope: str, domain: str) -> KnowledgeSource:
+    async def create_source_async(
+        self, actor: str, scope: str, domain: str, max_file_bytes: int | None = None
+    ) -> KnowledgeSource:
         async with self._db.transaction_async() as session:
-            source = KnowledgeSource(owner_principal_id=actor, deployment_scope=scope, domain=domain)
+            source = KnowledgeSource(
+                owner_principal_id=actor, deployment_scope=scope, domain=domain,
+                classification="synthetic_unclassified", policy_ref="synthetic-only",
+                max_file_bytes=max_file_bytes,
+            )
             session.add(source)
             await session.flush()
             self._audit(session, None, source.id, scope, actor, "source_created")
@@ -64,6 +70,23 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                     KnowledgeSource.deployment_scope == scope,
                 )
             )
+
+    async def disable_source_owned_async(self, source_id: UUID, actor: str, scope: str) -> KnowledgeSource | None:
+        """Owner-only, audited, idempotent disable; no implicit deletion or publication."""
+        async with self._db.transaction_async() as session:
+            source = await session.scalar(
+                select(KnowledgeSource)
+                .where(
+                    KnowledgeSource.id == source_id,
+                    KnowledgeSource.owner_principal_id == actor,
+                    KnowledgeSource.deployment_scope == scope,
+                )
+                .with_for_update()
+            )
+            if source is not None and source.status != "disabled":
+                source.status = "disabled"
+                self._audit(session, None, source.id, scope, actor, "source_disabled")
+            return source
 
     async def stage_async(
         self,

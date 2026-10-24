@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,6 +11,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class SourceCreateDto(BaseModel):
     domain: str = Field(min_length=2, max_length=64, pattern=r"^[a-z][a-z0-9_-]{1,63}$")
+    classification: Literal["synthetic_unclassified"] = "synthetic_unclassified"
+    policy_ref: Literal["synthetic-only"] = "synthetic-only"
+    max_file_bytes: int | None = Field(default=None, ge=1024, le=5242880)
 
 
 class SourceResponseDto(BaseModel):
@@ -20,6 +24,9 @@ class SourceResponseDto(BaseModel):
     deployment_scope: str
     source_type: str
     status: str
+    classification: str
+    policy_ref: str
+    max_file_bytes: int | None
 
 
 class JobResponseDto(BaseModel):

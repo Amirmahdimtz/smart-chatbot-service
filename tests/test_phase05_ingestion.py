@@ -13,12 +13,8 @@ from fastapi.testclient import TestClient
 from starlette.datastructures import Headers
 
 from src.core.services.ingestion.ingestion_service import IngestionService
-from src.core.services.ingestion.upload_validation import (
-    UploadRejected,
-    validate_content,
-    validate_filename,
-    validate_upload_async,
-)
+from src.application.knowledge.upload_reader import validate_upload_async
+from src.core.services.ingestion.upload_validation import UploadRejected, validate_content, validate_filename
 from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.models.ingestion import IngestionAuditEvent, IngestionJob
 from src.infrastructure.providers.scanner.clamav_scanner import ClamAvScanner, MalwareDetected, ScanUnavailable
@@ -289,3 +285,41 @@ def test_scanner_timeout_without_clean_verdict_fails_closed():
             await listener.wait_closed()
 
     asyncio.run(exercise())
+
+
+def test_pdf_sandbox_child_deadline_fail_closed(monkeypatch):
+    """A hung PDF parse must not continue running in a worker thread."""
+    import subprocess
+    from src.core.services.ingestion import upload_validation
+
+    def timed_out(*args, **kwargs):
+        assert kwargs["timeout"] == 4
+        assert kwargs["stderr"] == subprocess.DEVNULL
+        raise subprocess.TimeoutExpired(args[0], 4)
+
+    monkeypatch.setattr(upload_validation.subprocess, "run", timed_out)
+    with pytest.raises(UploadRejected) as exc:
+        validate_content(b"%PDF-1.4\n%%EOF", "application/pdf")
+    assert exc.value.code == "invalid_document"
+
+
+def test_source_synthetic_policy_contract_and_limits():
+    from pydantic import ValidationError
+    from src.application.knowledge.dtos.knowledge_dto import SourceCreateDto
+
+    assert SourceCreateDto(domain="research").classification == "synthetic_unclassified"
+    assert SourceCreateDto(domain="research", max_file_bytes=1024).max_file_bytes == 1024
+    for bad in (
+        {"domain": "research", "classification": "confidential"},
+        {"domain": "research", "policy_ref": "organizational"},
+        {"domain": "research", "max_file_bytes": 0},
+    ):
+        with pytest.raises(ValidationError):
+            SourceCreateDto(**bad)
+
+
+def test_core_upload_is_independent_of_fastapi_uploadfile():
+    import inspect
+    from src.core.services.ingestion.ingestion_service import IngestionService
+
+    assert "UploadFile" not in inspect.getsource(IngestionService)
