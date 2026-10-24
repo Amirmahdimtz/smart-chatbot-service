@@ -28,3 +28,16 @@ CI run 40098823479 executed tests/test_phase05_service_outages.py in the real Ph
 ## Digital PDF positive validation evidence
 
 CI 40099162282 adds and passes one generated PDF validation test in Group A and one real PDF multipart → S3 quarantine → ClamAV → PostgreSQL awaiting_approval path in Group B. This is a synthetic one-page digital PDF, not scanned/OCR, extraction, layout preservation or Phase06 parser benchmark evidence. The full run recorded 75 general PASS / 18 SKIP, 8 real ingestion PASS and 3 real reversible dependency outage PASS on the cited source SHA.
+
+
+## Executed cold process restart matrix (2026-10-24)
+
+The formerly untested **process restart** case is now actually exercised in [CI 40100496685](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40100496685) by three additional guarded Group B tests:
+
+1. S3-compatible server `docker restart --time 1` after immutable quarantine PUT; object survives, bytes match checksum, no early state transition, independent worker then scans successfully.
+2. ClamAV daemon `docker restart --time 1`; scanner becomes usable again with real clean and EICAR FOUND verdicts, durable queued job then reaches awaiting_approval only after rescanning.
+3. PostgreSQL `docker restart --time 1` while job lease is persisted; reconnect succeeds, expired previous owner cannot `finish`, a new worker claims and completes.
+
+`tests/test_phase05_service_outages.py`: **6 passed** total (3 earlier pause/unpause and 3 cold process restart); `tests/test_phase05_integration.py`: **8 passed**. Runner safeguards restrict fault injection to CI/dev/internal/disposable `scb_phase05_test` and uniquely selected test service containers. No real workstation/On-Prem/Production system was touched.
+
+**Scope limitation:** Restarting the *same* Docker container is a genuine process shutdown/boot, but NOT deleting/recreating its instance or enterprise multi-node HA/DR. Full container removal/recreation remains NOT_RUN, with reviewer decision pending on whether it is a Phase05-required Group B test or a Phase18 Group C deployment scenario. No unsupported outcome is called PASS.

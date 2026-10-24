@@ -36,3 +36,27 @@ Unresolved: independent accountable security/architecture review, provenance ass
 Source 5c9096ace5983a8876bb3f4a37ef1c4ef325d098 (CI 40099162282) has all six jobs successful, including 75 Group A test passes (18 skips) and real B 8 ingestion + 3 reversible Docker outage passes, plus PostgreSQL 4 / Qdrant 9 regressions. Successful digital PDF E2E is evidenced rather than assumed. Ruff, vulnerability audit, SBOM, Docker and secret scan passed. Image digests remain pinned.
 
 There is no independent accountable reviewer signature or organizational policy approval. Production and publication remain prohibited. The PR must remain Draft; do not mark Phase05 CLOSED unless the verifier accepts all A/B evidence, the community image provenance and determines whether true cold restart tests are essential. Technical DoD PENDING; Production NOT_READY; Group C deferred to Phase18.
+
+
+## Current technical gate after real cold process restart tests (2026-10-24)
+
+**Latest tested implementation commit:** [d266c0c0454261769a6c74f3427244836f1ed578](https://github.com/Amirmahdimtz/smart-chatbot-service/commit/d266c0c0454261769a6c74f3427244836f1ed578); **CI:** [40100496685](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40100496685), all **6/6 jobs SUCCESS** on that exact code SHA.
+
+| DoD category | Verifiable result | Current decision |
+| --- | --- | --- |
+| Group A and security regression | General `75 passed / 21 skipped`; compile/contract validators, Ruff check and format, strict pip-audit with no known vulnerabilities, SBOM, secret scan and Docker build SUCCESS | EVIDENCED, skips not passes |
+| Real isolated Group B ingestion | `8 passed`, genuine S3 quarantine, PostgreSQL, ClamAV, signed synthetic auth, digital PDF, EICAR, API negatives and separate Worker | EVIDENCED |
+| Real isolated Group B outage and restart | `6 passed`: 3 reversible pause/unpause + 3 Docker cold **process** restarts (S3 object bytes preserved, ClamAV clean/EICAR after restart, PostgreSQL in-flight lease persisted and stale token fenced) | EVIDENCED |
+| Other regression Group B | PostgreSQL `4 passed`, Qdrant `9 passed`; migration repeat/upgrade/drift/disposable reverse successful | EVIDENCED |
+| Community S3 test-image trust decision | Digest matches public GHCR package listing; public source/build scripts inspected, but signature, provenance attestation, dependency vulnerability and risk-owner approval are **NOT** evidenced | PENDING_SECURITY_ACCEPTANCE; see [supply-chain risk review](phase_05_supply_chain_review.md) |
+| Container removal/recreation, not just process restart | `docker restart` proven; `docker rm` plus provision-new-container while actively processing not executed; reviewer must decide if this is essential additional Group B evidence | PENDING_REVIEW_DECISION; NOT_RUN if required |
+| Independent accountable Senior Backend/Architecture + Security sign-off | No attributable verifier or approval was provided | NOT_SIGNED |
+
+**Technical DoD Status:** `PENDING_INDEPENDENT_REVIEW`, not `CLOSED`.
+**Phase Status Before/After:** `IN_PROGRESS → IN_PROGRESS`.
+**Production Release Status:** `NOT_READY`, no real data, no publication/organization authorization.
+**Tests C Deferred to Phase 18:** `P18-P05-C01` through `P18-P05-C08`, all `DEFERRED_TO_PHASE_18`, none executed. D-07/D-08 remain blocked decisions.
+
+### Decision requested from an actual technical reviewer
+
+The reviewer must independently inspect source/security boundaries and the exact CI evidence, decide whether the recorded supply-chain risk is acceptable for synthetic CI or demands an approved image, decide if true container destruction/recreation is mandatory Group B, and record an attributable approval or rejection (identity, role, timestamp, commit, any conditions). **No sign-off has been simulated or delegated to CI/AI.** Keep PR #3 Draft and do not merge or declare Phase 05 `CLOSED` until all mandatory A/B gates and actual reviewer acceptance pass.
