@@ -31,7 +31,9 @@ def upgrade() -> None:
     op.add_column("document_version", sa.Column("byte_size", sa.Integer()))
     op.create_unique_constraint("uq_document_version_object_key", "document_version", ["object_key"])
     op.drop_constraint("ck_version_state", "document_version", type_="check")
-    op.alter_column("document_version", "state", existing_type=sa.String(16), type_=sa.String(32), existing_nullable=False)
+    op.alter_column(
+        "document_version", "state", existing_type=sa.String(16), type_=sa.String(32), existing_nullable=False
+    )
     op.create_check_constraint(
         "ck_version_state",
         "document_version",
@@ -108,7 +110,9 @@ def downgrade() -> None:
     op.drop_table("ingestion_job")
     op.drop_constraint("ck_version_state", "document_version", type_="check")
     op.create_check_constraint("ck_version_state", "document_version", "state IN ('draft', 'revoked')")
-    op.alter_column("document_version", "state", existing_type=sa.String(32), type_=sa.String(16), existing_nullable=False)
+    op.alter_column(
+        "document_version", "state", existing_type=sa.String(32), type_=sa.String(16), existing_nullable=False
+    )
     op.drop_constraint("uq_document_version_object_key", "document_version", type_="unique")
     for col in ("byte_size", "object_key", "content_type", "safe_filename"):
         op.drop_column("document_version", col)
