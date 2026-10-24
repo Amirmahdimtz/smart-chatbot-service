@@ -303,3 +303,92 @@ def test_postgresql_cold_restart_reclaims_persisted_inflight_lease():
             await db.close_async()
 
     asyncio.run(exercise())
+
+
+def test_real_s3_container_recreation_preserves_object_and_job():
+    """Destroy and recreate the S3 process/container with the same named CI-only volume."""
+    _guard()
+    image = os.environ["SCB_PHASE05_TEST_S3_IMAGE"]
+    assert image.startswith("chrislusf/seaweedfs@sha256:")
+
+    async def exercise():
+        container = bootstrap_di()
+        db = container.resolve(PsqlDbContext)
+        repo = container.resolve(IngestionRepository)
+        store = container.resolve(QuarantineStorage)
+        worker = container.resolve(IngestionWorkerService)
+        await db.start_async()
+        try:
+            await store.start_async()
+            try:
+                payload = ("s3-recreated-" + uuid4().hex).encode()
+                owner, job, version, checksum = await _stage(repo, payload)
+                await store.put_async(version.object_key, payload, checksum)
+                assert await repo.mark_queued_async(job.id, owner, "internal")
+                _docker("rm", "-f", "scb-phase05-s3")
+                # Docker inherits only the ephemeral test keys with -e NAME.
+                # No credentials or organization data enter test source or logs.
+                _docker(
+                    "run", "-d", "--rm", "--name", "scb-phase05-s3",
+                    "-e", "AWS_ACCESS_KEY_ID",
+                    "-e", "AWS_SECRET_ACCESS_KEY",
+                    "-e", "S3_BUCKET=scb-quarantine",
+                    "-p", "127.0.0.1:9000:8333",
+                    "-v", "scb-phase05-seaweed-data:/data",
+                    image,
+                )
+                restored = await _wait_restored(lambda: store.get_async(version.object_key), (StorageUnavailable,))
+                assert restored == payload
+                assert (await repo.get_job_owned_async(job.id, owner, "internal"))[0].status == "queued"
+                assert await worker.run_once_async("s3-container-recreated")
+                result = await repo.get_job_owned_async(job.id, owner, "internal")
+                assert result[0].status == "completed"
+                assert result[1].state == "awaiting_approval"
+            finally:
+                await store.close_async()
+        finally:
+            await db.close_async()
+
+    asyncio.run(exercise())
+
+
+def test_real_clamav_container_recreation_requires_new_scan():
+    """Destroy and recreate the independently operated scanner before accepting a job."""
+    _guard()
+    image = os.environ["SCB_PHASE05_TEST_CLAMAV_IMAGE"]
+    assert image.startswith("clamav/clamav@sha256:")
+
+    async def exercise():
+        container = bootstrap_di()
+        db = container.resolve(PsqlDbContext)
+        repo = container.resolve(IngestionRepository)
+        store = container.resolve(QuarantineStorage)
+        scanner = container.resolve(ClamAvScanner)
+        worker = container.resolve(IngestionWorkerService)
+        await db.start_async()
+        try:
+            await store.start_async()
+            try:
+                payload = ("clamav-recreated-" + uuid4().hex).encode()
+                owner, job, version, checksum = await _stage(repo, payload)
+                await store.put_async(version.object_key, payload, checksum)
+                assert await repo.mark_queued_async(job.id, owner, "internal")
+                _docker("rm", "-f", "scb-phase05-clamav")
+                _docker(
+                    "run", "-d", "--rm", "--name", "scb-phase05-clamav",
+                    "-e", "CLAMAV_NO_FRESHCLAMD=true",
+                    "-p", "127.0.0.1:3310:3310",
+                    image,
+                )
+                await _wait_restored(lambda: scanner.scan_async(payload), (ScanUnavailable,))
+                assert (await repo.get_job_owned_async(job.id, owner, "internal"))[0].status == "queued"
+                assert await worker.run_once_async("clamav-container-recreated")
+                result = await repo.get_job_owned_async(job.id, owner, "internal")
+                assert result[0].status == "completed"
+                assert result[1].state == "awaiting_approval"
+            finally:
+                await store.close_async()
+        finally:
+            await db.close_async()
+
+    asyncio.run(exercise())
