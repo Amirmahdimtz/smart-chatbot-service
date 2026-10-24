@@ -226,7 +226,7 @@ def test_s3_cold_restart_preserves_immutable_quarantined_bytes():
 
 def test_clamav_cold_restart_restores_genuine_malware_verdict():
     _guard()
-eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+    eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
 
     async def exercise():
         container = bootstrap_di()
