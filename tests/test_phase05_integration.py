@@ -632,3 +632,87 @@ def test_real_dependency_outage_retries_then_recovers():
             await db.close_async()
 
     asyncio.run(exercise())
+
+
+def test_killed_independent_worker_reclaims_expired_real_db_lease():
+    """Kill a real worker after SQL lease commit, then resume via actual clamd."""
+    _enabled()
+    import hashlib
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    repo = container.resolve(IngestionRepository)
+    store = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def exercise():
+        await db.start_async()
+        await store.start_async()
+        gate = asyncio.Event()
+        accepted = asyncio.Event()
+
+        async def blocked_scanner(reader, writer):
+            accepted.set()
+            await gate.wait()
+            writer.close()
+            await writer.wait_closed()
+
+        listener = await asyncio.start_server(blocked_scanner, "127.0.0.1", 0)
+        process = None
+        try:
+            actor = "synthetic-" + uuid4().hex
+            source = await repo.create_source_async(actor, "internal", "research")
+            content = ("crash-lease-" + uuid4().hex).encode()
+            checksum = hashlib.sha256(content).hexdigest()
+            job, version, created = await repo.stage_async(
+                source.id,
+                actor,
+                "internal",
+                "workercrash.txt",
+                "text/plain",
+                len(content),
+                checksum,
+                uuid4().hex,
+                2,
+            )
+            assert created
+            await store.put_async(version.object_key, content, checksum)
+            assert await repo.mark_queued_async(job.id, actor, "internal")
+            env = os.environ.copy()
+            env["SCB_INGESTION_CLAMD_PORT"] = str(listener.sockets[0].getsockname()[1])
+            process = subprocess.Popen(
+                [sys.executable, "-m", "src.host.ingestion_worker"],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(accepted.wait(), timeout=15)
+            locked = await repo.get_job_owned_async(job.id, actor, "internal")
+            assert locked[0].status == "leased"
+            assert locked[0].attempts == 1
+            stale_token = locked[0].lease_owner
+            process.kill()
+            await asyncio.to_thread(process.wait, 10)
+            process = None
+            assert (await repo.get_job_owned_async(job.id, actor, "internal"))[0].status == "leased"
+            # Advance the already committed synthetic lease instead of sleeping 45s.
+            async with db.transaction_async() as session:
+                locked_row = await session.get(IngestionJob, job.id)
+                locked_row.lease_expires_at = datetime.now(UTC) - timedelta(seconds=2)
+            assert await worker.run_once_async("post-crash-recovery")
+            assert not await repo.finish_async(job.id, stale_token, True)
+            recovered = await repo.get_job_owned_async(job.id, actor, "internal")
+            assert recovered[0].status == "completed"
+            assert recovered[0].attempts == 2
+            assert recovered[1].state == "awaiting_approval"
+        finally:
+            if process is not None and process.poll() is None:
+                process.kill()
+                await asyncio.to_thread(process.wait, 10)
+            gate.set()
+            listener.close()
+            await listener.wait_closed()
+            await store.close_async()
+            await db.close_async()
+
+    asyncio.run(exercise())
