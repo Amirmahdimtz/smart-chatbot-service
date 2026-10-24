@@ -109,9 +109,7 @@ class QdrantProvider:
             raise QdrantUnavailable()
         return self._client
 
-    async def _call_async(
-        self, method: str, *, allow_not_found: bool = False, allow_conflict: bool = False, **kwargs
-    ):
+    async def _call_async(self, method: str, *, allow_not_found: bool = False, allow_conflict: bool = False, **kwargs):
         client = self._ready()
         for attempt in range(self._cfg.max_retries + 1):
             try:

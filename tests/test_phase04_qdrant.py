@@ -153,19 +153,24 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
                 ],
                 wait=True,
             )
-            assert [str(point.id) for point in await provider.search_async(
-                good.vector,
-                domain="research",
-                authorized_classifications=["synthetic"],
-                authorized_document_ids=[doc_allowed],
-            )] == [deterministic_point_id(good, 1)]
+            assert [
+                str(point.id)
+                for point in await provider.search_async(
+                    good.vector,
+                    domain="research",
+                    authorized_classifications=["synthetic"],
+                    authorized_document_ids=[doc_allowed],
+                )
+            ] == [deterministic_point_id(good, 1)]
             with pytest.raises(QdrantContractError):
                 await provider.search_async(
                     good.vector, domain="research", authorized_classifications=[], authorized_document_ids=[doc_allowed]
                 )
             with pytest.raises(QdrantContractError):
                 await provider.search_async(
-                    good.vector, domain="research", authorized_classifications="synthetic",
+                    good.vector,
+                    domain="research",
+                    authorized_classifications="synthetic",
                     authorized_document_ids=[doc_allowed],
                 )
             with pytest.raises(QdrantContractError):
@@ -297,7 +302,6 @@ def test_retries_are_bounded_and_no_endpoint_is_exposed(monkeypatch):
     asyncio.run(exercise())
 
 
-
 def test_real_qdrant_disposable_snapshot_restore_round_trip(monkeypatch):
     """Restore source snapshot into a new synthetic collection; no production writes."""
     provider = _integration_provider(monkeypatch)
@@ -324,9 +328,7 @@ def test_real_qdrant_disposable_snapshot_restore_round_trip(monkeypatch):
             restored = await provider._client.query_points(
                 collection_name=restored_name,
                 query=list(record.vector),
-                query_filter=provider._filter(
-                    "research", ["synthetic"], [record.document_id]
-                ),
+                query_filter=provider._filter("research", ["synthetic"], [record.document_id]),
                 with_payload=True,
                 limit=10,
             )
