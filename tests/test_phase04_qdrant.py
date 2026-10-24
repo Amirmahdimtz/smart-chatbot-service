@@ -190,7 +190,14 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
                 authorized_classifications=["synthetic"],
                 authorized_document_ids=[aborted.document_id],
             )
-            assert await provider.snapshot_async()
+            manifest = await provider.backup_manifest_async()
+            assert manifest.collection_name == provider.collection_name
+            assert manifest.active_alias_target == provider.collection_name
+            assert manifest.schema_version == 1
+            assert manifest.dimension == 4
+            assert manifest.distance == "Cosine"
+            assert manifest.deployment_zone == "public"
+            assert manifest.snapshot_name.endswith(".snapshot")
             await provider.delete_document_points_async(doc_allowed, domain="research")
             assert not await provider.search_async(
                 good.vector,
@@ -313,7 +320,9 @@ def test_real_qdrant_disposable_snapshot_restore_round_trip(monkeypatch):
             record = _record()
             await provider.upsert_async([record])
             before_aliases = await provider._client.get_aliases()
-            snapshot_name = await provider.snapshot_async()
+            manifest = await provider.backup_manifest_async()
+            assert manifest.active_alias_target is None
+            snapshot_name = manifest.snapshot_name
             assert snapshot_name.endswith(".snapshot")
             restored_name = f"{provider._cfg.collection_prefix}_public_restore_test"
             # The source snapshot remains on the disposable Qdrant Docker node.

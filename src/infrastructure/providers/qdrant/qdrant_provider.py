@@ -28,6 +28,19 @@ class QdrantContractError(ValueError):
 
 
 @dataclass(frozen=True)
+class QdrantBackupManifest:
+    """Sidecar backup metadata. Not the Phase 07 authoritative index manifest."""
+
+    collection_name: str
+    snapshot_name: str
+    schema_version: int
+    dimension: int
+    distance: str
+    deployment_zone: str
+    active_alias_target: str | None
+
+
+@dataclass(frozen=True)
 class VectorRecord:
     chunk_id: UUID
     document_id: UUID
@@ -327,3 +340,32 @@ class QdrantProvider:
         if not isinstance(snapshot.name, str) or not snapshot.name.endswith(".snapshot"):
             raise QdrantUnavailable()
         return snapshot.name
+
+    async def backup_manifest_async(self) -> QdrantBackupManifest:
+        """Capture snapshot and its version/alias sidecar; restore remains a separate operation."""
+        name = self.collection_name
+        info = await self._call_async("get_collection", collection_name=name)
+        params = info.config.params.vectors
+        if (
+            not isinstance(params, models.VectorParams)
+            or params.size != self._cfg.dimension
+            or params.distance != models.Distance(self._cfg.distance)
+        ):
+            raise QdrantContractError()
+        before = await self._call_async("get_aliases")
+        target = next((a.collection_name for a in before.aliases if a.alias_name == self.alias_name), None)
+        snapshot_name = await self.snapshot_async()
+        after = await self._call_async("get_aliases")
+        latest = next((a.collection_name for a in after.aliases if a.alias_name == self.alias_name), None)
+        if target != latest:
+            raise QdrantUnavailable()
+        return QdrantBackupManifest(
+            collection_name=name,
+            snapshot_name=snapshot_name,
+            schema_version=self._cfg.schema_version,
+            dimension=params.size,
+            distance=params.distance.value,
+            deployment_zone=self._zone,
+            active_alias_target=target,
+        )
+
