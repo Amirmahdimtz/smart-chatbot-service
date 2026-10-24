@@ -21,3 +21,20 @@ This file is not a PASS claim. After each real execution record source SHA, runn
 - Follow-up owner Windows evidence of the same or later SHA and disposable database restore.
 - On-prem owner decisions D-07/D-08 and verified physically separate public/internal DB secrets and networking.
 - **No `CLOSED` marker without these gates.**
+
+## Verified GitHub execution — 2026-10-24
+
+- Baseline: `eb918b1f27c6028ca9d19c118973d8e165bb661f`. Initial Phase 03 code: `114ece53594f340e5543c17a6eed49c97d455524`; Ruff import-order failure in that run was corrected by `462411bfbb921cb52f6a2b0361631aee4c1a730d`.
+- Successful source: [commit `462411bfbb921cb52f6a2b0361631aee4c1a730d`](https://github.com/Amirmahdimtz/smart-chatbot-service/commit/462411bfbb921cb52f6a2b0361631aee4c1a730d); [Actions run 40078990354](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40078990354). All **four** jobs `verify`, `postgres-integration`, `docker-build`, `secret-scan`: **SUCCESS**.
+- `verify`: `python -m compileall -q src scripts tests` PASS; Phase 01 validators normal and `-O` both PASS; `pytest -q` **38 passed, 1 skipped, 1 known Starlette warning**. The skip is specifically the integration test without a PostgreSQL URL in the general verification job; it runs in the dedicated PostgreSQL job. `ruff check src tests` PASS; `ruff format --check src tests` PASS; `pip-audit -r requirements.txt --strict` **No known vulnerabilities found**; CycloneDX SBOM generation/upload PASS.
+- `postgres-integration`: GitHub Actions isolated PostgreSQL **16.15**, synthetic `scb_phase03_test` database; first Alembic `--upgrade` PASS; repeated `--upgrade` PASS; `--check` reports **No new upgrade operations detected**; `pytest -q tests/test_phase03_postgresql.py`: **3 passed** (metadata/negative config/real PostgreSQL constraints and concurrent transactional operations); `--downgrade-test-only`, re-upgrade and repeat drift check PASS. This is a destructive reverse strategy **only on ephemeral CI test database**, not a proof of production backup/restore.
+- PostgreSQL expected negative-test ERROR entries for forbidden composite FK scope, duplicate message sequence, duplicate version, and RESTRICT delete appear in PostgreSQL service log; those errors are intentional inputs under `pytest.raises(IntegrityError)` and do not represent failing integration tests.
+- `docker-build`: PASS. `secret-scan`: PASS. No credentials for organization systems, no real HR/PII records, and no shared PostgreSQL touched.
+- Latest documentation-only status/evidence commit must not be described as having passed CI until its workflow actually completes.
+
+## Still pending
+
+- **B — Windows:** owner must run `git pull --ff-only`, dependency installation, complete regression, real isolated Docker PostgreSQL, metadata check and safe local reverse test. No Windows execution has been provided for Phase 03.
+- **C — On-Prem:** separate Public/Internal PostgreSQL network, role/credential isolation, organization CA/TLS, migrations and verified backup/PITR restore, deadlocks/soak/load/HA, D-07/D-08 classification/retention/consent/approval and Security/Infrastructure/Privacy sign-offs. **NOT_RUN**.
+- **Benchmark:** no throughput, database latency, QPS, RPO or RTO values measured or claimed.
+- Outcome: `IMPLEMENTED_AWAITING_VERIFICATION`; marker `PHASE_03_IMPLEMENTED_AWAITING_VERIFICATION` is justified for source and CI but not `CLOSED`.

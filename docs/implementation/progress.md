@@ -20,7 +20,7 @@
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
 | 02 | IMPLEMENTED_AWAITING_VERIFICATION | Code included in owner-verified `main` SHA `${sha}`: **36/36 pytest PASS on Windows and GitHub CI** (3/3 jobs); Windows Ruff and `pip-audit --strict --timeout 60` PASS. Real IdP/Vault, independent Public/Internal test credentials and network isolation, ingress/TLS, HA/restore and owner sign-off remain pending — [Phase 02 evidence](phase_02_evidence.md) |
-| 03 | IN_PROGRESS | Conditional development only under ADR-0005; [design](phase_03_design.md), [progress](phase_03_progress.md), [evidence](phase_03_evidence.md). Live PostgreSQL/Windows/On-Prem and D-07/D-08 sign-off pending |
+| 03 | IMPLEMENTED_AWAITING_VERIFICATION | Conditional development only under ADR-0005; [design](phase_03_design.md), [progress](phase_03_progress.md), [evidence](phase_03_evidence.md). Live PostgreSQL/Windows/On-Prem and D-07/D-08 sign-off pending |
 | 04–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
@@ -44,4 +44,6 @@ A Phase 02 technical re-audit resulted in [ADR-0005](../decisions/ADR-0005-phase
 
 ## Phase 03 initiated (2026-10-24)
 
-Explicit owner command received. Technical baseline `eb918b1f27c6028ca9d19c118973d8e165bb661f` verified on `main`; development-only ADR-0005 gate valid. Phase 03 `IN_PROGRESS`, awaiting implementation verification and stakeholder approval. No other phase status changed. No completion marker or organizational data authorization.
+Explicit owner command received. Technical baseline `eb918b1f27c6028ca9d19c118973d8e165bb661f` verified on `main`; development-only ADR-0005 gate valid. Phase 03 development initiated and subsequently verified in [GitHub CI run 40078990354](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40078990354): 4/4 jobs PASS on `462411bfbb921cb52f6a2b0361631aee4c1a730d`; Phase 03 status `IMPLEMENTED_AWAITING_VERIFICATION`, pending Windows/On-Prem and stakeholder approval. No other phase status changed. No completion marker or organizational data authorization.
+
+**Phase 03 marker:** `PHASE_03_IMPLEMENTED_AWAITING_VERIFICATION` (not CLOSED).
