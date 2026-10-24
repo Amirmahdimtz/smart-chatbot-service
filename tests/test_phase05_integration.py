@@ -12,23 +12,18 @@ import subprocess
 import sys
 import time
 from datetime import UTC, datetime, timedelta
-from io import BytesIO
 from uuid import uuid4
 
-import boto3
 import httpx
 import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
-from sqlalchemy import select
-from starlette.datastructures import Headers
 
 from src.core.services.ingestion.ingestion_worker_service import IngestionWorkerService
 from src.host.app import create_app
 from src.infrastructure.context.sql_db.psql_dbcontext import PsqlDbContext
 from src.infrastructure.di.bootstrap import bootstrap_di
-from src.infrastructure.models.entities import DocumentVersion
 from src.infrastructure.models.ingestion import IngestionJob
 from src.infrastructure.providers.scanner.clamav_scanner import ClamAvScanner, MalwareDetected
 from src.infrastructure.providers.storage.quarantine_storage import QuarantineStorage
