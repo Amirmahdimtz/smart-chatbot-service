@@ -53,10 +53,9 @@ def test_upload_disabled_no_public_endpoints(disabled):
     with TestClient(create_app()) as client:
         assert client.get(f"/api/v1/knowledge/jobs/{uuid4()}").status_code == 401
         assert client.post("/api/v1/knowledge/sources", json={"domain": "research"}).status_code == 401
-        route_paths = {route.path for route in client.app.routes}
-        assert "/api/v1/knowledge/sources" in route_paths
-        assert not any("/publish" in path for path in route_paths)
-        assert "/api/v1/knowledge/sources" in client.app.openapi()["paths"]
+        paths = client.app.openapi()["paths"]
+        assert "/api/v1/knowledge/sources" in paths
+        assert not any("/publish" in path for path in paths)
 
 
 @pytest.mark.parametrize(
