@@ -828,24 +828,25 @@ def test_real_source_metadata_limit_and_disable_lifecycle(client):
     http, token, app = client
     actor = "synthetic-" + uuid4().hex
     h = {"Authorization": "Bearer " + token(actor, ["knowledge:test:ingest"])}
-    bad = http.post("/api/v1/knowledge/sources", headers=h,
-        json={"domain": "research", "classification": "secret"})
+    bad = http.post("/api/v1/knowledge/sources", headers=h, json={"domain": "research", "classification": "secret"})
     assert bad.status_code == 422
-    bad_limit = http.post("/api/v1/knowledge/sources", headers=h,
-        json={"domain": "research", "max_file_bytes": 5242880})
+    bad_limit = http.post(
+        "/api/v1/knowledge/sources", headers=h, json={"domain": "research", "max_file_bytes": 5242880}
+    )
     assert bad_limit.status_code == 422
 
-    created = http.post("/api/v1/knowledge/sources", headers=h,
-        json={"domain": "research", "max_file_bytes": 1024})
+    created = http.post("/api/v1/knowledge/sources", headers=h, json={"domain": "research", "max_file_bytes": 1024})
     assert created.status_code == 201, created.text
     source = created.json()
     assert source["classification"] == "synthetic_unclassified"
     assert source["policy_ref"] == "synthetic-only"
     assert source["max_file_bytes"] == 1024
 
-    size_denied = http.post(f"/api/v1/knowledge/sources/{source['id']}/documents",
+    size_denied = http.post(
+        f"/api/v1/knowledge/sources/{source['id']}/documents",
         headers={**h, "Idempotency-Key": uuid4().hex},
-        files={"file": ("large.txt", b"a" * 1025, "text/plain")})
+        files={"file": ("large.txt", b"a" * 1025, "text/plain")},
+    )
     assert size_denied.status_code == 413
 
     outsider = {"Authorization": "Bearer " + token("synthetic-outsider", ["knowledge:test:ingest"])}
@@ -855,8 +856,10 @@ def test_real_source_metadata_limit_and_disable_lifecycle(client):
     assert stopped.status_code == 200
     assert stopped.json()["status"] == "disabled"
     assert http.post(f"/api/v1/knowledge/sources/{source['id']}/disable", headers=h).status_code == 200
-    rejected = http.post(f"/api/v1/knowledge/sources/{source['id']}/documents",
+    rejected = http.post(
+        f"/api/v1/knowledge/sources/{source['id']}/documents",
         headers={**h, "Idempotency-Key": uuid4().hex},
-        files={"file": ("ok.txt", b"synthetic clean bytes", "text/plain")})
+        files={"file": ("ok.txt", b"synthetic clean bytes", "text/plain")},
+    )
     assert rejected.status_code == 403
     assert http.get(f"/api/v1/knowledge/sources/{source['id']}", headers=h).json()["status"] == "disabled"

@@ -39,9 +39,7 @@ class IngestionService:
             raise PermissionError("Synthetic ingestion unavailable")
         return principal.subject, self._settings.deployment_zone
 
-    async def create_source_async(
-        self, principal: Principal | None, domain: str, max_file_bytes: int | None = None
-    ):
+    async def create_source_async(self, principal: Principal | None, domain: str, max_file_bytes: int | None = None):
         actor, scope = self._actor(principal)
         if not isinstance(domain, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{1,63}", domain):
             raise UploadRejected("invalid_domain")
@@ -58,7 +56,9 @@ class IngestionService:
         source = await self._repo.get_source_owned_async(source_id, actor, scope)
         if source is None or source.status != "active":
             raise PermissionError("Source unavailable")
-        return min(self._settings.ingestion.max_file_bytes, source.max_file_bytes or self._settings.ingestion.max_file_bytes)
+        return min(
+            self._settings.ingestion.max_file_bytes, source.max_file_bytes or self._settings.ingestion.max_file_bytes
+        )
 
     async def get_source_async(self, principal: Principal | None, source_id: UUID):
         actor, scope = self._actor(principal)

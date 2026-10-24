@@ -294,6 +294,7 @@ def test_scanner_timeout_without_clean_verdict_fails_closed():
 
 def test_pdf_sandbox_child_deadline_fail_closed(monkeypatch):
     """A hung PDF parse must not continue running in a worker thread."""
+
     def timed_out(*args, **kwargs):
         assert kwargs["timeout"] == 4
         assert kwargs["stderr"] == subprocess.DEVNULL

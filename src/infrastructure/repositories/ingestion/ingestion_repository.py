@@ -52,8 +52,11 @@ class IngestionRepository(BaseRepository[IngestionJob]):
     ) -> KnowledgeSource:
         async with self._db.transaction_async() as session:
             source = KnowledgeSource(
-                owner_principal_id=actor, deployment_scope=scope, domain=domain,
-                classification="synthetic_unclassified", policy_ref="synthetic-only",
+                owner_principal_id=actor,
+                deployment_scope=scope,
+                domain=domain,
+                classification="synthetic_unclassified",
+                policy_ref="synthetic-only",
                 max_file_bytes=max_file_bytes,
             )
             session.add(source)

@@ -83,5 +83,3 @@ def validate_content(data: bytes, content_type: str) -> None:
             raise UploadRejected("invalid_document") from None
         if any(ord(ch) < 32 and ch not in "\t\r\n" for ch in decoded):
             raise UploadRejected("invalid_document")
-
-
