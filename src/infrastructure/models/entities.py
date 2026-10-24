@@ -129,7 +129,7 @@ class DocumentVersion(Base):
     content_type: Mapped[str | None] = mapped_column(String(80))
     object_key: Mapped[str | None] = mapped_column(String(256))
     byte_size: Mapped[int | None] = mapped_column(Integer)
-    state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="draft")
+    state: Mapped[str] = mapped_column(String(32), nullable=False, server_default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
