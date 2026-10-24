@@ -68,3 +68,22 @@ This supersedes historical test-count snapshots above only for the stated source
 - **Technical DoD Status:** PENDING_INDEPENDENT_REVIEW; **Phase Status Before/After:** IN_PROGRESS → IN_PROGRESS; **Production Release Status:** NOT_READY.
 
 [Supply-chain source review](phase_05_supply_chain_review.md) is an evidence/risk dossier, **not** an approval.
+
+
+## Latest source-matched full A/B evidence — 2026-10-24
+
+**Implementation SHA:** 15f4326cd5dba898a185dd95f067969ca90aa01c; **GitHub CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40103038011; all **6/6 jobs SUCCESS** on this exact SHA.
+
+**Tests A Executed + Actual Results:** General pytest 75 passed / 24 skipped / 1 third-party deprecation warning; compile, normal/optimized architecture validators, Ruff lint/format, strict Python pip-audit (no known known vulnerabilities for audited Python dependencies), CycloneDX SBOM, Docker build and secret scan SUCCESS. All skipped service-specific tests were executed in separate Group B jobs and are not counted as A passes.
+
+**Tests B Executed + Actual Results:** 9 real S3+ClamAV+PostgreSQL ingestion PASS, including synthetic PDF, actual malware EICAR, auth/idempotency/file negatives, real worker crash/recovery, and denied incorrect/anonymous S3 credentials. 8 real disposable dependency outages PASS: 3 Docker pause/unpause, 3 genuine process cold restarts, 2 whole-container remove/recreate (S3 retains immutable quarantine bytes on named volume, ClamAV requires a fresh real scan). PostgreSQL regression 4 PASS; Qdrant regression 9 PASS. Migration repeat-upgrade/schema drift/test-only reverse/re-upgrade PASS.
+
+**S3 CI image:** Upstream SeaweedFS 4.48, registry-pinned exact image digest sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d. Before using the service, actual CI cosign verification PASSED for GitHub Actions OIDC issuer, upstream seaweedfs/seaweedfs release workflow at refs/tags/4.48, trusted certificate authority and transparency log. Prior Coollabs third-party MinIO CI image was replaced. Signature provenance does NOT constitute a complete OCI image vulnerability/license/security approval.
+
+**Tests A/B Required but Missing:** Independent, attributable Architecture + Security source review/sign-off and accountable synthetic CI-only image residual-risk disposition remain NOT_SIGNED. No known essential scoped code-path A/B execution gap remains after current checks; an independent reviewer may demand additional A/B checks if a new issue is identified. Full enterprise PostgreSQL node replacement/backup/PITR/HA/DR is Group C in Phase18, distinct from successful Group B in-flight leased-job recovery during true PostgreSQL process restart.
+
+**Tests C Deferred to Phase 18:** P18-P05-C01 through P18-P05-C08 each remain DEFERRED_TO_PHASE_18, NOT_RUN and not PASSED. No corporate server was accessed.
+**Phase 18 Verification Register IDs:** P18-P05-C01, P18-P05-C02, P18-P05-C03, P18-P05-C04, P18-P05-C05, P18-P05-C06, P18-P05-C07, P18-P05-C08.
+**Technical DoD Status:** PENDING_INDEPENDENT_REVIEW. **Phase Status Before/After:** IN_PROGRESS -> IN_PROGRESS. **Production Release Status:** NOT_READY. D-07/D-08 organizational-data decisions remain blocked.
+
+Historic intermediate CI failures (formatter, unpublished image tag, unsigned-image test setup, temporary malformed workflow) were corrected and are not represented as passed.

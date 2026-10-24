@@ -1,28 +1,35 @@
-# Phase 05 — Third-party synthetic CI S3 image supply-chain review (NOT APPROVED)
+# Phase 05 — Supply chain evidence and residual CI image risk
 
-**Dossier date:** 2026-10-24. **Review status:** `PENDING_SECURITY_ACCEPTANCE`. This review documents inspectable source and risks, not an independent signer, a proven provenance chain or Production authorization.
+**Reviewed date:** 2026-10-24. **Exact tested source:** 15f4326cd5dba898a185dd95f067969ca90aa01c. **CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40103038011, all 6 jobs SUCCESS.
 
-## Artifact and bounded purpose
+## Artifact change
 
-- CI image (S3 compatible) `ghcr.io/coollabsio/minio@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9`. It is used only in the ephemeral GitHub Actions `ingestion-integration` job with generated synthetic-only payloads, random per-run root credentials and host-only loopback port 9000. It is not part of the runtime deployment Dockerfile or an approved enterprise S3 supplier.
-- Verified **public metadata**: [GitHub Container Registry package](https://github.com/coollabsio/minio/pkgs/container/minio) lists the matching multi-arch digest and release tag `RELEASE.2025-10-15T17-29-55Z`; that corroborates the registry digest, not cryptographic publisher attestation.
-- Verified **published build description**: [source repository](https://github.com/coollabsio/minio), [Dockerfile](https://github.com/coollabsio/minio/blob/main/Dockerfile), and [GitHub Actions build workflow](https://github.com/coollabsio/minio/blob/main/.github/workflows/build-minio.yml). The publicly readable Dockerfile clones the upstream MinIO Git repository and compiles a selected release. No independently trusted mapping from the digest to the exact source/build environment was established.
+The previous third-party Coollabs MinIO CI image was removed. The isolated real S3 integration now uses **upstream SeaweedFS 4.48**, image:
 
-## Explicit unresolved risks and controls
+    chrislusf/seaweedfs@sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d
 
-| Observation | Risk or limitation | Status |
-| --- | --- | --- |
-| Third-party publisher; digest pinned | Digest prevents accidental tag drift, not a malicious or compromised publisher | UNACCEPTED_PENDING_OWNER |
-| Dockerfile includes floating build/runtime bases (`golang:1.24-alpine`, `ubi9/ubi-micro:latest`) and source checkout without established verified attestation for this published digest | Source transparency is not reproducible-build / signed provenance evidence | PENDING_SECURITY_REVIEW |
-| Published Dockerfile uses `chmod -R 777 /usr/bin`; it does not declare an unprivileged runtime `USER` | Overly permissive image design; inspect actual runtime image/user before approving | PENDING_SECURITY_REVIEW |
-| CI service on host loopback, disposable credentials, synthetic files, no organization secrets/data | Reduces sensitivity but does not prove network egress isolation or make the publisher trustworthy | MITIGATION_ONLY |
-| Separate ClamAV CI image is digest pinned and signature refresh disabled during isolated test run | CI verifies real scanner behavior for preloaded signatures, not up-to-date enterprise AV efficacy | GROUP_C_ENTERPRISE_POLICY_REQUIRED |
+This immutable digest was observed on the CI Docker pull. The official SeaweedFS source repository is https://github.com/seaweedfs/seaweedfs and the upstream release is https://github.com/seaweedfs/seaweedfs/releases/tag/4.48 .
 
-## Required accountable decision
+## Automated provenance proof (actual Group B run)
 
-A designated independent **Security** reviewer, with Architecture/Operations as appropriate, must either:
+The workflow installs the Sigstore cosign installer from pinned upstream commit ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 and **requires successful cosign verify before starting the S3 server**, with GitHub Actions certificate OIDC issuer and expected identity:
 
-1. Accept this exact digest strictly for **synthetic CI-only** use, documenting image/runtime scan, source and license evaluation, signer identity and any compensating controls; **or**
-2. Reject and replace it with an independently approved S3-compatible integration service image, rerun all Group A/B acceptance evidence and record the resulting tested SHA.
+    https://github.com/seaweedfs/seaweedfs/.github/workflows/container_release_unified.yml@refs/tags/4.48
 
-**Neither option has been approved.** Do not promote this test image into a real deployment or call Phase05 `CLOSED` from this dossier alone. Real On-Prem object storage, credentials, backups, retention, and audit belong to Phase18. D-07/D-08 organization access/content policy remain blocked decisions.
+GitHub Actions CI run 40103038011 showed successful cosign verification, trusted certificate authority validation and offline verification of public transparency-log claims for the exact image digest. A failed verifier fails the integration job. This is **verified publisher/release-workflow provenance**, not merely pinning a tag or trusting a registry label.
+
+CI uses masked, random per-run S3 credentials, synthetic files, loopback-only S3 endpoint, named **disposable** persistent data volume and bounded genuine S3 operations. Real tests confirm incorrect credentials and unsigned anonymous access are rejected, conditional write is immutable, bytes survive full container replacement, and a separate worker actually runs ClamAV before durable awaiting_approval.
+
+## Residual security risks and approval
+
+| Control | Result |
+| --- | --- |
+| Trusted signer/expected release workflow for exact digest | PASSED in CI |
+| Immutable image reference and repeatable image selection | PASSED |
+| Real S3 deny-invalid/anonymous auth and immutable data access | PASSED |
+| Real object and worker recovery after container replacement | PASSED |
+| OCI image vulnerability scan/independent license and runtime policy acceptance | NOT_APPROVED; not claimed as performed |
+| Independent accountable Security and Architecture CI-only residual-risk sign-off | NOT_SIGNED |
+| Actual production S3, IdP, retention, backup, HA/DR and network isolation | Group C, Phase18, NOT_RUN |
+
+Strict Python pip-audit does **not** scan OCI layers. Signing verifies declared builder identity, not absence of vulnerabilities. The test image is never declared suitable for organization deployment. The Security risk owner must independently assess residual risk and accept this **synthetic-only CI** image or mandate change. No owner signature has been invented. Technical DoD PENDING_INDEPENDENT_REVIEW; Phase05 IN_PROGRESS; Production NOT_READY.

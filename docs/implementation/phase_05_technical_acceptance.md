@@ -60,3 +60,13 @@ There is no independent accountable reviewer signature or organizational policy 
 ### Decision requested from an actual technical reviewer
 
 The reviewer must independently inspect source/security boundaries and the exact CI evidence, decide whether the recorded supply-chain risk is acceptable for synthetic CI or demands an approved image, decide if true container destruction/recreation is mandatory Group B, and record an attributable approval or rejection (identity, role, timestamp, commit, any conditions). **No sign-off has been simulated or delegated to CI/AI.** Keep PR #3 Draft and do not merge or declare Phase 05 `CLOSED` until all mandatory A/B gates and actual reviewer acceptance pass.
+
+## Latest independent gate handoff — 2026-10-24
+
+Final source-matched implementation SHA 15f4326cd5dba898a185dd95f067969ca90aa01c, CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40103038011: **6/6 jobs SUCCESS**. A 75 passed/24 skipped; real isolated B 9 ingestion + 8 fault/recovery + 4 PostgreSQL + 9 Qdrant passed. SeaweedFS 4.48 is signed by the verified upstream GitHub release workflow on a pinned OCI digest; denied anonymous/wrong credentials and full S3/ClamAV container replacement have actual passing B evidence.
+
+Engineering self-review of the application boundaries, database job leases/fencing, fail-closed antivirus, immutable quarantine and regression behavior has been recorded in phase_05_engineering_self_review.md. It is **NOT** a substitute for independent accountable review or sign-off.
+
+**Outstanding acceptance:** An actual independent Architecture/Security reviewer must inspect current SHA and CI evidence, disposition image runtime vulnerability/license risk for synthetic CI-only use, and record a signed/attributable acceptance or change request. Complete enterprise PostgreSQL node removal/restore and On-Prem HA/DR remain Phase18 Group C, not a Phase05 technical gate. No known required scoped A/B test is left unrun before new reviewer findings.
+
+**Do not merge or close Phase05 without human acceptance.** Technical DoD PENDING_INDEPENDENT_REVIEW; Phase05 IN_PROGRESS -> IN_PROGRESS; Production NOT_READY. P18-P05-C01–C08 remain deferred and not PASSED.

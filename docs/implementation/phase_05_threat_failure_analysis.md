@@ -24,3 +24,7 @@ Decisions still outstanding: D-07 IdP/permissions and D-08 real classification/r
 - PostgreSQL real docker pause denies a fresh application start; after unpause a new database-backed repository transaction succeeds.
 - A real OS Worker was killed after PostgreSQL lease commit, and the new worker's claim/fencing prevented acknowledgement from the stale token.
 - Evidence: GitHub Actions 40098823479 on 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0. These tests are not enterprise network, HA or backup/restore evidence, which remains deferred to Phase18.
+
+## Updated synthetic CI storage security evidence
+
+On SHA 15f4326cd5dba898a185dd95f067969ca90aa01c, CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40103038011, 9 real ingestion and 8 real outage tests PASS. Third-party Coollabs CI MinIO provider was replaced by upstream SeaweedFS 4.48, whose immutable image digest is now checked via successful keyless cosign verification of upstream GitHub release-workflow identity. Real S3 gateway denies invalid credentials/anonymous unsigned requests, conditional writes prevent overwrites, and a complete S3 container replacement preserves quarantined bytes and queued job. ClamAV container removal/recreation requires a new genuine verdict. This is not enterprise runtime vulnerability approval or HA/DR/PITR evidence. Independent accountable Security/Architecture sign-off remains NOT_SIGNED.
