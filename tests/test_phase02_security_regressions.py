@@ -90,9 +90,11 @@ def _configured_validator(monkeypatch) -> TokenValidator:
 
 def _unknown_key_token(token: str) -> str:
     _, payload, signature = token.split(".")
-    header = base64.urlsafe_b64encode(
-        json.dumps({"alg": "RS256", "typ": "JWT", "kid": "untrusted-key"}).encode()
-    ).rstrip(b"=").decode()
+    header = (
+        base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "typ": "JWT", "kid": "untrusted-key"}).encode())
+        .rstrip(b"=")
+        .decode()
+    )
     return ".".join((header, payload, signature))
 
 
@@ -105,18 +107,20 @@ def identity():
     public = private.public_key().public_numbers()
 
     def encode(number):
-        return base64.urlsafe_b64encode(
-            number.to_bytes((number.bit_length() + 7) // 8, "big")
-        ).rstrip(b"=").decode()
+        return base64.urlsafe_b64encode(number.to_bytes((number.bit_length() + 7) // 8, "big")).rstrip(b"=").decode()
 
-    jwks = {"keys": [{
-        "kty": "RSA",
-        "use": "sig",
-        "alg": "RS256",
-        "kid": "test-key",
-        "n": encode(public.n),
-        "e": encode(public.e),
-    }]}
+    jwks = {
+        "keys": [
+            {
+                "kty": "RSA",
+                "use": "sig",
+                "alg": "RS256",
+                "kid": "test-key",
+                "n": encode(public.n),
+                "e": encode(public.e),
+            }
+        ]
+    }
 
     def token():
         now = datetime.now(UTC)

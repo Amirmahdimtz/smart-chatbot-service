@@ -41,7 +41,7 @@ class TokenValidator:
         self._ttl = timedelta(minutes=5)
         self._refresh_interval_seconds = 60.0
         self._retry_interval_seconds = 15.0
-        self._last_refresh_attempt = float('-inf')
+        self._last_refresh_attempt = float("-inf")
         self._refresh_task: asyncio.Task[None] | None = None
 
     @property
