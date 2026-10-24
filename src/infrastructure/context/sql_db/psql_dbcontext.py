@@ -6,8 +6,8 @@ import ssl
 from contextlib import asynccontextmanager
 
 from sqlalchemy import text
-from sqlalchemy.exc import ArgumentError
 from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 

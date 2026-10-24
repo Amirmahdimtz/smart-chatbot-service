@@ -1,0 +1,20 @@
+# Phase 18 Verification Register — On-Prem-only
+
+Policy: Smart_Chatbot_Implementation_Plan_FA.md **v1.1.0** (§0.3–0.6, Phase 18).
+This register initially records **Phase 03** Group C tests. No organization tests below have been executed; each is **DEFERRED_TO_PHASE_18**. Technical closure of Phase 03 is not permission for production data or deployment. Owner fields are **roles awaiting assignment**, not signed approvals.
+
+| verification_id | originating_phase | requirement_id | scenario/control | expected_result | prerequisites/environment | test_command_or_runbook | owner | evidence_required | status | related_decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| P18-P03-C01 | 03 | SCB-PLAN-03-ISOLATION | Physical Public/Internal PostgreSQL data, credentials and network segmentation | Wrong zone/identity cannot access other zone's database | Approved organizational topology and synthetic test users | Phase18-DB-Isolation runbook: credential/firewall negative probes | Security + Infrastructure Owners | Diagrams, access matrix, firewall rules, redacted deny logs, release SHA | DEFERRED_TO_PHASE_18 | D-07, D-08 |
+| P18-P03-C02 | 03 | SCB-PLAN-03-TLS | CA-verified TLS, least-privilege DB roles, Vault secret rotation | TLS hostname validated, application role denied DDL, credentials isolated/rotated | Organizational CA/IdP/Vault, test credentials and approved integration hosts | Phase18-DB-Security runbook: TLS and grant negative probes | DBA + IAM + Security Owners | TLS/CA validation, grants, negative SQL, redacted secret audit | DEFERRED_TO_PHASE_18 | D-07, D-08 |
+| P18-P03-C03 | 03 | SCB-PLAN-03-RESTORE | PostgreSQL backup/WAL/PITR restore | Restored schema/data integrity, time target and agreed RPO/RTO proven | Authorized restore site, backup retention and versioned synthetic dataset | Phase18-DB-PITR runbook: backup, point restore, integrity checks | DBA + Operations Owners | Backup manifest, restore transcript, checksums, RPO/RTO | DEFERRED_TO_PHASE_18 | D-05, D-08 |
+| P18-P03-C04 | 03 | SCB-PLAN-03-MIGRATION | Approved online migration / concurrent migration lock / interrupted recovery | Signed change reaches expected Alembic head, competing migrator denied, recovery succeeds | Change ticket, verified backup, scoped migration role | Phase18-DB-Migration runbook: controlled upgrade/check and lock contention | DBA + Change Manager | Change ticket, approval, revision/hash, pre/post checks and recovery record | DEFERRED_TO_PHASE_18 | D-05, D-08 |
+| P18-P03-C05 | 03 | SCB-PLAN-03-RELIABILITY | Load, contention, pool saturation, soak, HA failover/DR | Contracted service limits and recovery targets met, no corruption/lost committed data | Real topology, traffic/SLO agreement, failover environment | Phase18-DB-Resilience runbook: load/soak/failover | DBA + Performance + Operations Owners | Tool version, metrics, p95/p99, logs, failover timing and RPO/RTO | DEFERRED_TO_PHASE_18 | D-01, D-05 |
+| P18-P03-C06 | 03 | SCB-PLAN-03-POLICY | Actual IdP principal-to-scope enforcement, classification, retention and purge | Deny-by-default, access isolation and policy-compliant retention | **D-07/D-08 authorization required before real data**; test identities and policy | Phase18-DB-DataPolicy runbook: signed ABAC and retention E2E | Data/Privacy + IAM + Security Owners | Signed policy, synthetic/authorized probes, redacted audit, retention proof | DEFERRED_TO_PHASE_18 | D-07, D-08 |
+
+## Governance
+
+- `status` must not be changed to `PASSED_WITH_EVIDENCE` without real Phase 18 On-Prem logs, environment, model/database versions, test SHA, verifier and accountable owner decision.
+- **D-07 and D-08 are not approved by this document.** Any access to real internal/HR/PII data needs prior independent authorization; organizational test deferral does not defer such permission.
+- Do not request or execute these tests for technical closure of Phases 01–17. Infrastructure-side verification belongs to Phase 18.
+- This document **does not register Phase 01/02 or future Phase 04–17 tests**; they must be assessed and appended with distinct immutable IDs when each phase is reviewed.

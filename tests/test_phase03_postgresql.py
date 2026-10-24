@@ -12,7 +12,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 
 from src.core.services.conversation.conversation_service import ConversationService
-from src.infrastructure.context.sql_db.psql_dbcontext import Base, DatabaseUnavailable, PsqlDbContext, validate_database_url
+from src.infrastructure.context.sql_db.psql_dbcontext import (
+    Base,
+    DatabaseUnavailable,
+    PsqlDbContext,
+    validate_database_url,
+)
 from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.models.entities import (
     Conversation,
