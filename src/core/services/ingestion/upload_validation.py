@@ -63,6 +63,12 @@ async def validate_upload_async(file: UploadFile, limit: int) -> tuple[str, byte
     name = validate_filename(file.filename)
     if file.content_type not in {"text/plain", "application/pdf"}:
         raise UploadRejected("unsupported_format")
+    extension = name.rpartition(".")[2].casefold()
+    if (extension, file.content_type) not in {
+        ("txt", "text/plain"),
+        ("pdf", "application/pdf"),
+    }:
+        raise UploadRejected("content_type_mismatch")
     content = bytearray()
     try:
         while True:
