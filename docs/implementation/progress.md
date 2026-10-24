@@ -137,3 +137,8 @@ Owner's explicit command starts Phase 04 under ADR-0007 from verified main SHA `
 ## Phase 05 evidence follow-up (2026-10-24)
 
 CI 40098047270 on bf6137dc64761ba2120c79128d630c12ed8e9b49: six of six jobs passed. General A tests 74 passed/14 skipped; real B ingestion seven passed, PostgreSQL four passed, Qdrant nine passed; Ruff/compile/validators/strict pip-audit/SBOM/secret scan and Docker succeeded. Group A/B still require actual isolated dependency container stop/restart, community test S3 image provenance review and independent technical/security sign-off. Group C P18-P05-C01 through P18-P05-C08 remain DEFERRED_TO_PHASE_18. Phase05 before/after: IN_PROGRESS -> IN_PROGRESS, Technical DoD PENDING, Production NOT_READY. Details: phase_05_evidence.md. No prior phase status changed.
+
+
+## Phase 05 technical evidence after Docker dependency fault injection
+
+CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40098823479 on 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0: 6/6 jobs PASS. Tests A: 74 passed/17 skipped, compile/lint/strict audit/SBOM/secret scan/Docker PASS. Tests B: 7 live ingestion PASS plus 3 actual isolated service pause/unpause/recovery PASS, PostgreSQL regressions 4, Qdrant regressions 9. Required-but-missing: independent security/architecture acceptance, community CI S3 image provenance and any reviewer-mandated full process stop/recreate scenarios. Tests C remain all deferred IDs P18-P05-C01–C08. Technical DoD: PENDING; phase status before/after: IN_PROGRESS/IN_PROGRESS; Production Release: NOT_READY. All earlier phase statuses are unchanged and Phase06 is NOT_STARTED.

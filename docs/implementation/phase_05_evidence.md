@@ -33,3 +33,15 @@ Final same-SHA full CI after recovery improvements; nontrivial failure-injection
 - Technical DoD Status: PENDING remaining A/B and independent technical acceptance. Phase Status Before/After: IN_PROGRESS -> IN_PROGRESS (original NOT_STARTED -> IN_PROGRESS is recorded). Production Release Status: NOT_READY. D-07/D-08 remain BLOCKED_DECISION for real data; Phase15 Agent remains BLOCKED_EXTERNAL.
 
 General test skips are not reclassified as passes. Real integration evidence comes separately from the named B jobs. Historical failed CI runs remain failures; this later successful source-matched result supersedes only their outstanding technical regressions.
+
+
+## Final synthetic-service verification update — digest-pinned revision
+
+- Tested source: 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0. GitHub CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40098823479 : ALL SIX JOBS SUCCESS.
+- Tests A Executed + Actual Results: general 74 passed / 17 skipped / one third-party test-client warning; Python compile and architecture validators PASS; Ruff lint/format PASS; strict pip-audit no known vulnerabilities; SBOM, Docker build and secret scan SUCCESS.
+- Tests B Executed + Actual Results: 7 real ingestion integration tests PASS; 3 real Docker pause/unpause dependency fault-injection tests PASS (PostgreSQL, ClamAV and S3-compatible storage); 4 PostgreSQL regression and 9 Qdrant regression tests PASS. Independent Worker OS kill and lease reclaim, scanner outage and real recovery, EICAR, immutable S3 conditional writes, changed-object rejection, concurrent claims, expired lease/dead letter and negative API cases covered. CI S3 and ClamAV images pinned to the exact registry digests observed in the prior successful runner. No organization On-Prem tests executed.
+- Tests A/B Required but Missing: independently verified supply-chain provenance/signature and security assessment of community S3 test image; separate stop/recreate crash scenario rather than pause/unpause for each dependency, if required by technical reviewer. Operational signature/update monitoring and approval for any real deployment remain outside this synthetic-only scope. The accountable independent Technical Verifier has not approved the implementation.
+- Tests C Deferred to Phase 18: all eight On-Prem controls P18-P05-C01 through P18-P05-C08 remain DEFERRED_TO_PHASE_18; no PASSED claim and no requirement to execute them during Phase05.
+- Phase 18 Verification Register IDs: P18-P05-C01, P18-P05-C02, P18-P05-C03, P18-P05-C04, P18-P05-C05, P18-P05-C06, P18-P05-C07, P18-P05-C08.
+- Technical DoD Status: PENDING (provenance, independent review and any reviewer-required crash/recreate negative scenario). Phase Status Before/After: IN_PROGRESS -> IN_PROGRESS. Production Release Status: NOT_READY. D-07/D-08 real-data decisions unapproved; Agent is BLOCKED_EXTERNAL.
+- Source-matched evidence is deliberately separate from this documentation-only follow-up commit. Run acceptance checks on the final documentation SHA before asserting identical-SHA acceptance. The earlier historical failures remain recorded and were not retroactively changed to PASS.

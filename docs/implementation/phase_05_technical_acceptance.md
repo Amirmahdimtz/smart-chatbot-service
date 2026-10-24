@@ -22,3 +22,10 @@ Decision: **DO NOT MERGE / DO NOT CLOSE** while any required control is pending.
 CI 40098047270 on source bf6137dc64761ba2120c79128d630c12ed8e9b49 succeeded in all six jobs: Group A 74 passed/14 skipped, Group B seven live ingestion, four PostgreSQL and nine Qdrant passes; strict audit, Ruff, SBOM, Docker and secret scan succeeded. Real worker termination after lease commit, real ClamAV malware scan, S3 conditional create, retry/fencing and negative API paths were exercised. This replaces historical PENDING_SAME_SHA notes for that precise source, not the outstanding external approval.
 
 Remaining mandatory DoD: actual disposable service stop/restart under in-flight operations for each integration dependency; provenance and digest review of the community S3-compatible CI image; independent accountable architecture/security reviewer sign-off. Do not close Phase05 or merge the PR merely because CI is green. Owner roles and sign-offs are not fabricated. Technical DoD: PENDING; Phase Status: IN_PROGRESS; Production: NOT_READY.
+
+
+## Status after actual synthetic outage verification
+
+All six CI jobs in run 40098823479 PASSED on source 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0: general 74 passes/17 skips; ingestion 7 real tests and 3 real reversible outage/recovery tests; PostgreSQL 4 passes, Qdrant 9 passes; Ruff/compile, SBOM, dependency audit, Docker build and secret scan PASS. S3 and ClamAV container digests are pinned to registry digests obtained from CI. Actual pause/unpause with denial and recovery is proven, NOT a complete service process stop/recreate test.
+
+Unresolved: independent accountable security/architecture review, provenance assessment/attestation for the community S3 CI image, and any separately deemed essential full stop/recreate fault injection. No Technical Verifier signature has been provided. Decision remains DO_NOT_CLOSE; PR #3 stays Draft; no merger or Production authorization. All P18-P05-C01–C08 deferred controls remain pending until Phase18.

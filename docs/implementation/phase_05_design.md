@@ -46,3 +46,8 @@ Group C: object-store backup/restore, enterprise scanner/version/policy, organiz
 ## Post-implementation hardening
 
 Knowledge upload routes are not mounted unless the synthetic internal feature flag is enabled. TXT and PDF filename extensions must match their MIME type, with size/signature validation. S3 writes require scoped UUIDv4 object keys and use conditional create; an identical lost-ACK replay is safe, while changed bytes cannot overwrite via the adapter. An actual OS Worker process was killed after its PostgreSQL lease had been committed and the lease was reclaimed by another Worker, which scanned using real ClamAV. Current source-specific CI evidence and remaining tests are tracked in phase_05_evidence.md.
+
+
+## Phase 05 verified CI boundary (2026-10-24)
+
+Digest-pinned synthetic CI services have now passed real PostgreSQL, ClamAV and S3-compatible integration including three separate reversible Docker pause/unpause outages with recovery and persisted job checks (CI 40098823479, source 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0). These are not full process stop/recreation, organizational HA or DR tests. S3 and ClamAV test image digests were resolved from real CI Docker pulls and pinned in the workflow; community S3 image provenance has NOT received an independent approval. No organization connectivity, HR/PII, publication, Qdrant writes, UAT or production authorization is claimed.

@@ -15,3 +15,12 @@
 | Accidental production enablement | explicit synthetic-only environment gate, dev/integration, deny-by-default | unavailable in staging/production |
 
 Decisions still outstanding: D-07 IdP/permissions and D-08 real classification/retention/deletion/consent. No real-data imports, policy-dependent purge or publication while undecided. Group C organizational controls go into Phase 18 register.
+
+
+## Recorded final synthetic outage controls
+
+- Conditional S3 object creation allows byte-identical retries after lost PUT ACK but rejects overwrite of a prior different object; direct out-of-band tampering fails SHA-256 before malware approval.
+- ClamAV genuine daemon EICAR and network loss/timeout are fail-closed; real docker pause drives a persistent retry_wait, followed by a real scan after unpause.
+- PostgreSQL real docker pause denies a fresh application start; after unpause a new database-backed repository transaction succeeds.
+- A real OS Worker was killed after PostgreSQL lease commit, and the new worker's claim/fencing prevented acknowledgement from the stale token.
+- Evidence: GitHub Actions 40098823479 on 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0. These tests are not enterprise network, HA or backup/restore evidence, which remains deferred to Phase18.

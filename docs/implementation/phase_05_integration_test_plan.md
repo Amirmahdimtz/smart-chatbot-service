@@ -18,3 +18,8 @@ Post-PUT crash/reconciliation, missing S3 object + same-key replay, concurrent c
 ## Actual scope after CI 40098047270
 
 Seven actual ingestion integration checks PASS, including real separate Worker OS-kill and lease recovery against PostgreSQL, live ClamAV clean/EICAR, scanner TCP outage/recovery, S3 immutable conditional write/dedup, storage-tamper denial and API negative coverage. Four PostgreSQL regressions and nine Qdrant integration checks PASS. Full container-stop/restart fault injection on S3, ClamAV, and PostgreSQL mid-operation remains REQUIRED A/B and NOT_RUN. Final enterprise HA/DR testing belongs to Group C Phase18.
+
+
+## Additional real service outage matrix executed
+
+CI run 40098823479 executed tests/test_phase05_service_outages.py in the real Phase05 integration job. Three of three PASS: Docker-paused private S3 refuses reads and returns valid quarantined bytes on resume while durable job remains queued; Docker-paused ClamAV prevents approval and induces durable retry_wait, then real daemon rescan reaches awaiting_approval; Docker-paused PostgreSQL rejects startup, and after resume a fresh DB-backed repository persists/reads a synthetic source. Runner CI, disposable database and unique container names are enforced before pause. The tests unpause each service in finally blocks. They demonstrate service unavailability and recovery, not destruction, cold start or multi-node disaster recovery.
