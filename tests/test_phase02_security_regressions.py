@@ -98,8 +98,8 @@ def _unknown_key_token(token: str) -> str:
 
 @pytest.fixture
 def identity():
-    from cryptography.hazmat.primitives.asymmetric import rsa
     import jwt
+    from cryptography.hazmat.primitives.asymmetric import rsa
 
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public = private.public_key().public_numbers()
