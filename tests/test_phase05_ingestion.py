@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
+import subprocess
 from io import BytesIO
 from types import SimpleNamespace
 from uuid import uuid4
@@ -10,10 +12,13 @@ from uuid import uuid4
 import pytest
 from fastapi import UploadFile
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from starlette.datastructures import Headers
 
-from src.core.services.ingestion.ingestion_service import IngestionService
+from src.application.knowledge.dtos.knowledge_dto import SourceCreateDto
 from src.application.knowledge.upload_reader import validate_upload_async
+from src.core.services.ingestion import upload_validation
+from src.core.services.ingestion.ingestion_service import IngestionService
 from src.core.services.ingestion.upload_validation import UploadRejected, validate_content, validate_filename
 from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.models.ingestion import IngestionAuditEvent, IngestionJob
@@ -289,9 +294,6 @@ def test_scanner_timeout_without_clean_verdict_fails_closed():
 
 def test_pdf_sandbox_child_deadline_fail_closed(monkeypatch):
     """A hung PDF parse must not continue running in a worker thread."""
-    import subprocess
-    from src.core.services.ingestion import upload_validation
-
     def timed_out(*args, **kwargs):
         assert kwargs["timeout"] == 4
         assert kwargs["stderr"] == subprocess.DEVNULL
@@ -304,9 +306,6 @@ def test_pdf_sandbox_child_deadline_fail_closed(monkeypatch):
 
 
 def test_source_synthetic_policy_contract_and_limits():
-    from pydantic import ValidationError
-    from src.application.knowledge.dtos.knowledge_dto import SourceCreateDto
-
     assert SourceCreateDto(domain="research").classification == "synthetic_unclassified"
     assert SourceCreateDto(domain="research", max_file_bytes=1024).max_file_bytes == 1024
     for bad in (
@@ -319,7 +318,4 @@ def test_source_synthetic_policy_contract_and_limits():
 
 
 def test_core_upload_is_independent_of_fastapi_uploadfile():
-    import inspect
-    from src.core.services.ingestion.ingestion_service import IngestionService
-
     assert "UploadFile" not in inspect.getsource(IngestionService)

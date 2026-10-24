@@ -7,13 +7,13 @@ from uuid import UUID
 from fastapi import APIRouter, File, Header, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
-from src.application.knowledge.upload_reader import validate_upload_async
 from src.application.knowledge.dtos.knowledge_dto import (
     DocumentVersionResponseDto,
     JobResponseDto,
     SourceCreateDto,
     SourceResponseDto,
 )
+from src.application.knowledge.upload_reader import validate_upload_async
 from src.core.services.ingestion.ingestion_service import IngestionService
 from src.core.services.ingestion.upload_validation import UploadRejected
 from src.infrastructure.di.inject import inject

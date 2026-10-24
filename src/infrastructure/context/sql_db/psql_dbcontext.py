@@ -8,7 +8,6 @@ from pathlib import Path
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
