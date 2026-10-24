@@ -529,3 +529,106 @@ def test_real_malware_corrupted_object_and_scanner_network_failure():
             await db.close_async()
 
     asyncio.run(exercise())
+
+
+def test_real_dependency_outage_retries_then_recovers():
+    """Real Postgres state and S3 bytes survive scanner loss and safe retry."""
+    _enabled()
+    import hashlib
+    import socket
+    from types import SimpleNamespace
+
+    from src.infrastructure.providers.storage.quarantine_storage import StorageUnavailable
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    repo = container.resolve(IngestionRepository)
+    store = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def exercise():
+        await db.start_async()
+        await store.start_async()
+        try:
+            owner = "synthetic-" + uuid4().hex
+            source = await repo.create_source_async(owner, "internal", "research")
+            content = ("safe-after-network-outage-" + uuid4().hex).encode()
+            checksum = hashlib.sha256(content).hexdigest()
+            idempotency_key = uuid4().hex
+            job, version, new = await repo.stage_async(
+                source.id,
+                owner,
+                "internal",
+                "recovery.txt",
+                "text/plain",
+                len(content),
+                checksum,
+                idempotency_key,
+                3,
+            )
+            assert new
+
+            # Interrupted upload: a committed intent remains and can be resumed.
+            await store.close_async()
+            with pytest.raises(StorageUnavailable):
+                await store.put_async(version.object_key, content, checksum)
+            await repo.fail_staging_async(job.id, owner, "internal", "storage_unavailable")
+            failed = await repo.get_job_owned_async(job.id, owner, "internal")
+            assert failed[0].status == "dead"
+            assert failed[1].state == "failed"
+            rearmed, same_version, new = await repo.stage_async(
+                source.id,
+                owner,
+                "internal",
+                "recovery.txt",
+                "text/plain",
+                len(content),
+                checksum,
+                idempotency_key,
+                3,
+            )
+            assert new and rearmed.id == job.id and same_version.id == version.id
+            await store.start_async()
+            await store.put_async(same_version.object_key, content, checksum)
+            assert await repo.mark_queued_async(job.id, owner, "internal")
+
+            # Scanner endpoint loss is a genuine failed TCP connection, not an
+            # optimistic mocked clean verdict. The job must be retry_wait.
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.bind(("127.0.0.1", 0))
+                unreachable = probe.getsockname()[1]
+            cfg = SimpleNamespace(
+                settings=SimpleNamespace(
+                    ingestion=SimpleNamespace(
+                        enabled=True,
+                        max_file_bytes=1048576,
+                        clamd_host="127.0.0.1",
+                        clamd_port=unreachable,
+                        timeout_seconds=0.5,
+                    )
+                )
+            )
+            worker._scanner = ClamAvScanner(cfg)
+            assert await worker.run_once_async("scanner-outage")
+            waiting = await repo.get_job_owned_async(job.id, owner, "internal")
+            assert waiting[0].status == "retry_wait"
+            assert waiting[0].error_code == "dependency_unavailable"
+            assert waiting[0].attempts == 1
+            assert waiting[1].state != "awaiting_approval"
+
+            # The real ClamAV service is healthy again. Move the synthetic
+            # retry deadline forward without sleeping through backoff.
+            worker._scanner = container.resolve(ClamAvScanner)
+            async with db.transaction_async() as session:
+                row = await session.get(IngestionJob, job.id)
+                row.next_retry_at = datetime.now(UTC) - timedelta(seconds=1)
+            assert await worker.run_once_async("scanner-restored")
+            result = await repo.get_job_owned_async(job.id, owner, "internal")
+            assert result[0].status == "completed"
+            assert result[0].attempts == 2
+            assert result[1].state == "awaiting_approval"
+        finally:
+            await store.close_async()
+            await db.close_async()
+
+    asyncio.run(exercise())
