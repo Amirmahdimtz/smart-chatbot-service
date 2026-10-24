@@ -193,13 +193,12 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
-      - run: python -m pytest -q tests/test_phase05_integration.py
-      - name: Disposable migration reverse/re-upgrade
-        if: success()
+      - name: Disposable migration reverse/re-upgrade before writing test records
         run: |
           python src/infrastructure/scripts/run_migrations.py --downgrade-test-only
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
+      - run: python -m pytest -q tests/test_phase05_integration.py
       - name: Remove synthetic containers
         if: always()
         run: |
