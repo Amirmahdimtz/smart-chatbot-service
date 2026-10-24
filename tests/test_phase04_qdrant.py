@@ -7,7 +7,7 @@ import os
 from uuid import uuid4
 
 import pytest
-from qdrant_client import AsyncQdrantClient
+from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 from src.infrastructure.di.bootstrap import bootstrap_di
@@ -145,6 +145,15 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
                 await provider.upsert_async([good, good])
             with pytest.raises(QdrantContractError):
                 await provider.upsert_async([_record(dimensions=3)])
+            aborted = _record()
+            with pytest.raises(QdrantContractError):
+                await provider.upsert_async([aborted, _record(dimensions=3)])
+            assert not await provider.search_async(
+                aborted.vector,
+                domain="research",
+                authorized_classifications=["synthetic"],
+                authorized_document_ids=[aborted.document_id],
+            )
             assert await provider.snapshot_async()
             await provider.delete_document_points_async(doc_allowed, domain="research")
             assert not await provider.search_async(
@@ -215,6 +224,19 @@ def test_real_qdrant_isolated_rebuild_schema_mismatch_and_alias_rollback(monkeyp
             assert len(rollback) == 1
             assert str(rollback[0].id) == deterministic_point_id(record, 1)
             provider._cfg = version_one.model_copy(update={"dimension": 8})
+            with pytest.raises(QdrantContractError):
+                await provider.ensure_collection_async()
+            provider._cfg = version_one.model_copy(update={"schema_version": 3})
+            await provider._client.create_collection(
+                collection_name=provider.collection_name,
+                vectors_config=models.VectorParams(size=4, distance=models.Distance.COSINE),
+            )
+            await provider._client.create_payload_index(
+                collection_name=provider.collection_name,
+                field_name="published",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+                wait=True,
+            )
             with pytest.raises(QdrantContractError):
                 await provider.ensure_collection_async()
         finally:

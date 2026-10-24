@@ -168,14 +168,18 @@ class QdrantProvider:
             "published": models.PayloadSchemaType.BOOL,
         }
         for field, schema in indexes.items():
-            if field not in info.payload_schema:
-                await self._call_async(
-                    "create_payload_index",
-                    collection_name=name,
-                    field_name=field,
-                    field_schema=schema,
-                    wait=True,
-                )
+            existing_index = info.payload_schema.get(field)
+            if existing_index is not None:
+                if existing_index.data_type != schema:
+                    raise QdrantContractError()
+                continue
+            await self._call_async(
+                "create_payload_index",
+                collection_name=name,
+                field_name=field,
+                field_schema=schema,
+                wait=True,
+            )
         return name
 
     async def activate_collection_async(self) -> None:
