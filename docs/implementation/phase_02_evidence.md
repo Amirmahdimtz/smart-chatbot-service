@@ -98,3 +98,12 @@ Windows PowerShell displayed its legacy `Invoke-WebRequest` content-parsing secu
 Baseline main source SHA: `2f52c58c2be1f15831b2226c7c4591eb809e08b9`. Runtime changes are restricted to JWKS cache lifecycle/refresh throttling, ASGI timeout correctness, and expired rate-limit cache eviction. Dedicated negative/concurrency/TTL regression tests are added to `tests/test_phase02_security_regressions.py`. On-prem IdP, Vault, gateway isolation, HA, trace exporter and supply-chain digest decisions remain untested/unapproved. Phase 02 is still `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 approval state is unchanged.
 
 CI results must be recorded only after real execution. Local runtime cannot clone GitHub due DNS/network restrictions; therefore full-project local tests have not been claimed here.
+
+## Verified source remediation CI — 2026-10-24
+
+- Source commit: [56efee12f1e8b67493e946e5d6936915528df66f](https://github.com/Amirmahdimtz/smart-chatbot-service/commit/56efee12f1e8b67493e946e5d6936915528df66f), branch main.
+- GitHub Actions [run 40070131736](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40070131736): **SUCCESS**; verify, docker-build and secret-scan each **SUCCESS**.
+- Verify job executed Python compile, both normal and optimized Phase 01 contract validators (**PASS**), pytest (**27 passed, 1 known framework deprecation warning**), Ruff check and format (**PASS**), pip-audit requirements strict (**no known vulnerabilities found at execution time**), SBOM generation/upload (**PASS**).
+- Four new regression tests in the file named tests/test_phase02_security_regressions.py cover expired rate-limit bucket eviction, timeout-before/after-headers, concurrent unknown JWT key IDs and periodic JWKS refresh, and stale-key failure on IdP outage. These are actual CI tests with MockTransport solely in test fixtures, not organizational IdP/Proxy E2E verification.
+- Earlier CI runs failed exclusively on introduced Ruff lint/format issues; two forward-only follow-up commits corrected those issues. A temporary diagnostic workflow was removed from the final source tree.
+- Live IdP/Vault, authorized metrics retrieval, independent public/internal network and credential boundary, distributed edge rate limits, image digest/lockfile policy, tracing export, HA and DR remain **NOT_RUN / BLOCKED_DECISION or BLOCKED_EXTERNAL** as applicable. No Phase 02 CLOSED marker is issued.

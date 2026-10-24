@@ -2,7 +2,7 @@
 
 Enterprise-grade, on-premises smart chatbot service for documented Persian-language knowledge retrieval and controlled organizational workflows.
 
-**Status:** Phase 01 — IMPLEMENTED_AWAITING_VERIFICATION; Phase 02 — IMPLEMENTED_AWAITING_VERIFICATION (development-only foundation; SSO/on-prem/CI acceptance pending). Not production-ready.
+**Status:** Phase 01 — IMPLEMENTED_AWAITING_VERIFICATION; Phase 02 — IMPLEMENTED_AWAITING_VERIFICATION (security regressions pass GitHub CI; actual SSO/on-prem operational acceptance pending). Not production-ready.
 
 ## Architecture baseline
 
