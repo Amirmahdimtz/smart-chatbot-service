@@ -19,7 +19,7 @@
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
-| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Latest source `ac02b3a42e767bdfc854d01d371713294683d8d3`: GitHub CI **3/3 PASS**, **35 pytest PASS**. Previous source `5607c51032ff4828822b04fa155add7fc2a38f07` had owner-reported Windows **32/32 PASS**; newest 3 regressions await Windows run. Organizational IdP/Vault, distinct Public/Internal test environments/credentials, ingress, network isolation and signed acceptance outstanding — [Phase 02 evidence](phase_02_evidence.md) |
+| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Newest runtime source `7c620b0018ce209197ff4df560fa1d076508ac47`: GitHub CI **3/3 PASS**, **36 pytest PASS** (JWKS two-lifespan regression). Owner-reported Windows **35/35 PASS** on prior SHA `6348cd89b693c48367fa44ecf63ea0068e3f6222`; newest regression awaits local verification and local audit timed out. Live IdP/Vault, independent Public/Internal test deployment and network/credential isolation, ingress, recovery and owner sign-off remain outstanding — [Phase 02 evidence](phase_02_evidence.md) |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |

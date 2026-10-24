@@ -36,3 +36,7 @@
 - Repeated `Authorization` headers on protected routes are rejected with 400 rather than choosing one credential value; spoofed principal headers remain separately rejected.
 - An exhausted 10,000-peer rate limiter never awaits socket writes while holding the global state lock. A concurrent slow `429` regression confirms that a separate known client can proceed.
 - GitHub CI source SHA `ac02b3a42e767bdfc854d01d371713294683d8d3`: **35/35 tests PASS** and 3/3 CI jobs green, run [40073778225](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40073778225). Real ingress fairness, per-user distributed quotas, IdP/Vault, cross-zone firewall denies and owner security approval are not verified. Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION`.
+
+## JWKS client lifespan correctness (2026-10-24)
+
+Repeated FastAPI lifespans previously risked stale-ready cached JWKS and a closed HTTP client after shutdown. Shutdown now invalidates signing-key cache and refresh cooldown; the next startup reopens the client and requires a fresh trusted JWKS retrieval. CI confirms a two-lifespan regression (**36/36 tests PASS** on `7c620b0018ce209197ff4df560fa1d076508ac47`). This is a **source-level fix**, not evidence of real IdP rotation, external gateway security or organizational Public/Internal isolation. Formal Phase 02 sign-off remains pending.

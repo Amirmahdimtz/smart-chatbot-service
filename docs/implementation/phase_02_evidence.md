@@ -200,3 +200,23 @@ The project owner submitted a new PowerShell transcript with the following **own
 **Non-destructive remediation instruction:** once network connectivity permits, rerun `./.venv/Scripts/pip-audit.exe -r requirements.txt --strict --timeout 60` (Windows use `.\\.venv\\Scripts\\pip-audit.exe`). The `--timeout` socket option is documented upstream. Preserve the exact output and exit code. If it still times out, test outbound HTTPS access to `pypi.org` and review DNS/proxy/firewall settings without disabling TLS verification. No package upgrade, security exception, or fake offline audit is warranted based only on this timeout.
 
 **Acceptance and gate:** local 35-test regression is PASS; local vulnerability lookup is **NOT_VERIFIED_DUE_TO_NETWORK**; CI vulnerability audit is PASS as of its run. Phase 02 stays `IMPLEMENTED_AWAITING_VERIFICATION`, real on-prem security/IdP/Vault/network owner tests and sign-offs remain outstanding, and the previously documented conditional development-only technical gate for Phase 03 remains unchanged. No Phase 03 implementation started.
+
+## Independent Phase 02 acceptance re-audit: JWKS lifespan restart — 2026-10-24
+
+**Repository baseline:** `main` `62e47279a935c798a2d2b9606d3c8f9ecb161e13`; code fix commit [`7c620b0018ce209197ff4df560fa1d076508ac47`](https://github.com/Amirmahdimtz/smart-chatbot-service/commit/7c620b0018ce209197ff4df560fa1d076508ac47).
+
+**Scope:** Re-evaluated the implementation plan's Phase 02 DoD against actual FastAPI startup/shutdown, DI, JWT validation/JWKS refresh, Vault boundary, per-process request security, telemetry, public/internal deployment manifests, Docker/CI, and Phase 01/02 markers. The earlier production-equivalent IdP/Vault/two-zone, gateway, ingress security and sign-off gaps are not resolved by source inspection or unit tests.
+
+**Root cause corrected:** The FastAPI lifespan previously closed `TokenValidator`'s `httpx.AsyncClient` on shutdown without explicitly resetting cached signing keys/refresh attempt state. A later startup of the same app instance could believe old keys were still fresh, skip fetching JWKS under the retry cooldown, and start the refresh task with a **closed HTTP client**. The delayed background refresh could then crash or fail to renew keys; this is a lifecycle correctness/readiness risk.
+
+**Implementation:** `TokenValidator.open_async()` recreates an HTTP client only if the existing client is closed and is invoked before each FastAPI startup JWKS fetch. `close_async()` cancels the periodic refresh task, closes its client and clears cached verification keys, wall-clock cache time and cooldown state. This forces a fresh trusted JWKS lookup on re-startup. MockTransport is used **only in the regression test**.
+
+**New regression:** `test_validator_reinitializes_jwks_client_and_cache_across_app_lifespans` exercises two successive TestClient lifespans for a single FastAPI instance, verifies that each start fetches JWKS and returns readiness 200, and that each shutdown closes the client and makes validator readiness false.
+
+**Category A actual CI evidence:** [GitHub Actions run 40075776482](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40075776482), source `7c620b0018ce209197ff4df560fa1d076508ac47`, finished `SUCCESS`; `verify`, `docker-build` and `secret-scan`: **3/3 PASS**. Pytest **36 passed, 1 known framework warning in 1.50s**; compile, normal and optimized Phase 01 validators (both PASS), Ruff lint/format PASS, strict pip-audit `No known vulnerabilities found` at execution, and SBOM/gitleaks artifacts generated/uploaded.
+
+**Category B:** The latest owner Windows transcript remains **35 passed** on the earlier source SHA `6348cd89b693c48367fa44ecf63ea0068e3f6222` and reported a `pypi.org` network read timeout during a local audit. The newest 36th regression has **not yet been run by the owner on Windows**; no local PASS claim is made for it. The previous failed local advisory lookup has not been resolved by this code change.
+
+**Category C / Owner gates:** Real org IdP/JWKS rotation (including second lifespan), Vault trust/auth/secret lifecycle, two genuinely separate test deployments and credentials, ingress/TLS and firewall deny probes, authorized metrics, tracing exporter, distributed quotas, load/HA/recovery and approved security sign-off remain **NOT_RUN / AWAITING_APPROVAL / BLOCKED_DECISION** according to their respective evidence needs.
+
+**Disposition:** Phase 02 status remains `IMPLEMENTED_AWAITING_VERIFICATION` (no closure marker); Phase 01 status unchanged. ADR-0005's `TECHNICAL_GO_FOR_DEVELOPMENT_ONLY` remains a **conditional authorization** for isolated Phase 03 work after explicit owner instruction, **not** Phase 02 `CLOSED` or Production permission.
