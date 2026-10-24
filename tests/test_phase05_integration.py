@@ -217,6 +217,7 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
 
 def test_real_scanner_and_quarantine_storage():
     _enabled()
+    from src.infrastructure.providers.storage.quarantine_storage import StorageUnavailable
     container = bootstrap_di()
     scanner = container.resolve(ClamAvScanner)
     storage = container.resolve(QuarantineStorage)
@@ -230,6 +231,10 @@ def test_real_scanner_and_quarantine_storage():
 
             checksum = hashlib.sha256(clean).hexdigest()
             await storage.put_async(key, clean, checksum)
+            await storage.put_async(key, clean, checksum)  # Lost ACK, safe identical replay.
+            assert await storage.get_async(key) == clean
+            with pytest.raises(StorageUnavailable):
+                await storage.put_async(key, b"modified", hashlib.sha256(b"modified").hexdigest())
             assert await storage.get_async(key) == clean
             await scanner.scan_async(clean)
             with pytest.raises(MalwareDetected):
@@ -501,7 +506,15 @@ def test_real_malware_corrupted_object_and_scanner_network_failure():
             await store.put_async(version.object_key, original, hashlib.sha256(original).hexdigest())
             assert await repo.mark_queued_async(queued.id, actor, "internal")
             # Simulate a malicious or accidental object overwrite after HEAD verification.
-            await store.put_async(version.object_key, changed, hashlib.sha256(changed).hexdigest())
+            # Bypass the production adapter to model an out-of-band actor with
+            # direct bucket privileges. The safe adapter itself forbids overwrites.
+            await asyncio.to_thread(
+                store._client.put_object,
+                Bucket=store._cfg.s3_bucket,
+                Key=version.object_key,
+                Body=changed,
+                Metadata={"sha256": hashlib.sha256(changed).hexdigest()},
+            )
             assert await worker.run_once_async("tamper-detection")
             tampered = await repo.get_job_owned_async(queued.id, actor, "internal")
             assert tampered[0].status == "dead"
