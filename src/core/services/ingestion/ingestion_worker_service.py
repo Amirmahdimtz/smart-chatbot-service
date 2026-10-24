@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+from datetime import UTC, datetime, timedelta
 
 from src.infrastructure.di.inject import inject
 from src.infrastructure.providers.scanner.clamav_scanner import ClamAvScanner, MalwareDetected, ScanUnavailable
-from src.infrastructure.providers.storage.quarantine_storage import QuarantineStorage, StorageUnavailable
+from src.infrastructure.providers.storage.quarantine_storage import QuarantineStorage, StorageMissing, StorageUnavailable
 from src.infrastructure.repositories.ingestion.ingestion_repository import IngestionRepository
 from src.infrastructure.utils.config_reader import ConfigReader
 
@@ -35,11 +36,38 @@ class IngestionWorkerService:
                 if not await self._repo.heartbeat_async(job_id, token, self._cfg.lease_seconds):
                     return
 
+    async def _recover_staging_async(self) -> bool:
+        """Recover committed quarantine objects after a crash before queue acknowledgment."""
+        progressed = bool(await self._repo.exhaust_expired_async(self._scope))
+        for job_id, owner, checksum, created_at, key, expected_size in await self._repo.list_stale_staging_async(
+            self._scope
+        ):
+            if not key or expected_size is None:
+                await self._repo.fail_staging_async(job_id, owner, self._scope, "invalid_storage_reference")
+                progressed = True
+                continue
+            try:
+                data = await self._storage.get_async(key)
+            except StorageMissing:
+                # A late upload might still be in flight. Only terminally fail an old missing intent.
+                if created_at < datetime.now(UTC) - timedelta(seconds=300):
+                    await self._repo.fail_staging_async(job_id, owner, self._scope, "staging_abandoned")
+                    progressed = True
+                continue
+            except StorageUnavailable:
+                # An outage must not convert a recoverable intent into a false terminal success/failure.
+                continue
+            if len(data) != expected_size or hashlib.sha256(data).hexdigest() != checksum:
+                await self._repo.fail_staging_async(job_id, owner, self._scope, "integrity_mismatch")
+                progressed = True
+            elif await self._repo.mark_queued_async(job_id, owner, self._scope):
+                progressed = True
+        return progressed
+
     async def run_once_async(self, worker_id: str) -> bool:
         claim = await self._repo.claim_async(worker_id, self._scope, self._cfg.lease_seconds)
         if claim is None:
-            await self._repo.expire_staging_async(self._scope)
-            return False
+            return await self._recover_staging_async()
         job_id, token, key, expected_hash, expected_size = claim
         stop = asyncio.Event()
         heartbeat = asyncio.create_task(self._heartbeat_async(job_id, token, stop))
