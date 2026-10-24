@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from collections import defaultdict, deque
 
@@ -50,12 +51,12 @@ class HttpSecurityMiddleware:
         if len(content_lengths) > 1 or (content_lengths and has_transfer_encoding):
             await reject(400, "bad_request")
             return
+        if content_lengths and not re.fullmatch(rb"[0-9]+", content_lengths[0]):
+            await reject(400, "bad_request")
+            return
         try:
             declared_length = int(content_lengths[0]) if content_lengths else None
         except ValueError:
-            await reject(400, "bad_request")
-            return
-        if declared_length is not None and declared_length < 0:
             await reject(400, "bad_request")
             return
         if declared_length is not None and declared_length > self.max_bytes:
@@ -63,6 +64,8 @@ class HttpSecurityMiddleware:
             return
         ip = scope.get("client")
         key = ip[0] if ip else "unknown"
+        capacity_exhausted = False
+        blocked = False
         async with self._lock:
             now = time.monotonic()
             if key not in self._hits and len(self._hits) >= 10000:
@@ -72,23 +75,22 @@ class HttpSecurityMiddleware:
                         bucket.popleft()
                     if not bucket:
                         del self._hits[host]
-                if len(self._hits) >= 10000:
-                    await reject(429, "rate_limited")
-                    return
-            hits = self._hits[key]
-            while hits and hits[0] < now - 60:
-                hits.popleft()
-            if len(hits) >= self.limit:
-                blocked = True
-            else:
-                hits.append(now)
-                blocked = False
-            # Prevent unbounded growth of idle client tracking.
-            if len(self._hits) > 10000:
-                for host in list(self._hits):
-                    if not self._hits[host] or self._hits[host][-1] < now - 60:
-                        del self._hits[host]
-        if blocked:
+                capacity_exhausted = len(self._hits) >= 10000
+            if not capacity_exhausted:
+                hits = self._hits[key]
+                while hits and hits[0] < now - 60:
+                    hits.popleft()
+                if len(hits) >= self.limit:
+                    blocked = True
+                else:
+                    hits.append(now)
+                # Prevent unbounded growth of idle client tracking.
+                if len(self._hits) > 10000:
+                    for host in list(self._hits):
+                        if not self._hits[host] or self._hits[host][-1] < now - 60:
+                            del self._hits[host]
+        # Never perform network I/O while holding the shared rate-limit lock.
+        if capacity_exhausted or blocked:
             await reject(429, "rate_limited")
             return
 

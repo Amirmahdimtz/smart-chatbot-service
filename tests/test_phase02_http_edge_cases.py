@@ -86,3 +86,67 @@ def test_body_replay_preserves_payload_for_standard_post():
     assert statuses == [200]
     assert called
     assert received == [{"type": "http.request", "body": b"abcd", "more_body": False}]
+
+
+def test_malformed_content_length_values_are_rejected():
+    invalid_values = (b"+3", b"-3", b" 3", b"3 ", b"3, 3", b"")
+    for value in invalid_values:
+        statuses, called, received = asyncio.run(
+            _exercise_async([], method="POST", headers=[(b"content-length", value)])
+        )
+        assert statuses == [400]
+        assert not called
+        assert not received
+
+
+def test_full_rate_limit_cache_does_not_hold_lock_during_slow_rejection():
+    import time
+    from collections import defaultdict, deque
+
+    async def exercise():
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def upstream(scope, receive, send):
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.body", "body": b""})
+
+        guard = HttpSecurityMiddleware(upstream, max_bytes=8, rate_per_minute=2, timeout=1)
+        guard._hits = defaultdict(deque, {f"client-{i}": deque([time.monotonic()]) for i in range(10000)})
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def slow_send(message):
+            if message["type"] == "http.response.start":
+                started.set()
+                await release.wait()
+
+        async def normal_send(message):
+            pass
+
+        async def rejected():
+            await guard(
+                _scope() | {"client": ("unknown", 1234)},
+                receive,
+                slow_send,
+            )
+
+        first = asyncio.create_task(rejected())
+        try:
+            await asyncio.wait_for(started.wait(), timeout=1)
+            # A slow client's 429 response must not block another client's
+            # normal request from entering the rate limiter.
+            await asyncio.wait_for(
+                guard(
+                    _scope() | {"client": ("client-0", 1234)},
+                    receive,
+                    normal_send,
+                ),
+                timeout=0.5,
+            )
+        finally:
+            release.set()
+            await first
+
+    asyncio.run(exercise())

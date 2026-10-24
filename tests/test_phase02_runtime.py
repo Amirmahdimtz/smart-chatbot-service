@@ -217,3 +217,13 @@ def test_vault_configuration_fails_closed(monkeypatch):
     monkeypatch.delenv("SCB_VAULT_TOKEN", raising=False)
     with pytest.raises(ConfigurationError):
         create_app()
+
+
+def test_duplicate_authorization_headers_are_rejected(client):
+    http, token, _ = client
+    auth = "Bearer " + token(permissions=["observability:read"])
+    response = http.get(
+        "/api/v1/health_check/metrics",
+        headers=[("Authorization", auth), ("Authorization", "Bearer invalid")],
+    )
+    assert response.status_code == 400

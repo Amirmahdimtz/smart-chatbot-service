@@ -24,6 +24,13 @@ class RequestAuthenticationMiddleware(BaseHTTPMiddleware):
             return JSONResponse({"error": "invalid_identity_context"}, status_code=400)
         if request.url.path in self.public_paths:
             return await call_next(request)
+        # Different proxies may select different values from repeated credentials.
+        # Reject the ambiguous request rather than trusting a particular occurrence.
+        authorization_headers = [
+            value for name, value in request.scope.get("headers", []) if name.lower() == b"authorization"
+        ]
+        if len(authorization_headers) > 1:
+            return JSONResponse({"error": "bad_request"}, status_code=400)
         authorization = request.headers.get("authorization", "")
         scheme, _, token = authorization.partition(" ")
         if scheme.lower() != "bearer" or not token or token.strip() != token:
