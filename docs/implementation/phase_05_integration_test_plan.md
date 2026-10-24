@@ -8,3 +8,9 @@
 - Migration: two upgrades, `--check`, test-only downgrade/upgrade on exclusively disposable *_test database. Do not execute on organizational DBs.
 - Evidence acceptance: record exact commit SHA, run ID, command, exit status, test counts, skipped count, service version, failure logs and independent review. A mocked dependency does not satisfy real B.
 - C: only deferred verification register entries in Phase18, never requested before Phase18. No technical closure unless A/B critical-path evidence passes.
+
+## CI implementation and mandatory follow-up
+
+Workflow `.github/workflows/phase02-ci.yml` includes a dedicated `ingestion-integration` job with disposable PostgreSQL 16, loopback S3-compatible service and `clamav/clamav:1.4` (preloaded signatures), synthetic-generated per-run object credentials, dedicated subprocess Worker, EICAR test payload and disposable migration reverse/re-upgrade **before test data writes**.
+
+Post-PUT crash/reconciliation, missing S3 object + same-key replay, concurrent claim/lease fencing, dead-letter, cancellation and lease-expiration are now coded and subject to same-head CI acceptance; any CI `skip` is separately counted. Missing multi-process crash DURING malware scan, extended scanner/storage outage and real service restart injection are not to be represented as PASSED until exercised.
