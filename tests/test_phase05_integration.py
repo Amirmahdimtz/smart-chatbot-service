@@ -273,3 +273,96 @@ def test_durable_concurrent_claim_fencing_retry_and_cancellation():
             await db.close_async()
 
     asyncio.run(exercise())
+
+
+def test_real_post_put_crash_recovery_missing_staging_and_lease_expiry():
+    """Reconstruct committed staging after crash; never silently lose an orphaned intent."""
+    _enabled()
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    repo = container.resolve(IngestionRepository)
+    store = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def exercise():
+        import hashlib
+
+        await db.start_async()
+        await store.start_async()
+        try:
+            actor = "synthetic-" + uuid4().hex
+            source = await repo.create_source_async(actor, "internal", "research")
+
+            # Simulates the API process dying after S3 PUT, before durable queue ACK.
+            content = ("crash-after-put-" + uuid4().hex).encode()
+            checksum = hashlib.sha256(content).hexdigest()
+            key = uuid4().hex
+            job, version, fresh = await repo.stage_async(
+                source.id, actor, "internal", "crash.txt", "text/plain",
+                len(content), checksum, key, 2,
+            )
+            assert fresh and job.status == "staging"
+            await store.put_async(version.object_key, content, checksum)
+            async with db.transaction_async() as session:
+                j = await session.get(IngestionJob, job.id)
+                j.created_at = datetime.now(UTC) - timedelta(seconds=35)
+            assert await worker.run_once_async("recovery-worker")
+            recovered = await repo.get_job_owned_async(job.id, actor, "internal")
+            assert recovered[0].status == "queued"
+            assert await worker.run_once_async("recovery-worker")
+            completed = await repo.get_job_owned_async(job.id, actor, "internal")
+            assert completed[0].status == "completed"
+            assert completed[1].state == "awaiting_approval"
+
+            # Simulates a crash after committing the job but before writing the S3 object.
+            missing = ("not-uploaded-" + uuid4().hex).encode()
+            missing_checksum = hashlib.sha256(missing).hexdigest()
+            idem = uuid4().hex
+            lost, lost_version, fresh = await repo.stage_async(
+                source.id, actor, "internal", "missing.txt", "text/plain",
+                len(missing), missing_checksum, idem, 2,
+            )
+            assert fresh
+            async with db.transaction_async() as session:
+                j = await session.get(IngestionJob, lost.id)
+                j.created_at = datetime.now(UTC) - timedelta(seconds=360)
+            assert await worker.run_once_async("recovery-worker")
+            old = await repo.get_job_owned_async(lost.id, actor, "internal")
+            assert old[0].status == "dead"
+            assert old[0].error_code == "staging_abandoned"
+            # Same idempotency key and checksum may safely resume a pre-processing failed upload.
+            resumed, resumable_version, fresh = await repo.stage_async(
+                source.id, actor, "internal", "missing.txt", "text/plain",
+                len(missing), missing_checksum, idem, 2,
+            )
+            assert fresh and resumed.id == lost.id and resumable_version.id == lost_version.id
+            await store.put_async(resumable_version.object_key, missing, missing_checksum)
+            assert await repo.mark_queued_async(resumed.id, actor, "internal")
+            assert await worker.run_once_async("recovery-worker")
+            assert (await repo.get_job_owned_async(resumed.id, actor, "internal"))[0].status == "completed"
+
+            # A crashed final-attempt worker cannot be claimed for an unbounded extra attempt.
+            third = ("lease-expiration-" + uuid4().hex).encode()
+            third_checksum = hashlib.sha256(third).hexdigest()
+            final_job, final_version, _ = await repo.stage_async(
+                source.id, actor, "internal", "lease.txt", "text/plain",
+                len(third), third_checksum, uuid4().hex, 1,
+            )
+            await store.put_async(final_version.object_key, third, third_checksum)
+            assert await repo.mark_queued_async(final_job.id, actor, "internal")
+            claim = await repo.claim_async("crashed-worker", "internal", 45)
+            assert claim[0] == final_job.id
+            async with db.transaction_async() as session:
+                j = await session.get(IngestionJob, final_job.id)
+                j.lease_expires_at = datetime.now(UTC) - timedelta(seconds=2)
+            assert await worker.run_once_async("recovery-worker")
+            assert not await repo.finish_async(final_job.id, claim[1], True)
+            final = await repo.get_job_owned_async(final_job.id, actor, "internal")
+            assert final[0].status == "dead"
+            assert final[0].error_code == "lease_expired"
+            assert final[1].state == "failed"
+        finally:
+            await store.close_async()
+            await db.close_async()
+
+    asyncio.run(exercise())
