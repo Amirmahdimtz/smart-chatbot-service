@@ -136,7 +136,7 @@ jobs:
       SCB_INGESTION_ENABLED: 'true'
       SCB_INGESTION_S3_URL: http://127.0.0.1:9000
       SCB_INGESTION_S3_BUCKET: scb-quarantine
-      SCB_PHASE05_TEST_S3_IMAGE: chrislusf/seaweedfs@sha256:e67e8c385484120b78bff47ba5f4debbca47fbd27ed1a39f016f47e8baea615b
+      SCB_PHASE05_TEST_S3_IMAGE: chrislusf/seaweedfs:4.49
       SCB_PHASE05_TEST_CLAMAV_IMAGE: clamav/clamav@sha256:3bba6dd5ac6663d55b80f86a3126e146612d93b593cc2617188d13f637d91260
       SCB_INGESTION_CLAMD_HOST: 127.0.0.1
       SCB_INGESTION_CLAMD_PORT: '3310'
@@ -161,7 +161,7 @@ jobs:
             -e S3_BUCKET=scb-quarantine \
             -p 127.0.0.1:9000:8333 \
             -v scb-phase05-seaweed-data:/data \
-            chrislusf/seaweedfs@sha256:e67e8c385484120b78bff47ba5f4debbca47fbd27ed1a39f016f47e8baea615b
+            chrislusf/seaweedfs:4.49
           docker run -d --rm --name scb-phase05-clamav \
             -e CLAMAV_NO_FRESHCLAMD=true \
             -p 127.0.0.1:3310:3310 clamav/clamav@sha256:3bba6dd5ac6663d55b80f86a3126e146612d93b593cc2617188d13f637d91260
