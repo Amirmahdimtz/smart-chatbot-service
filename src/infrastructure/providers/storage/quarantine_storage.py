@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from io import BytesIO
+from uuid import UUID
 
 import boto3
 from botocore.config import Config as BotoConfig
@@ -28,6 +30,17 @@ class QuarantineStorage:
     def __init__(self, config_reader: ConfigReader):
         self._cfg = config_reader.settings.ingestion
         self._client = None
+
+    @staticmethod
+    def _valid_key(key: str) -> bool:
+        if not isinstance(key, str) or not key.startswith("quarantine/internal/"):
+            return False
+        try:
+            suffix = key.removeprefix("quarantine/internal/")
+            object_id = UUID(suffix)
+            return object_id.version == 4 and str(object_id) == suffix
+        except ValueError:
+            return False
 
     async def start_async(self) -> None:
         if not self._cfg.enabled:
@@ -60,9 +73,17 @@ class QuarantineStorage:
             await asyncio.to_thread(client.close)
 
     async def put_async(self, key: str, contents: bytes, checksum: str) -> None:
-        if self._client is None or not key.startswith("quarantine/internal/"):
-            raise StorageUnavailable("Quarantine storage unavailable")
+        if (
+            self._client is None
+            or not self._valid_key(key)
+            or not isinstance(contents, bytes)
+            or not 1 <= len(contents) <= self._cfg.max_file_bytes
+            or hashlib.sha256(contents).hexdigest() != checksum
+        ):
+            raise StorageUnavailable("Quarantine upload rejected")
         try:
+            # Never overwrite a previously accepted quarantine object, including
+            # an object committed before a request/worker crashed.
             await asyncio.to_thread(
                 self._client.put_object,
                 Bucket=self._cfg.s3_bucket,
@@ -70,7 +91,23 @@ class QuarantineStorage:
                 Body=BytesIO(contents),
                 ContentLength=len(contents),
                 Metadata={"sha256": checksum},
+                IfNoneMatch="*",
             )
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") in {"PreconditionFailed", "412"}:
+                # A prior successful PUT with a lost ACK is a safe replay only
+                # if the existing object's actual bytes still match.
+                try:
+                    existing = await self.get_async(key)
+                except StorageUnavailable:
+                    raise StorageUnavailable("Quarantine object conflict") from None
+                if len(existing) == len(contents) and hashlib.sha256(existing).hexdigest() == checksum:
+                    return
+                raise StorageUnavailable("Quarantine object conflict") from None
+            raise StorageUnavailable("Quarantine storage unavailable") from None
+        except (BotoCoreError, OSError):
+            raise StorageUnavailable("Quarantine storage unavailable") from None
+        try:
             info = await asyncio.to_thread(self._client.head_object, Bucket=self._cfg.s3_bucket, Key=key)
             if info["ContentLength"] != len(contents) or info.get("Metadata", {}).get("sha256") != checksum:
                 raise StorageUnavailable("Storage integrity failed")
@@ -78,7 +115,7 @@ class QuarantineStorage:
             raise StorageUnavailable("Quarantine storage unavailable") from None
 
     async def get_async(self, key: str) -> bytes:
-        if self._client is None or not key.startswith("quarantine/internal/"):
+        if self._client is None or not self._valid_key(key):
             raise StorageUnavailable("Quarantine storage unavailable")
 
         def read_bounded():
