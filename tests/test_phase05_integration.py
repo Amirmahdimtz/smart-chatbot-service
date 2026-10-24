@@ -216,6 +216,44 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
         process.wait(timeout=10)
 
 
+
+def test_actual_s3_gateway_rejects_invalid_and_unsigned_credentials():
+    """A real S3 gateway must fail closed, unlike an unauthenticated mock."""
+    _enabled()
+    import boto3
+    from botocore import UNSIGNED
+    from botocore.config import Config as BotoConfig
+    from botocore.exceptions import ClientError
+
+    endpoint = os.environ["SCB_INGESTION_S3_URL"]
+    bucket = os.environ["SCB_INGESTION_S3_BUCKET"]
+    # Even a healthy S3 service must not grant reads to an unknown key.
+    bad = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id="invalid-ci-key",
+        aws_secret_access_key="invalid-ci-secret",
+        config=BotoConfig(s3={"addressing_style": "path"}, connect_timeout=3, read_timeout=3),
+    )
+    try:
+        with pytest.raises(ClientError) as invalid:
+            bad.head_bucket(Bucket=bucket)
+        assert invalid.value.response["ResponseMetadata"]["HTTPStatusCode"] in {401, 403}
+    finally:
+        bad.close()
+
+    anonymous = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        config=BotoConfig(signature_version=UNSIGNED, s3={"addressing_style": "path"}, connect_timeout=3, read_timeout=3),
+    )
+    try:
+        with pytest.raises(ClientError) as unsigned:
+            anonymous.get_object(Bucket=bucket, Key="quarantine/internal/" + str(uuid4()))
+        assert unsigned.value.response["ResponseMetadata"]["HTTPStatusCode"] in {401, 403}
+    finally:
+        anonymous.close()
+
 def test_real_scanner_and_quarantine_storage():
     _enabled()
     from src.infrastructure.providers.storage.quarantine_storage import StorageUnavailable
