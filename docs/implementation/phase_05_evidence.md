@@ -21,3 +21,15 @@ Final same-SHA full CI after recovery improvements; nontrivial failure-injection
 `P18-P05-C01`–`P18-P05-C08` each `DEFERRED_TO_PHASE_18`. No final organization IdP/Vault, public/internal network enforcement, load, Soak, HA/DR, object-storage enterprise restore/retention or UAT evidence exists. D-07/D-08 are not approved.
 
 **Technical DoD Status:** PENDING. **Phase Status:** IN_PROGRESS / cannot close until final evidence and independent review. **Production Release Status:** NOT_READY.
+
+## Extended source-matched Group A/B evidence, 2026-10-24
+
+- Source commit: bf6137dc64761ba2120c79128d630c12ed8e9b49; CI: https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40098047270 . All six jobs passed on this commit, before this documentation-only revision.
+- Tests A Executed + Actual Results: general pytest 74 passed, 14 skipped, one third-party deprecation warning; Python compile and Phase01 validators PASS; Ruff check and format PASS; strict pip-audit found no known vulnerabilities; SBOM generated; Docker build and secret scan PASS.
+- Tests B Executed + Actual Results: isolated real S3-compatible/ClamAV/PostgreSQL integration 7 passed, one warning; independent Worker OS kill and lease reclaim, scanner TCP outage/recovery, real EICAR rejection, idempotency and conditional S3 writes, tamper rejection, pagination/authorization and multipart negatives. PostgreSQL regression 4 passed; Qdrant regression 9 passed (six warnings). Disposable Alembic repeated upgrade, drift check and test-only reverse/upgrade PASS. No organization On-Prem service used.
+- Tests A/B Required but Missing: real container stop/restart injection for S3, ClamAV and PostgreSQL while in-flight jobs are active; reviewed integrity/provenance and immutable digest for the community CI S3 image; accountable independent security/architecture verification and final sign-off. They are NOT_RUN, not waived or passed.
+- Tests C Deferred to Phase 18: organization data policy/identity, physical isolation, storage backup/restore, enterprise scanner and rotation, HA/DR, capacity/load/soak and final security/UAT. All remain DEFERRED_TO_PHASE_18, not passed.
+- Phase 18 Verification Register IDs: P18-P05-C01, P18-P05-C02, P18-P05-C03, P18-P05-C04, P18-P05-C05, P18-P05-C06, P18-P05-C07, P18-P05-C08.
+- Technical DoD Status: PENDING remaining A/B and independent technical acceptance. Phase Status Before/After: IN_PROGRESS -> IN_PROGRESS (original NOT_STARTED -> IN_PROGRESS is recorded). Production Release Status: NOT_READY. D-07/D-08 remain BLOCKED_DECISION for real data; Phase15 Agent remains BLOCKED_EXTERNAL.
+
+General test skips are not reclassified as passes. Real integration evidence comes separately from the named B jobs. Historical failed CI runs remain failures; this later successful source-matched result supersedes only their outstanding technical regressions.

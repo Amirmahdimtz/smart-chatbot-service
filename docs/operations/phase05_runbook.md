@@ -26,3 +26,7 @@ Status: development-only under ADR-0008; no organizational or production infrast
 ## Open operational constraints
 
 D-07/D-08 policy, real retention/purge, object-store vendor trust, organization network and rate capacity are unapproved. No HR/PII import, organization publishing or production public upload.
+
+## Security and recovery amendment
+
+Knowledge routes are not mounted when ingestion is disabled. TXT/PDF MIME type and extension must agree; accepted bytes are size/signature validated. Every object key is a UUIDv4 under the quarantine/internal namespace. S3 PutObject uses If-None-Match conditional creation; only the same actual byte content may be replayed after lost acknowledgement, no app-provider overwrite is allowed. A different idempotency key with identical source/checksum yields 409. Scanner outage or untrusted daemon response never yields approval. The source-matched CI above demonstrates Worker crash after lease commit, but not full container outages for all dependencies. No real data, physical network or enterprise restore is authorized in this phase.

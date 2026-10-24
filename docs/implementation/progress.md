@@ -133,3 +133,7 @@ Owner's explicit command starts Phase 04 under ADR-0007 from verified main SHA `
 - **Tests A/B Required but Missing:** final same-SHA full all-job green after crash-recovery changes, negative API malformed multipart and dependency outage/timeout failure-injection evidence, independent technical review, source S3 mirror trust assessment. Do not mark missing/unexecuted tests passed.
 - **Tests C deferred:** `P18-P05-C01` through `P18-P05-C08`, each `DEFERRED_TO_PHASE_18` with owner roles/evidence; never run before Phase 18.
 - **Phase status Before / After:** `NOT_STARTED → IN_PROGRESS`; Technical DoD pending (no signed independent acceptance). **Production Release Status: NOT_READY**; Agent Phase15 `BLOCKED_EXTERNAL`; D-07/D-08 `BLOCKED_DECISION`; Phase06 remains `NOT_STARTED`.
+
+## Phase 05 evidence follow-up (2026-10-24)
+
+CI 40098047270 on bf6137dc64761ba2120c79128d630c12ed8e9b49: six of six jobs passed. General A tests 74 passed/14 skipped; real B ingestion seven passed, PostgreSQL four passed, Qdrant nine passed; Ruff/compile/validators/strict pip-audit/SBOM/secret scan and Docker succeeded. Group A/B still require actual isolated dependency container stop/restart, community test S3 image provenance review and independent technical/security sign-off. Group C P18-P05-C01 through P18-P05-C08 remain DEFERRED_TO_PHASE_18. Phase05 before/after: IN_PROGRESS -> IN_PROGRESS, Technical DoD PENDING, Production NOT_READY. Details: phase_05_evidence.md. No prior phase status changed.
