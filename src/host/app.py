@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 
 from src.application.web import mount_controllers
 from src.core.services.security.security_service import PermissionDenied
+from src.infrastructure.context.sql_db.psql_dbcontext import PsqlDbContext
 from src.infrastructure.context.vault.vault_service import VaultService
 from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.observability.telemetry import HttpMetrics, SafeJsonFormatter, TelemetryMiddleware
@@ -26,12 +27,15 @@ def create_app() -> FastAPI:
     config = container.resolve(ConfigReader)
     settings = config.settings
     validator = container.resolve(TokenValidator)
+    database = container.resolve(PsqlDbContext) if settings.database.enabled else None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.started = False
         try:
             await validator.open_async()
+            if database is not None:
+                await database.start_async()
             if settings.vaulthc.enabled:
                 await container.resolve(VaultService).check_async()
             if settings.auth.jwks_url:
@@ -43,7 +47,11 @@ def create_app() -> FastAPI:
             yield
         finally:
             app.state.started = False
-            await validator.close_async()
+            try:
+                if database is not None:
+                    await database.close_async()
+            finally:
+                await validator.close_async()
 
     app = FastAPI(
         title="Smart Chatbot Service",

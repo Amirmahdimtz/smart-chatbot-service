@@ -49,6 +49,19 @@ class VaultSettings(StrictModel):
     startup_check_path: str | None = None
 
 
+class DatabaseSettings(StrictModel):
+    enabled: bool = False
+    url: str | None = None
+    vault_secret_path: str | None = None
+    tls_mode: Literal["disable", "verify-full"] = "disable"
+    tls_ca_file: str | None = None
+    pool_size: int = Field(default=5, ge=1, le=100)
+    max_overflow: int = Field(default=5, ge=0, le=100)
+    pool_timeout_seconds: float = Field(default=10, gt=0, le=120)
+    connect_timeout_seconds: float = Field(default=5, gt=0, le=60)
+    statement_timeout_ms: int = Field(default=30000, ge=1000, le=300000)
+
+
 class Settings(StrictModel):
     environment: Literal["development", "integration", "staging", "production"]
     deployment_zone: Literal["public", "internal"]
@@ -56,9 +69,33 @@ class Settings(StrictModel):
     server: ServerSettings
     auth: AuthSettings
     vaulthc: VaultSettings
+    database: DatabaseSettings = DatabaseSettings()
 
     @model_validator(mode="after")
     def validate_security(self):
+        db = self.database
+        if db.enabled:
+            if bool(db.url) == bool(db.vault_secret_path):
+                raise ValueError("Exactly one database credential source is required")
+            if db.vault_secret_path and (
+                not self.vaulthc.enabled
+                or db.vault_secret_path.startswith("/")
+                or ".." in db.vault_secret_path.split("/")
+            ):
+                raise ValueError("Invalid database Vault integration")
+            if db.url:
+                parts = urlparse(db.url)
+                if (
+                    parts.scheme != "postgresql+asyncpg"
+                    or not parts.hostname
+                    or not parts.username
+                    or parts.password is None
+                    or not parts.path.strip("/")
+                    or parts.query
+                ):
+                    raise ValueError("Invalid database URL")
+            if self.environment != "development" and db.tls_mode != "verify-full":
+                raise ValueError("Database TLS verification required")
         a = self.auth
         values = (a.jwks_url, a.issuer, a.audience)
         if any(values) and not all(values):
@@ -127,6 +164,20 @@ class ConfigReader:
             ):
                 if name in os.environ:
                     vault[field] = os.environ[name]
+            database = data.setdefault("database", {})
+            flag = os.environ.get("SCB_DATABASE_ENABLED")
+            if flag is not None:
+                if flag.lower() not in {"true", "false"}:
+                    raise ValueError("Invalid database enable flag")
+                database["enabled"] = flag.lower() == "true"
+            for name, field in (
+                ("SCB_DATABASE_URL", "url"),
+                ("SCB_DATABASE_VAULT_PATH", "vault_secret_path"),
+                ("SCB_DATABASE_TLS_MODE", "tls_mode"),
+                ("SCB_DATABASE_TLS_CA_FILE", "tls_ca_file"),
+            ):
+                if name in os.environ:
+                    database[field] = os.environ[name]
             self.settings = Settings.model_validate(data)
         except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError):
             raise ConfigurationError() from None
