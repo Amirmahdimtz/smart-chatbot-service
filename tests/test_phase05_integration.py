@@ -218,6 +218,7 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
 def test_real_scanner_and_quarantine_storage():
     _enabled()
     from src.infrastructure.providers.storage.quarantine_storage import StorageUnavailable
+
     container = bootstrap_di()
     scanner = container.resolve(ClamAvScanner)
     storage = container.resolve(QuarantineStorage)
