@@ -102,9 +102,11 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                 if prior.checksum_sha256 != checksum:
                     raise ValueError("Idempotency key conflict")
                 version = await session.get(DocumentVersion, prior.version_id)
-                if prior.status == "dead" and prior.attempts == 0 and prior.error_code in {
-                    "storage_unavailable", "staging_abandoned"
-                }:
+                if (
+                    prior.status == "dead"
+                    and prior.attempts == 0
+                    and prior.error_code in {"storage_unavailable", "staging_abandoned"}
+                ):
                     prior.status, prior.error_code, version.state = "staging", None, "draft"
                     self._audit(session, prior, source.id, scope, actor, "staging_retried")
                     return prior, version, True
@@ -118,9 +120,11 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             )
             if repeated:
                 version = await session.get(DocumentVersion, repeated.version_id)
-                if repeated.status == "dead" and repeated.attempts == 0 and repeated.error_code in {
-                    "storage_unavailable", "staging_abandoned"
-                }:
+                if (
+                    repeated.status == "dead"
+                    and repeated.attempts == 0
+                    and repeated.error_code in {"storage_unavailable", "staging_abandoned"}
+                ):
                     repeated.status, repeated.error_code, version.state = "staging", None, "draft"
                     self._audit(session, repeated, source.id, scope, actor, "staging_retried")
                     return repeated, version, True

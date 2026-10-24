@@ -298,8 +298,15 @@ def test_real_post_put_crash_recovery_missing_staging_and_lease_expiry():
             checksum = hashlib.sha256(content).hexdigest()
             key = uuid4().hex
             job, version, fresh = await repo.stage_async(
-                source.id, actor, "internal", "crash.txt", "text/plain",
-                len(content), checksum, key, 2,
+                source.id,
+                actor,
+                "internal",
+                "crash.txt",
+                "text/plain",
+                len(content),
+                checksum,
+                key,
+                2,
             )
             assert fresh and job.status == "staging"
             await store.put_async(version.object_key, content, checksum)
@@ -319,8 +326,15 @@ def test_real_post_put_crash_recovery_missing_staging_and_lease_expiry():
             missing_checksum = hashlib.sha256(missing).hexdigest()
             idem = uuid4().hex
             lost, lost_version, fresh = await repo.stage_async(
-                source.id, actor, "internal", "missing.txt", "text/plain",
-                len(missing), missing_checksum, idem, 2,
+                source.id,
+                actor,
+                "internal",
+                "missing.txt",
+                "text/plain",
+                len(missing),
+                missing_checksum,
+                idem,
+                2,
             )
             assert fresh
             async with db.transaction_async() as session:
@@ -332,8 +346,15 @@ def test_real_post_put_crash_recovery_missing_staging_and_lease_expiry():
             assert old[0].error_code == "staging_abandoned"
             # Same idempotency key and checksum may safely resume a pre-processing failed upload.
             resumed, resumable_version, fresh = await repo.stage_async(
-                source.id, actor, "internal", "missing.txt", "text/plain",
-                len(missing), missing_checksum, idem, 2,
+                source.id,
+                actor,
+                "internal",
+                "missing.txt",
+                "text/plain",
+                len(missing),
+                missing_checksum,
+                idem,
+                2,
             )
             assert fresh and resumed.id == lost.id and resumable_version.id == lost_version.id
             await store.put_async(resumable_version.object_key, missing, missing_checksum)
@@ -345,8 +366,15 @@ def test_real_post_put_crash_recovery_missing_staging_and_lease_expiry():
             third = ("lease-expiration-" + uuid4().hex).encode()
             third_checksum = hashlib.sha256(third).hexdigest()
             final_job, final_version, _ = await repo.stage_async(
-                source.id, actor, "internal", "lease.txt", "text/plain",
-                len(third), third_checksum, uuid4().hex, 1,
+                source.id,
+                actor,
+                "internal",
+                "lease.txt",
+                "text/plain",
+                len(third),
+                third_checksum,
+                uuid4().hex,
+                1,
             )
             await store.put_async(final_version.object_key, third, third_checksum)
             assert await repo.mark_queued_async(final_job.id, actor, "internal")
