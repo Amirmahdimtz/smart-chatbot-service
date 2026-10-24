@@ -17,6 +17,10 @@ class StorageUnavailable(RuntimeError):
     pass
 
 
+class StorageMissing(StorageUnavailable):
+    pass
+
+
 @inject
 class QuarantineStorage:
     __di_singleton__ = True
@@ -90,5 +94,9 @@ class QuarantineStorage:
 
         try:
             return await asyncio.to_thread(read_bounded)
-        except (ClientError, BotoCoreError, OSError):
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") in {"404", "NoSuchKey", "NotFound"}:
+                raise StorageMissing("Quarantine object missing") from None
+            raise StorageUnavailable("Quarantine storage unavailable") from None
+        except (BotoCoreError, OSError):
             raise StorageUnavailable("Quarantine storage unavailable") from None
