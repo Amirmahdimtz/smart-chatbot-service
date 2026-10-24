@@ -20,6 +20,8 @@ jobs:
       - run: python -O scripts/validate_phase01.py
       - run: python -m pytest -q
       - run: ruff check src tests
+      - name: Formatter diff for audit
+        run: ruff format --diff src tests || true
       - run: ruff format --check src tests
       - run: pip-audit -r requirements.txt --strict
       - run: cyclonedx-py environment --output-format JSON --output-file sbom.json
