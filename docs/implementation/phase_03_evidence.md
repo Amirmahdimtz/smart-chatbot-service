@@ -63,3 +63,13 @@ This file is not a PASS claim. After each real execution record source SHA, runn
 - No Windows `--downgrade-test-only` was run. Reverse/re-upgrade was verified **only in ephemeral GitHub CI**, not on the workstation. No Windows backup/restore drill was evidenced.
 - Follow-ups: review local outbound HTTPS/PyPI connectivity and rerun strict vulnerability audit; capture a fresh successful `pg_isready` before migrations on future test-container starts (bounded readiness loop added to the runbook); keep credentials out of logs.
 - Phase 03 **remains `IMPLEMENTED_AWAITING_VERIFICATION`**: organization PostgreSQL with independent Public/Internal credentials, TLS/roles, backup/PITR restore, load/HA/DR, policy D-07/D-08 and sign-offs are **NOT_RUN / AWAITING_APPROVAL**. No `PHASE_03_CLOSED` marker.
+
+## Subsequent Windows dependency audit verification — 2026-10-24
+
+- **Evidence type:** owner-reported PowerShell output from the same `smart-chatbot-service` checkout at source SHA `61ad27287b34693314466d2727d9e676f1d0cb08` (before later documentation-only commits). Not independently executed on the owner's workstation by the assistant.
+- `Test-Path .\\.venv\\Scripts\\pip-audit.exe`: **`True`**; the dependency security scanner was present.
+- `.\\.venv\\Scripts\\python.exe -m pip_audit -r requirements.txt --strict --timeout 60`: **`No known vulnerabilities found`**. No exception was shown in this rerun. Shell exit code was **not separately captured** in the transcript.
+- Supplemental owner-supplied `python -m pip install -r requirements-dev.txt` output listed the pinned project/runtime/dev dependencies as already satisfied; no installation failure was present.
+- **Disposition:** prior Windows `RemoteDisconnected` result remains correctly recorded as a failed *earlier attempt*, but the **subsequent completed local strict audit is PASS (no known vulnerabilities reported)** on the same source and requirements. This is bounded to the advisory database and execution time; it does not prove absence of all security risks.
+- Previous GitHub CI [run 40084606410](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40084606410) on documentation commit `6bc8caa2d062003d4036b8ca3abdcd4b0f492da7` independently passed all four jobs, including its own dependency audit. No application/dependency versions were changed by that documentation commit.
+- **Outstanding gate remains unchanged:** organizational Public/Internal PostgreSQL, production-grade role/TLS isolation, policy sign-offs, backup/PITR restore, HA/load/DR and authorized environment verification. Status is still `IMPLEMENTED_AWAITING_VERIFICATION`, not `CLOSED`.
