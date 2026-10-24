@@ -5,16 +5,24 @@ from prometheus_client import CONTENT_TYPE_LATEST
 
 from src.core.services.security.security_service import SecurityService
 from src.infrastructure.di.inject import inject
+from src.infrastructure.providers.qdrant.qdrant_provider import QdrantProvider, QdrantUnavailable
 from src.infrastructure.security.token_validator import TokenValidator
 from src.infrastructure.utils.config_reader import ConfigReader
 
 
 @inject
 class HealthCheckController:
-    def __init__(self, security_service: SecurityService, token_validator: TokenValidator, config_reader: ConfigReader):
+    def __init__(
+        self,
+        security_service: SecurityService,
+        token_validator: TokenValidator,
+        config_reader: ConfigReader,
+        qdrant_provider: QdrantProvider,
+    ):
         self._security = security_service
         self._validator = token_validator
         self._cfg = config_reader
+        self._qdrant = qdrant_provider
 
     def api(self) -> APIRouter:
         router = APIRouter(tags=["Health"])
@@ -27,6 +35,11 @@ class HealthCheckController:
         async def ready_async(request: Request):
             if not request.app.state.started or not self._validator.ready:
                 raise HTTPException(status_code=503, detail="service_unavailable")
+            if self._cfg.settings.qdrant.enabled:
+                try:
+                    await self._qdrant.check_async()
+                except QdrantUnavailable:
+                    raise HTTPException(status_code=503, detail="service_unavailable") from None
             return {"status": "ready"}
 
         @router.get("/startup", include_in_schema=False)
