@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from uuid import uuid4
 
 import httpx
@@ -730,3 +731,53 @@ def test_killed_independent_worker_reclaims_expired_real_db_lease():
             await db.close_async()
 
     asyncio.run(exercise())
+
+
+def test_real_digital_pdf_upload_scan_and_approval_wait(client):
+    """Digital PDF is staged and scanned by real services without publishing."""
+    from pypdf import PdfWriter
+
+    http, token, _ = client
+    owner = "synthetic-" + uuid4().hex
+    bearer = {"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"])}
+    source_response = http.post("/api/v1/knowledge/sources", headers=bearer, json={"domain": "research"})
+    assert source_response.status_code == 201
+    source_id = source_response.json()["id"]
+    pdf = BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=180, height=180)
+    writer.write(pdf)
+    payload = pdf.getvalue()
+    uploaded = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": ("synthetic.pdf", payload, "application/pdf")},
+    )
+    assert uploaded.status_code == 202, uploaded.text
+    job_id = uploaded.json()["id"]
+    version_id = uploaded.json()["version_id"]
+
+    db_container = bootstrap_di()
+    db = db_container.resolve(PsqlDbContext)
+    storage = db_container.resolve(QuarantineStorage)
+    worker = db_container.resolve(IngestionWorkerService)
+
+    async def process():
+        await db.start_async()
+        try:
+            await storage.start_async()
+            try:
+                assert await worker.run_once_async("pdf-real-scanner")
+            finally:
+                await storage.close_async()
+        finally:
+            await db.close_async()
+
+    asyncio.run(process())
+    status = http.get(f"/api/v1/knowledge/jobs/{job_id}", headers=bearer)
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed"
+    version = http.get(f"/api/v1/knowledge/versions/{version_id}", headers=bearer)
+    assert version.status_code == 200
+    assert version.json()["state"] == "awaiting_approval"
+    assert version.json()["content_type"] == "application/pdf"
