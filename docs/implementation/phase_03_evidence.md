@@ -20,7 +20,7 @@ This file is not a PASS claim. After each real execution record source SHA, runn
 - Actual PostgreSQL: empty-db upgrade; repeat upgrade; Alembic drift check; synthetic data constraints; scope/owner denied; concurrent sequence; duplicate idempotency; optimistic conflict; FK constraints; rollback.
 - Follow-up owner Windows evidence of the same or later SHA and disposable database restore.
 - On-prem owner decisions D-07/D-08 and verified physically separate public/internal DB secrets and networking.
-- **No `CLOSED` marker without these gates.**
+- **Historical gate at original drafting:** organization On-Prem was formerly treated as a prerequisite. **Superseded for Phase 01–17 by owner-uploaded Implementation Plan v1.1.0 and ADR-0006**; technical DoD and Group C release evidence must be evaluated separately.
 
 ## Verified GitHub execution — 2026-10-24
 
@@ -73,3 +73,12 @@ This file is not a PASS claim. After each real execution record source SHA, runn
 - **Disposition:** prior Windows `RemoteDisconnected` result remains correctly recorded as a failed *earlier attempt*, but the **subsequent completed local strict audit is PASS (no known vulnerabilities reported)** on the same source and requirements. This is bounded to the advisory database and execution time; it does not prove absence of all security risks.
 - Previous GitHub CI [run 40084606410](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40084606410) on documentation commit `6bc8caa2d062003d4036b8ca3abdcd4b0f492da7` independently passed all four jobs, including its own dependency audit. No application/dependency versions were changed by that documentation commit.
 - **Outstanding gate remains unchanged:** organizational Public/Internal PostgreSQL, production-grade role/TLS isolation, policy sign-offs, backup/PITR restore, HA/load/DR and authorized environment verification. Status is still `IMPLEMENTED_AWAITING_VERIFICATION`, not `CLOSED`.
+
+## Post-review technical closure evidence (2026-10-24)
+
+**Source** `33c215945676c9d84bca7b6511f059a7b3a6c171`, [CI 40087999023](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40087999023): **4/4 jobs successful**. Generic `verify`: **39 passed, 1 skipped** (DB-only test intentionally runs in dedicated PostgreSQL job), 1 known deprecation warning. Real PostgreSQL 16.15 `postgres-integration`: **4 passed**, migration upgrade/repeat/drift, test-only reverse/re-upgrade and drift PASS; Ruff lint/format, strict `pip-audit` (`No known vulnerabilities found`), SBOM, Docker and secret-scan PASS. The prior import-order CI failure is recorded and was corrected before this run.
+- Source review found and corrected malformed PostgreSQL URL exceptions potentially exposing unredacted low-level parser details; added negative regression, and ensured engine creation failures also become redacted `DatabaseUnavailable`. Added archived-conversation write-denial integration assertion.
+- `Tests A/B Required but Missing`: **none essential for approved Phase 03 structural/synthetic scope**. Real data retention/IdP policy functionality is unapproved and not exposed; no completeness claim for those later features.
+- `Tests C Deferred to Phase 18`: `P18-P03-C01`, `P18-P03-C02`, `P18-P03-C03`, `P18-P03-C04`, `P18-P03-C05`, `P18-P03-C06` — all `DEFERRED_TO_PHASE_18`, zero executed/zero passed. [Register](phase_18_verification_register.md).
+- Independent review and authorization scope: [Phase 03 Technical Acceptance](phase_03_technical_acceptance.md) and [ADR-0006](../decisions/ADR-0006-phase-closure-verification-v1_1_0.md).
+- `Technical DoD Status`: **APPROVED FOR SYNTHETIC STRUCTURAL FOUNDATION**. `Phase Status Before/After`: `IMPLEMENTED_AWAITING_VERIFICATION` → **`CLOSED` (technical only)**. `Production Release Status`: **NOT_READY**. D-07/D-08 organizational data approvals stay open.
