@@ -123,6 +123,47 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
         == job["id"]
     )
 
+    # A second idempotency key for identical bytes must be rejected instead of
+    # silently aliasing to a job without remembering that alternative key.
+    collision = http.post(
+        f"/api/v1/knowledge/sources/{source}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": ("paper.txt", payload, "text/plain")},
+    )
+    assert collision.status_code == 409
+    assert collision.json() == {"error": "idempotency_conflict"}
+
+    outsider = {"Authorization": "Bearer " + token("synthetic-foreign", ["knowledge:test:ingest"])}
+    assert http.post(
+        f"/api/v1/knowledge/sources/{source}/documents",
+        headers={**outsider, "Idempotency-Key": uuid4().hex},
+        files={"file": ("paper.txt", b"foreign", "text/plain")},
+    ).status_code == 403
+
+    for filename, body, mime, expected in (
+        ("../traversal.txt", b"safe", "text/plain", 422),
+        ("not-a-pdf.pdf", b"%PDF-broken", "application/pdf", 422),
+        ("archive.zip", b"PK\\x03\\x04foo", "application/zip", 415),
+        ("huge.txt", b"a" * 1048577, "text/plain", 413),
+    ):
+        rejected = http.post(
+            f"/api/v1/knowledge/sources/{source}/documents",
+            headers={**bearer, "Idempotency-Key": uuid4().hex},
+            files={"file": (filename, body, mime)},
+        )
+        assert rejected.status_code == expected, (filename, rejected.status_code, rejected.text)
+    assert http.post(
+        f"/api/v1/knowledge/sources/{source}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex, "x-user-id": "synthetic-victim"},
+        files={"file": ("ok.txt", b"safe", "text/plain")},
+    ).status_code == 400
+    malformed = http.post(
+        f"/api/v1/knowledge/sources/{source}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex, "content-type": "multipart/form-data; boundary=broken"},
+        content=b"invalid multipart payload",
+    )
+    assert malformed.status_code in {400, 422}
+
     # Real OS process; no request-loop background queue. Poll the actual persisted job.
     process = subprocess.Popen(
         [sys.executable, "-m", "src.host.ingestion_worker"],
@@ -389,6 +430,77 @@ def test_real_post_put_crash_recovery_missing_staging_and_lease_expiry():
             assert final[0].status == "dead"
             assert final[0].error_code == "lease_expired"
             assert final[1].state == "failed"
+        finally:
+            await store.close_async()
+            await db.close_async()
+
+    asyncio.run(exercise())
+
+
+def test_real_malware_corrupted_object_and_scanner_network_failure():
+    """Real S3 bytes + real ClamAV verdict; none may reach awaiting_approval."""
+    _enabled()
+    import hashlib
+    import socket
+    from types import SimpleNamespace
+
+    from src.infrastructure.providers.scanner.clamav_scanner import ScanUnavailable
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    repo = container.resolve(IngestionRepository)
+    store = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def exercise():
+        await db.start_async()
+        await store.start_async()
+        try:
+            actor = "synthetic-" + uuid4().hex
+            source = await repo.create_source_async(actor, "internal", "research")
+            malware_hash = hashlib.sha256(EICAR).hexdigest()
+            infected, infected_version, created = await repo.stage_async(
+                source.id, actor, "internal", "eicar.txt", "text/plain",
+                len(EICAR), malware_hash, uuid4().hex, 1,
+            )
+            assert created
+            await store.put_async(infected_version.object_key, EICAR, malware_hash)
+            assert await repo.mark_queued_async(infected.id, actor, "internal")
+            assert await worker.run_once_async("scanner-real")
+            scanned = await repo.get_job_owned_async(infected.id, actor, "internal")
+            assert scanned[0].status == "dead"
+            assert scanned[0].error_code == "malware_detected"
+            assert scanned[1].state == "failed"
+
+            original = ("expected-" + uuid4().hex).encode()
+            changed = ("modified-" + uuid4().hex).encode()
+            queued, version, _ = await repo.stage_async(
+                source.id, actor, "internal", "changed.txt", "text/plain",
+                len(original), hashlib.sha256(original).hexdigest(), uuid4().hex, 1,
+            )
+            await store.put_async(version.object_key, original, hashlib.sha256(original).hexdigest())
+            assert await repo.mark_queued_async(queued.id, actor, "internal")
+            # Simulate a malicious or accidental object overwrite after HEAD verification.
+            await store.put_async(version.object_key, changed, hashlib.sha256(changed).hexdigest())
+            assert await worker.run_once_async("tamper-detection")
+            tampered = await repo.get_job_owned_async(queued.id, actor, "internal")
+            assert tampered[0].status == "dead"
+            assert tampered[0].error_code == "integrity_mismatch"
+            assert tampered[1].state == "failed"
+
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.bind(("127.0.0.1", 0))
+                unused_port = probe.getsockname()[1]
+            cfg = SimpleNamespace(
+                settings=SimpleNamespace(
+                    ingestion=SimpleNamespace(
+                        enabled=True, max_file_bytes=1048576, clamd_host="127.0.0.1",
+                        clamd_port=unused_port, timeout_seconds=0.5,
+                    )
+                )
+            )
+            with pytest.raises(ScanUnavailable):
+                await ClamAvScanner(cfg).scan_async(b"synthetic scan with no daemon")
         finally:
             await store.close_async()
             await db.close_async()
