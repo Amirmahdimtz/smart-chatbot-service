@@ -77,3 +77,9 @@ Phase 03 retains `PHASE_03_IMPLEMENTED_AWAITING_VERIFICATION`: security scan suc
 - **Production Release Status:** **NOT_READY** — Phase 18 tests and official owner approvals are mandatory.
 - **Reviewer:** AI-assisted technical assessor authorized by the owner to review and sign off **technical evidence only**, no impersonation of Security/Privacy/Infrastructure sign-off. [Full rationale and limitations](phase_03_technical_acceptance.md).
 - Phase 01/02 statuses are **unchanged**; Phase 04 is **NOT_STARTED**; new phase initiation requires explicit owner command.
+
+## Phase 04 conditional technical entry gate (2026-10-24)
+
+[ADR-0007](../decisions/ADR-0007-phase04-conditional-development-gate.md) records a **CONDITIONAL_GO_FOR_DEVELOPMENT_ONLY** after independent verification of the `main` source and the Phase 03 technical closure. [CI run 40088290757](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40088290757) completed **4/4 jobs SUCCESS** on the approved Phase 03 closure SHA `ce3def7094bafbd505dd51e4059b285ae7852d09`.
+
+**Phase 04 remains `NOT_STARTED`.** Entry is authorized only for isolated, synthetic-data Qdrant development **after explicit owner instruction**. Phase 01 and Phase 02 remain `IMPLEMENTED_AWAITING_VERIFICATION`, and the exception does not approve their missing owner decisions. Phase 03 remains `CLOSED` (technical). Phase 04 Group A/B must include actual Qdrant Docker/CI Integration; Group C organization infrastructure tests are deferred **only to Phase 18** and must be registered with immutable IDs when Phase 04 is carried out. D-03/D-04 production embedding dimensions/sparse strategy and D-07/D-08 data policy/identity approval remain open. **Production Release Status: NOT_READY.** No Qdrant provider, migrations, test results or Phase 04 CLOSED marker is asserted by the gate review.
