@@ -181,3 +181,22 @@ Source baseline: `main` `b478d984b0037adb4432aed516fbba3e17147c0d`. Remediated s
 **Category B workstation:** the owner already reported **32/32 PASS** on clean checkout `5607c51032ff4828822b04fa155add7fc2a38f07`. The three new regression tests introduced at `ac02b3a42e767bdfc854d01d371713294683d8d3` have **NOT** been reported as run on Windows. Do not attribute the earlier workstation transcript to the new revision.
 
 **Phase 02 formal status:** `IMPLEMENTED_AWAITING_VERIFICATION` throughout this review. Production-equivalent separate Public/Internal credentials, real JWKS/SSO and rotation, Vault, TLS/ingress, actual isolation and forbidden cross-zone probes, authorized metrics, on-prem tracing, load/HA/DR and Security/Operations owner approval remain open. Conditional Phase 03 development-only decision in ADR-0005 remains effective; no Phase 03 implementation has started.
+
+## Windows security audit network timeout after 35-test remediation — 2026-10-24
+
+The project owner submitted a new PowerShell transcript with the following **owner-reported Category B evidence** from a clean `main` checkout at commit `6348cd89b693c48367fa44ecf63ea0068e3f6222` (SHA printed in the same transcript after `git pull --ff-only` and clean `git status --short`):
+
+| Check | Observed owner result |
+|---|---|
+| `git switch main`, `git pull --ff-only`, `git rev-parse HEAD` | PASS; source SHA `6348cd89b693c48367fa44ecf63ea0068e3f6222` |
+| `git status --short` | PASS, no local changes |
+| `.venv/Scripts/python.exe -m pytest -q` | **35 passed, 1 warning in 40.33s** (one existing `StarletteDeprecationWarning` in framework TestClient) |
+| `.venv/Scripts/ruff.exe check src tests` | **PASS**, `All checks passed!` |
+| `.venv/Scripts/ruff.exe format --check src tests` | **PASS**, `17 files already formatted` |
+| `.venv/Scripts/pip-audit.exe -r requirements.txt --strict` | **INCONCLUSIVE — NETWORK READ TIMEOUT**, not a detected vulnerability and not a PASS; `requests.exceptions.ReadTimeout` accessing `pypi.org:443`, socket read timeout 15 seconds |
+
+**Independent Category A evidence:** the exact same commit `6348cd89b693c48367fa44ecf63ea0068e3f6222` had previously passed GitHub Actions [run 40073950447](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40073950447): 3/3 jobs succeeded, 35 pytest passed, Ruff and `pip-audit -r requirements.txt --strict` passed, SBOM artifact uploaded and Docker image built. That CI scan is actual evidence of an advisory lookup at CI execution time; it does **not** convert the timed-out Windows scan into a local PASS.
+
+**Non-destructive remediation instruction:** once network connectivity permits, rerun `./.venv/Scripts/pip-audit.exe -r requirements.txt --strict --timeout 60` (Windows use `.\\.venv\\Scripts\\pip-audit.exe`). The `--timeout` socket option is documented upstream. Preserve the exact output and exit code. If it still times out, test outbound HTTPS access to `pypi.org` and review DNS/proxy/firewall settings without disabling TLS verification. No package upgrade, security exception, or fake offline audit is warranted based only on this timeout.
+
+**Acceptance and gate:** local 35-test regression is PASS; local vulnerability lookup is **NOT_VERIFIED_DUE_TO_NETWORK**; CI vulnerability audit is PASS as of its run. Phase 02 stays `IMPLEMENTED_AWAITING_VERIFICATION`, real on-prem security/IdP/Vault/network owner tests and sign-offs remain outstanding, and the previously documented conditional development-only technical gate for Phase 03 remains unchanged. No Phase 03 implementation started.
