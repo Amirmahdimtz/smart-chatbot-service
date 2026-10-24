@@ -216,7 +216,6 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
         process.wait(timeout=10)
 
 
-
 def test_actual_s3_gateway_rejects_invalid_and_unsigned_credentials():
     """A real S3 gateway must fail closed, unlike an unauthenticated mock."""
     _enabled()
@@ -245,7 +244,9 @@ def test_actual_s3_gateway_rejects_invalid_and_unsigned_credentials():
     anonymous = boto3.client(
         "s3",
         endpoint_url=endpoint,
-        config=BotoConfig(signature_version=UNSIGNED, s3={"addressing_style": "path"}, connect_timeout=3, read_timeout=3),
+        config=BotoConfig(
+            signature_version=UNSIGNED, s3={"addressing_style": "path"}, connect_timeout=3, read_timeout=3
+        ),
     )
     try:
         with pytest.raises(ClientError) as unsigned:
@@ -253,6 +254,7 @@ def test_actual_s3_gateway_rejects_invalid_and_unsigned_credentials():
         assert unsigned.value.response["ResponseMetadata"]["HTTPStatusCode"] in {401, 403}
     finally:
         anonymous.close()
+
 
 def test_real_scanner_and_quarantine_storage():
     _enabled()

@@ -329,12 +329,21 @@ def test_real_s3_container_recreation_preserves_object_and_job():
                 # Docker inherits only the ephemeral test keys with -e NAME.
                 # No credentials or organization data enter test source or logs.
                 _docker(
-                    "run", "-d", "--rm", "--name", "scb-phase05-s3",
-                    "-e", "AWS_ACCESS_KEY_ID",
-                    "-e", "AWS_SECRET_ACCESS_KEY",
-                    "-e", "S3_BUCKET=scb-quarantine",
-                    "-p", "127.0.0.1:9000:8333",
-                    "-v", "scb-phase05-seaweed-data:/data",
+                    "run",
+                    "-d",
+                    "--rm",
+                    "--name",
+                    "scb-phase05-s3",
+                    "-e",
+                    "AWS_ACCESS_KEY_ID",
+                    "-e",
+                    "AWS_SECRET_ACCESS_KEY",
+                    "-e",
+                    "S3_BUCKET=scb-quarantine",
+                    "-p",
+                    "127.0.0.1:9000:8333",
+                    "-v",
+                    "scb-phase05-seaweed-data:/data",
                     image,
                 )
                 restored = await _wait_restored(lambda: store.get_async(version.object_key), (StorageUnavailable,))
@@ -375,9 +384,15 @@ def test_real_clamav_container_recreation_requires_new_scan():
                 assert await repo.mark_queued_async(job.id, owner, "internal")
                 _docker("rm", "-f", "scb-phase05-clamav")
                 _docker(
-                    "run", "-d", "--rm", "--name", "scb-phase05-clamav",
-                    "-e", "CLAMAV_NO_FRESHCLAMD=true",
-                    "-p", "127.0.0.1:3310:3310",
+                    "run",
+                    "-d",
+                    "--rm",
+                    "--name",
+                    "scb-phase05-clamav",
+                    "-e",
+                    "CLAMAV_NO_FRESHCLAMD=true",
+                    "-p",
+                    "127.0.0.1:3310:3310",
                     image,
                 )
                 await _wait_restored(lambda: scanner.scan_async(payload), (ScanUnavailable,))
