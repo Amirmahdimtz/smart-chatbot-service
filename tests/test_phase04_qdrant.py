@@ -124,7 +124,7 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
             other_doc = _record(document_id=doc_denied)
             other_domain = _record(domain="religion", document_id=doc_allowed)
             ids = await provider.upsert_async([good, hidden, other_doc, other_domain])
-            assert len(ids) == 4
+            assert ids == [deterministic_point_id(item, 1) for item in (good, hidden, other_doc, other_domain)]
             assert await provider.upsert_async([good]) == [deterministic_point_id(good, 1)]
             found = await provider.search_async(
                 good.vector,
@@ -133,9 +133,45 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
                 authorized_document_ids=[doc_allowed],
             )
             assert [str(p.id) for p in found] == [deterministic_point_id(good, 1)]
+            # Even malicious or accidentally mis-scoped data in this collection
+            # cannot bypass the Qdrant query-level deployment scope filter.
+            foreign_id = str(uuid4())
+            await provider._client.upsert(
+                collection_name=provider.collection_name,
+                points=[
+                    models.PointStruct(
+                        id=foreign_id,
+                        vector=list(good.vector),
+                        payload={
+                            "document_id": str(doc_allowed),
+                            "domain": "research",
+                            "classification": "synthetic",
+                            "deployment_scope": "internal",
+                            "published": True,
+                        },
+                    )
+                ],
+                wait=True,
+            )
+            assert [
+                str(point.id)
+                for point in await provider.search_async(
+                    good.vector,
+                    domain="research",
+                    authorized_classifications=["synthetic"],
+                    authorized_document_ids=[doc_allowed],
+                )
+            ] == [deterministic_point_id(good, 1)]
             with pytest.raises(QdrantContractError):
                 await provider.search_async(
                     good.vector, domain="research", authorized_classifications=[], authorized_document_ids=[doc_allowed]
+                )
+            with pytest.raises(QdrantContractError):
+                await provider.search_async(
+                    good.vector,
+                    domain="research",
+                    authorized_classifications="synthetic",
+                    authorized_document_ids=[doc_allowed],
                 )
             with pytest.raises(QdrantContractError):
                 await provider.search_async(
@@ -154,7 +190,14 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
                 authorized_classifications=["synthetic"],
                 authorized_document_ids=[aborted.document_id],
             )
-            assert await provider.snapshot_async()
+            manifest = await provider.backup_manifest_async()
+            assert manifest.collection_name == provider.collection_name
+            assert manifest.active_alias_target == provider.collection_name
+            assert manifest.schema_version == 1
+            assert manifest.dimension == 4
+            assert manifest.distance == "Cosine"
+            assert manifest.deployment_zone == "public"
+            assert manifest.snapshot_name.endswith(".snapshot")
             await provider.delete_document_points_async(doc_allowed, domain="research")
             assert not await provider.search_async(
                 good.vector,
@@ -262,5 +305,67 @@ def test_retries_are_bounded_and_no_endpoint_is_exposed(monkeypatch):
             await provider.check_async()
         assert len(calls) == 2
         assert "api-key" not in str(exc.value)
+
+    asyncio.run(exercise())
+
+
+def test_real_qdrant_disposable_snapshot_restore_round_trip(monkeypatch):
+    """Restore source snapshot into a new synthetic collection; no production writes."""
+    provider = _integration_provider(monkeypatch)
+
+    async def exercise():
+        await provider.start_async()
+        try:
+            source_name = await provider.ensure_collection_async()
+            record = _record()
+            await provider.upsert_async([record])
+            before_aliases = await provider._client.get_aliases()
+            manifest = await provider.backup_manifest_async()
+            assert manifest.active_alias_target is None
+            snapshot_name = manifest.snapshot_name
+            assert snapshot_name.endswith(".snapshot")
+            restored_name = f"{provider._cfg.collection_prefix}_public_restore_test"
+            # The source snapshot remains on the disposable Qdrant Docker node.
+            # Qdrant supports file:// paths and SNAPSHOT priority for fresh restores.
+            result = await provider._client.recover_snapshot(
+                collection_name=restored_name,
+                location=f"file:///qdrant/snapshots/{source_name}/{snapshot_name}",
+                priority=models.SnapshotPriority.SNAPSHOT,
+                wait=True,
+            )
+            assert result is True
+            restored = await provider._client.query_points(
+                collection_name=restored_name,
+                query=list(record.vector),
+                query_filter=provider._filter("research", ["synthetic"], [record.document_id]),
+                with_payload=True,
+                limit=10,
+            )
+            assert len(restored.points) == 1
+            assert str(restored.points[0].id) == deterministic_point_id(record, 1)
+            assert restored.points[0].payload["document_version_id"] == str(record.document_version_id)
+            # Collection snapshots do not include aliases. Verify that the
+            # existing alias state remains unchanged; alias backup is separate.
+            after_aliases = await provider._client.get_aliases()
+            assert after_aliases == before_aliases
+        finally:
+            await provider.close_async()
+
+    asyncio.run(exercise())
+
+
+def test_real_qdrant_concurrent_collection_bootstrap(monkeypatch):
+    """Idempotent bootstrap when independent startup tasks race on one collection."""
+    provider = _integration_provider(monkeypatch)
+
+    async def exercise():
+        await provider.start_async()
+        try:
+            expected = provider.collection_name
+            results = await asyncio.gather(*(provider.ensure_collection_async() for _ in range(4)))
+            assert results == [expected] * 4
+            assert (await provider._client.get_collection(expected)).config.params.vectors.size == 4
+        finally:
+            await provider.close_async()
 
     asyncio.run(exercise())
