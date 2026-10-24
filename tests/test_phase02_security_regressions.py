@@ -206,3 +206,38 @@ def test_jwks_outage_after_ttl_fails_closed(identity, monkeypatch):
             await validator.close_async()
 
     asyncio.run(exercise())
+
+
+def test_validator_reinitializes_jwks_client_and_cache_across_app_lifespans(monkeypatch, identity):
+    """A second lifespan must refresh JWKS, not reuse a closed client or stale readiness."""
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("SCB_ENV", "development")
+    monkeypatch.setenv("SCB_ZONE", "public")
+    monkeypatch.setenv("SCB_JWKS_URL", "https://issuer.example.test/jwks")
+    monkeypatch.setenv("SCB_ISSUER", "https://issuer.example.test/")
+    monkeypatch.setenv("SCB_AUDIENCE", "scb-public")
+
+    client_type = httpx.AsyncClient
+    calls = 0
+
+    async def jwks_response(request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json=identity[0])
+
+    def client_factory(*args, **kwargs):
+        return client_type(transport=httpx.MockTransport(jwks_response))
+
+    monkeypatch.setattr("src.infrastructure.security.token_validator.httpx.AsyncClient", client_factory)
+    app = create_app()
+    validator = app.state.container.resolve(TokenValidator)
+
+    for expected_calls in (1, 2):
+        with TestClient(app) as client:
+            assert validator.ready
+            assert not validator._client.is_closed
+            assert client.get("/api/v1/health_check/ready").status_code == 200
+            assert calls == expected_calls
+        assert validator._client.is_closed
+        assert not validator.ready

@@ -48,6 +48,11 @@ class TokenValidator:
     def ready(self) -> bool:
         return bool(self._keys and self._last_refresh and datetime.now(UTC) - self._last_refresh <= self._ttl)
 
+    async def open_async(self) -> None:
+        """Reopen the HTTP client on a new lifespan; closed clients must not be reused."""
+        if self._client.is_closed:
+            self._client = httpx.AsyncClient(timeout=5.0, follow_redirects=False, trust_env=False)
+
     async def refresh_async(self) -> None:
         """Bound refresh attempts across all callers, including untrusted unknown key IDs."""
         if not self._cfg.jwks_url:
@@ -150,3 +155,7 @@ class TokenValidator:
                 pass
             self._refresh_task = None
         await self._client.aclose()
+        # A subsequent lifespan must fetch fresh trusted keys before becoming ready.
+        self._keys = {}
+        self._last_refresh = None
+        self._last_refresh_attempt = float("-inf")

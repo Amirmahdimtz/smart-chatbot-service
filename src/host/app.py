@@ -31,6 +31,7 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         app.state.started = False
         try:
+            await validator.open_async()
             if settings.vaulthc.enabled:
                 await container.resolve(VaultService).check_async()
             if settings.auth.jwks_url:
