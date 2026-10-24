@@ -139,3 +139,9 @@ The newly added ASGI tests are in `tests/test_phase02_http_edge_cases.py`. For a
 ```
 
 Expected current CI baseline: **32 pytest PASS**, one known non-blocking framework warning. Do not mark owner Windows validation PASS until the actual updated PowerShell transcript is supplied.
+
+## Third security review and local verification (2026-10-24)
+
+- Reject duplicate `Authorization` headers on protected routes and noncanonical decimal `Content-Length` values with HTTP 400.
+- When the local rate limiter is at peer-cache capacity, the 429 response is sent **after** releasing the shared async lock. This prevents slow transports from blocking unrelated clients; ingress-level distributed controls remain an operational gate.
+- Current GitHub CI baseline is **35 pytest PASS** on `ac02b3a42e767bdfc854d01d371713294683d8d3`. The owner's last verified Windows run passed **32 tests** on the earlier SHA, not the new tests. From the existing local repository run `git pull --ff-only`, verify `git rev-parse HEAD`, then run `.\.venv\Scripts\python.exe -m pytest -q`, `.\.venv\Scripts\ruff.exe check src tests` and `.\.venv\Scripts\ruff.exe format --check src tests`. Expect **35 passed**.

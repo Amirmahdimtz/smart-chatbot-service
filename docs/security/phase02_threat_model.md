@@ -29,3 +29,10 @@
 - **Memory boundedness:** many empty or tiny ASGI request events are coalesced into a single bounded request-body event before the application executes; CI regression verifies 2,000 empty frames do not create 2,000 retained event objects. An ingress transport-level timeout and buffering policy are still required for slow clients.
 - **Framing ambiguity:** duplicated Content-Length, combined Content-Length/Transfer-Encoding or mismatch between declared and observed body length returns 400. This is defense in depth and does not replace an approved reverse proxy's HTTP request-smuggling safeguards.
 - **Acceptance:** four earlier high-priority source defects and these newly identified HTTP framing gaps are covered by tests. Actual two-zone production-equivalent credential/network testing, audit retention and real IdP/Vault are still pending. **NO Phase 02 security or release sign-off has been issued.**
+
+## Third security review: request framing, authentication ambiguity and slow-client fairness
+
+- `Content-Length` is now accepted only as a decimal digit sequence; signed, comma-joined and whitespace-padded formats are rejected with 400 before body processing. This is defense in depth, not a replacement for gateway HTTP-parser hardening.
+- Repeated `Authorization` headers on protected routes are rejected with 400 rather than choosing one credential value; spoofed principal headers remain separately rejected.
+- An exhausted 10,000-peer rate limiter never awaits socket writes while holding the global state lock. A concurrent slow `429` regression confirms that a separate known client can proceed.
+- GitHub CI source SHA `ac02b3a42e767bdfc854d01d371713294683d8d3`: **35/35 tests PASS** and 3/3 CI jobs green, run [40073778225](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40073778225). Real ingress fairness, per-user distributed quotas, IdP/Vault, cross-zone firewall denies and owner security approval are not verified. Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION`.
