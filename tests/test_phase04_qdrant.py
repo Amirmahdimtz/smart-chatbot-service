@@ -38,6 +38,7 @@ def test_qdrant_disabled_by_default_and_di(monkeypatch):
     container = bootstrap_di()
     assert not container.resolve(ConfigReader).settings.qdrant.enabled
     assert container.resolve(QdrantProvider) is container.resolve(QdrantProvider)
+
     async def exercise():
         provider = container.resolve(QdrantProvider)
         assert provider._client is None
@@ -45,6 +46,7 @@ def test_qdrant_disabled_by_default_and_di(monkeypatch):
         with pytest.raises(QdrantUnavailable):
             await provider.check_async()
         await provider.close_async()
+
     asyncio.run(exercise())
 
 
@@ -100,10 +102,9 @@ def _integration_provider(monkeypatch):
 
 def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
     provider = _integration_provider(monkeypatch)
+
     async def exercise():
-        invalid = AsyncQdrantClient(
-            url=os.environ["SCB_PHASE04_TEST_QDRANT_URL"], api_key="wrong_ci_key", timeout=3
-        )
+        invalid = AsyncQdrantClient(url=os.environ["SCB_PHASE04_TEST_QDRANT_URL"], api_key="wrong_ci_key", timeout=3)
         try:
             with pytest.raises(UnexpectedResponse) as exc:
                 await invalid.get_collections()
@@ -161,8 +162,83 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
 def test_qdrant_unavailable_does_not_leak_endpoint(monkeypatch):
     provider = _integration_provider(monkeypatch)
     provider._cfg = provider._cfg.model_copy(update={"url": "http://127.0.0.1:1", "timeout_seconds": 0.3})
+
     async def exercise():
         with pytest.raises(QdrantUnavailable) as exc:
             await provider.start_async()
         assert "127.0.0.1" not in str(exc.value)
+
+    asyncio.run(exercise())
+
+
+
+def test_real_qdrant_isolated_rebuild_schema_mismatch_and_alias_rollback(monkeypatch):
+    provider = _integration_provider(monkeypatch)
+
+    async def exercise():
+        await provider.start_async()
+        version_one = provider._cfg
+        record = _record()
+        try:
+            first_collection = await provider.ensure_collection_async()
+            await provider.activate_collection_async()
+            await provider.upsert_async([record])
+            first = await provider.search_async(
+                record.vector,
+                domain="research",
+                authorized_classifications=["synthetic"],
+                authorized_document_ids=[record.document_id],
+            )
+            assert len(first) == 1
+            assert str(first[0].id) == deterministic_point_id(record, 1)
+            provider._cfg = version_one.model_copy(update={"schema_version": 2})
+            second_collection = await provider.ensure_collection_async()
+            assert second_collection != first_collection
+            await provider.upsert_async([record])
+            await provider.activate_collection_async()
+            second = await provider.search_async(
+                record.vector,
+                domain="research",
+                authorized_classifications=["synthetic"],
+                authorized_document_ids=[record.document_id],
+            )
+            assert len(second) == 1
+            assert str(second[0].id) == deterministic_point_id(record, 2)
+            provider._cfg = version_one
+            await provider.activate_collection_async()
+            rollback = await provider.search_async(
+                record.vector,
+                domain="research",
+                authorized_classifications=["synthetic"],
+                authorized_document_ids=[record.document_id],
+            )
+            assert len(rollback) == 1
+            assert str(rollback[0].id) == deterministic_point_id(record, 1)
+            provider._cfg = version_one.model_copy(update={"dimension": 8})
+            with pytest.raises(QdrantContractError):
+                await provider.ensure_collection_async()
+        finally:
+            await provider.close_async()
+
+    asyncio.run(exercise())
+
+
+def test_retries_are_bounded_and_no_endpoint_is_exposed(monkeypatch):
+    provider = _integration_provider(monkeypatch)
+    provider._cfg = provider._cfg.model_copy(update={"max_retries": 1})
+    calls = []
+
+    class AlwaysTimeout:
+        async def get_collections(self):
+            calls.append(True)
+            raise TimeoutError("synthetic test url / api-key must not escape")
+
+    provider._client = AlwaysTimeout()
+
+    async def exercise():
+        with pytest.raises(QdrantUnavailable) as exc:
+            await provider.check_async()
+        assert len(calls) == 2
+        assert "api-key" not in str(exc.value)
+
     asyncio.run(exercise())

@@ -43,8 +43,10 @@ def deterministic_point_id(record: VectorRecord, schema_version: int) -> str:
 
 
 def _safe_token(value: str) -> bool:
-    return isinstance(value, str) and 0 < len(value) <= 100 and all(
-        char.isascii() and (char.islower() or char.isdigit() or char in "_-") for char in value
+    return (
+        isinstance(value, str)
+        and 0 < len(value) <= 100
+        and all(char.isascii() and (char.islower() or char.isdigit() or char in "_-") for char in value)
     )
 
 
@@ -214,7 +216,9 @@ class QdrantProvider:
         for record in records:
             if (
                 not isinstance(record, VectorRecord)
-                or not all(isinstance(v, UUID) for v in (record.chunk_id, record.document_id, record.document_version_id))
+                or not all(
+                    isinstance(v, UUID) for v in (record.chunk_id, record.document_id, record.document_version_id)
+                )
                 or not _safe_token(record.domain)
                 or not _safe_token(record.classification)
                 or not isinstance(record.published, bool)
@@ -240,16 +244,12 @@ class QdrantProvider:
                     },
                 )
             )
-        result = await self._call_async(
-            "upsert", collection_name=self.collection_name, points=points, wait=True
-        )
+        result = await self._call_async("upsert", collection_name=self.collection_name, points=points, wait=True)
         if result.status != models.UpdateStatus.COMPLETED:
             raise QdrantUnavailable()
         return list(seen)
 
-    def _filter(
-        self, domain: str, classifications: Sequence[str], document_ids: Sequence[UUID]
-    ) -> models.Filter:
+    def _filter(self, domain: str, classifications: Sequence[str], document_ids: Sequence[UUID]) -> models.Filter:
         if (
             not _safe_token(domain)
             or not classifications

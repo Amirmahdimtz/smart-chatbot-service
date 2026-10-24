@@ -137,12 +137,11 @@ class Settings(StrictModel):
                 or (url.port is not None and not 1 <= url.port <= 65535)
             ):
                 raise ValueError("Invalid Qdrant endpoint")
-            if self.environment not in {"development", "integration"} and url.scheme != "https":
-                raise ValueError("Qdrant TLS required outside development/integration")
-            if self.environment == "integration" and url.scheme != "https" and url.hostname not in {
-                "127.0.0.1", "localhost"
-            }:
-                raise ValueError("Integration Qdrant must be loopback or TLS")
+            if url.scheme == "http" and (
+                self.environment not in {"development", "integration"}
+                or url.hostname not in {"127.0.0.1", "localhost"}
+            ):
+                raise ValueError("Qdrant plaintext requires disposable local loopback")
         a = self.auth
         values = (a.jwks_url, a.issuer, a.audience)
         if any(values) and not all(values):
