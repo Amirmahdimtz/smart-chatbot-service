@@ -46,3 +46,16 @@ Enable only when the owner-approved deployment has the correct zone and secret:
 6. Restore from snapshots **only in a disposable instance** for technical A/B rehearsal; keep alias/schema metadata separate. Organization multi-node restore and DR are C/Phase 18, with signed change and verified backup.
 
 Failure behavior: a Qdrant outage prevents enabled startup and search; never serve unverified cached candidates. Invalid version/dimension blocks migration and must not silently recreate/overwrite existing data. No real-data migration or destructive operation without separate owner/security/operations approval.
+
+
+## Tested single-node disposable snapshot recovery and manifest (Group B)
+
+The Phase 04 corrective audit tested a **real restore** on Qdrant 1.20.0. The test deliberately uses a fresh unique synthetic collection prefix and does not delete or overwrite any organizational collection.
+
+1. In the authorized isolated maintenance context, call `backup_manifest_async()` on an enabled QdrantProvider to create a collection snapshot and capture `collection_name`, `snapshot_name`, `schema_version`, `dimension`, `distance`, `deployment_zone` and `active_alias_target`. Persist this metadata as a sidecar in an approved backup inventory outside Qdrant. The method refuses a detected alias transition during capture.
+2. On a **disposable standalone** Qdrant Docker instance, restore to a fresh collection with the pinned SDK: `await client.recover_snapshot(collection_name=fresh_name, location=f"file:///qdrant/snapshots/{source_name}/{snapshot_name}", priority=models.SnapshotPriority.SNAPSHOT, wait=True)`. The Qdrant node must have access to that local snapshot path. Never derive snapshot paths or destination names from an untrusted user.
+3. Verify restored deterministic point IDs, document/version metadata, vector dimensionality, domain/classification/published/scope filters and point counts against the sidecar. Query the restored collection with an explicitly scoped Qdrant Filter before any alias switch. The CI test confirms the restored record and expected metadata.
+4. Snapshot files **do not include collection aliases**. Restore the alias separately from the approved sidecar only after independent scope, policy and integrity checks; perform an explicit atomic alias cutover under maintenance approval. The test confirms that recovery did not silently change existing aliases.
+5. Do not generalize this standalone development drill to multi-node clustered restore, organizational secrets, TLS/IdP isolation, production PITR/RPO/RTO or live business data; those remain `P18-P04-C01`–`P18-P04-C10` Group C tests.
+
+See [independent corrective audit](../implementation/phase_04_technical_acceptance.md) and the exact [CI evidence](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40092573876).

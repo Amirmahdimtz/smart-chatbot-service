@@ -111,3 +111,14 @@ Owner's explicit command starts Phase 04 under ADR-0007 from verified main SHA `
 - D-03/D-04/D-07/D-08 and Phase01/02 approvals remain open/unchanged; no data publication, organizational security approval or model dimension finalization.
 - Technical DoD PASS for this limited scope; AI-assisted technical review does not replace accountable organization Security/Operations signoff.
 - Production Release Status: **NOT_READY**; Phase18 remains the only On-Prem production verification and release gate. Phase05 not started.
+
+
+## Phase 04 independent corrective review (2026-10-24)
+
+- Reviewer found missing actual single-node isolated Qdrant snapshot recovery in the **historical** closure tests, plus unsafe 404 reprobe behavior, unordered batch IDs and missing backup/alias sidecar metadata. No Group C test was considered a blocker; this was **Group A/B** remedial scope.
+- Corrective source commit `b5c38e8e097f53a13faf23b557c8809d3be6c063` on PR #2. [CI 40092573876](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40092573876) **5/5 jobs SUCCESS**: Group A `verify` 43 passed/7 skipped, compile, validators, Ruff, strict dependency audit, SBOM, Docker, gitleaks PASS. Group B real Qdrant 1.20.0 9 passed (including snapshot RESTORE and concurrent bootstrap); real PostgreSQL 16 4 passed and disposable migration/drift checks PASS.
+- **Tests A/B Required but Missing:** none in remediated Phase 04 synthetic technical scope. Earlier gap is explicitly documented, not hidden.
+- **Tests C Deferred to Phase 18:** P18-P04-C01–P18-P04-C10 all unchanged `DEFERRED_TO_PHASE_18`; none executed.
+- **Technical DoD Status:** PASS for corrected Phase04 technical scope. **Status Before re-audit:** `CLOSED` (historically overaccepted) → technical re-review → **Status After:** `CLOSED` (corrected technical acceptance).
+- **Production Release Status:** `NOT_READY`. D-03/D-04/D-07/D-08 open; no real organizational data or public/internal network tests.
+- **Phase 05:** `NOT_STARTED`; ADR-0008 grants conditional entry review for synthetic-only work **only after merge and main CI success**, with separate explicit project-owner start instruction required. Phase 01/02 statuses unchanged.
