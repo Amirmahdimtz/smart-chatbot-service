@@ -109,12 +109,18 @@ class QdrantProvider:
             raise QdrantUnavailable()
         return self._client
 
-    async def _call_async(self, method: str, **kwargs):
+    async def _call_async(
+        self, method: str, *, allow_not_found: bool = False, allow_conflict: bool = False, **kwargs
+    ):
         client = self._ready()
         for attempt in range(self._cfg.max_retries + 1):
             try:
                 return await getattr(client, method)(**kwargs)
             except UnexpectedResponse as exc:
+                if allow_not_found and exc.status_code == 404:
+                    return None
+                if allow_conflict and exc.status_code == 409:
+                    return False
                 if exc.status_code not in {429, 500, 502, 503, 504} or attempt == self._cfg.max_retries:
                     raise QdrantUnavailable() from None
             except (ResponseHandlingException, httpx.TransportError, TimeoutError, ConnectionError):
@@ -131,26 +137,19 @@ class QdrantProvider:
     async def ensure_collection_async(self) -> str:
         """Non-destructive: fail on incompatible schema instead of changing it in place."""
         name = self.collection_name
-        client = self._ready()
-        try:
-            info = await self._call_async("get_collection", collection_name=name)
-        except QdrantUnavailable:
-            # Only a genuine 404 authorizes creation; never treat timeouts/401 as absence.
-            try:
-                info = await client.get_collection(collection_name=name)
-            except UnexpectedResponse as exc:
-                if exc.status_code != 404:
-                    raise QdrantUnavailable() from None
-                info = None
-            except Exception:
-                raise QdrantUnavailable() from None
+        # Probe once. Only HTTP 404 may mean the collection is absent;
+        # auth/network/timeout failures must never trigger provisioning.
+        info = await self._call_async("get_collection", collection_name=name, allow_not_found=True)
         if info is None:
+            # Concurrent workers may create the same collection. A 409 is safe
+            # only after re-reading and validating the resulting schema below.
             await self._call_async(
                 "create_collection",
                 collection_name=name,
                 vectors_config=models.VectorParams(
                     size=self._cfg.dimension, distance=models.Distance(self._cfg.distance)
                 ),
+                allow_conflict=True,
             )
             info = await self._call_async("get_collection", collection_name=name)
         vectors = info.config.params.vectors
@@ -202,7 +201,11 @@ class QdrantProvider:
         await self._call_async("update_collection_aliases", change_aliases_operations=operations)
 
     def _vector(self, values: Sequence[float]) -> list[float]:
-        if len(values) != self._cfg.dimension:
+        try:
+            valid_size = len(values) == self._cfg.dimension
+        except (TypeError, ValueError):
+            raise QdrantContractError() from None
+        if not valid_size:
             raise QdrantContractError()
         try:
             output = [float(v) for v in values]
@@ -216,7 +219,8 @@ class QdrantProvider:
         if not records or len(records) > self._cfg.batch_size:
             raise QdrantContractError()
         points = []
-        seen = set()
+        point_ids: list[str] = []
+        seen: set[str] = set()
         for record in records:
             if (
                 not isinstance(record, VectorRecord)
@@ -232,6 +236,7 @@ class QdrantProvider:
             if point_id in seen:
                 raise QdrantContractError()
             seen.add(point_id)
+            point_ids.append(point_id)
             points.append(
                 models.PointStruct(
                     id=point_id,
@@ -251,13 +256,15 @@ class QdrantProvider:
         result = await self._call_async("upsert", collection_name=self.collection_name, points=points, wait=True)
         if result.status != models.UpdateStatus.COMPLETED:
             raise QdrantUnavailable()
-        return list(seen)
+        return point_ids
 
     def _filter(self, domain: str, classifications: Sequence[str], document_ids: Sequence[UUID]) -> models.Filter:
         if (
             not _safe_token(domain)
             or not classifications
+            or isinstance(classifications, (str, bytes))
             or not document_ids
+            or isinstance(document_ids, (str, bytes))
             or len(document_ids) > 1024
             or any(not _safe_token(v) for v in classifications)
             or any(not isinstance(v, UUID) for v in document_ids)
@@ -319,4 +326,6 @@ class QdrantProvider:
     async def snapshot_async(self) -> str:
         """Create, never restore, a snapshot; restore is an explicit isolated-ops drill."""
         snapshot = await self._call_async("create_snapshot", collection_name=self.collection_name)
+        if not isinstance(snapshot.name, str) or not snapshot.name.endswith(".snapshot"):
+            raise QdrantUnavailable()
         return snapshot.name
