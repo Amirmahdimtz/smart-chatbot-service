@@ -20,6 +20,8 @@ jobs:
       - run: python -O scripts/validate_phase01.py
       - run: python -m pytest -q
       - run: ruff check src tests
+      - name: Formatter diff for audit
+        run: ruff format --diff src tests || true
       - run: ruff format --check src tests
       - run: pip-audit -r requirements.txt --strict
       - run: cyclonedx-py environment --output-format JSON --output-file sbom.json
@@ -110,3 +112,112 @@ jobs:
       - name: Clean disposable Qdrant
         if: always()
         run: docker rm -f scb-phase04-ci || true
+
+  ingestion-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_DB: scb_phase05_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci -d scb_phase05_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SCB_ENV: development
+      SCB_ZONE: internal
+      SCB_DATABASE_ENABLED: 'true'
+      SCB_DATABASE_URL: postgresql+asyncpg://ci:@127.0.0.1:5432/scb_phase05_test
+      SCB_PHASE05_TEST_ENABLED: 'true'
+      SCB_INGESTION_ENABLED: 'true'
+      SCB_INGESTION_S3_URL: http://127.0.0.1:9000
+      SCB_INGESTION_S3_BUCKET: scb-quarantine
+      SCB_PHASE05_TEST_S3_IMAGE: chrislusf/seaweedfs@sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d
+      SCB_PHASE05_TEST_CLAMAV_IMAGE: clamav/clamav@sha256:3bba6dd5ac6663d55b80f86a3126e146612d93b593cc2617188d13f637d91260
+      SCB_INGESTION_CLAMD_HOST: 127.0.0.1
+      SCB_INGESTION_CLAMD_PORT: '3310'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install --requirement requirements-dev.txt
+      - name: Install pinned Sigstore cosign verifier
+        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22
+      - name: Verify upstream signed release identity for exact S3 image digest
+        shell: bash
+        run: |
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github.com/seaweedfs/seaweedfs/\.github/workflows/container_release_unified\.yml@refs/tags/4\.48$' \
+            "$SCB_PHASE05_TEST_S3_IMAGE" >/dev/null
+      - name: Start synthetic-only real S3 and ClamAV services
+        shell: bash
+        run: |
+          user="$(python -c 'import secrets; print("t" + secrets.token_hex(12))')"
+          password="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          echo "::add-mask::$user"
+          echo "::add-mask::$password"
+          echo "SCB_INGESTION_S3_ACCESS_KEY=$user" >> "$GITHUB_ENV"
+          echo "SCB_INGESTION_S3_SECRET_KEY=$password" >> "$GITHUB_ENV"
+          docker run -d --rm --name scb-phase05-s3 \
+            -e AWS_ACCESS_KEY_ID="$user" -e AWS_SECRET_ACCESS_KEY="$password" \
+            -e S3_BUCKET=scb-quarantine \
+            -p 127.0.0.1:9000:8333 \
+            -v scb-phase05-seaweed-data:/data \
+            chrislusf/seaweedfs@sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d
+          docker run -d --rm --name scb-phase05-clamav \
+            -e CLAMAV_NO_FRESHCLAMD=true \
+            -p 127.0.0.1:3310:3310 clamav/clamav@sha256:3bba6dd5ac6663d55b80f86a3126e146612d93b593cc2617188d13f637d91260
+      - name: Wait for real dependencies and create private quarantine bucket
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import socket
+          import time
+
+          import boto3
+          from botocore.config import Config
+
+          s3 = boto3.client(
+              "s3", endpoint_url=os.environ["SCB_INGESTION_S3_URL"],
+              aws_access_key_id=os.environ["SCB_INGESTION_S3_ACCESS_KEY"],
+              aws_secret_access_key=os.environ["SCB_INGESTION_S3_SECRET_KEY"],
+              region_name="us-east-1", config=Config(s3={"addressing_style": "path"}),
+          )
+          for i in range(100):
+              try:
+                  with socket.create_connection(("127.0.0.1", 3310), timeout=2):
+                      # SeaweedFS mini may create S3_BUCKET at startup.
+                      s3.head_bucket(Bucket="scb-quarantine")
+                      break
+              except Exception:
+                  time.sleep(2)
+          else:
+              raise SystemExit("Real synthetic dependencies not ready")
+          PY
+      - name: Real PostgreSQL upgrade, repeat, and migration drift check
+        run: |
+          python src/infrastructure/scripts/run_migrations.py --upgrade
+          python src/infrastructure/scripts/run_migrations.py --upgrade
+          python src/infrastructure/scripts/run_migrations.py --check
+      - name: Disposable migration reverse/re-upgrade before writing test records
+        run: |
+          python src/infrastructure/scripts/run_migrations.py --downgrade-test-only
+          python src/infrastructure/scripts/run_migrations.py --upgrade
+          python src/infrastructure/scripts/run_migrations.py --check
+      - run: python -m pytest -q tests/test_phase05_integration.py
+      - name: Real dependency outage/recovery injection on disposable CI containers only
+        run: python -m pytest -q tests/test_phase05_service_outages.py
+      - name: Remove synthetic containers
+        if: always()
+        run: |
+          docker logs --tail 30 scb-phase05-clamav || true
+          docker rm -f scb-phase05-clamav scb-phase05-s3 || true
+          docker volume rm scb-phase05-seaweed-data || true

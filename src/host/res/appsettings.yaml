@@ -15,3 +15,6 @@ database:
   enabled: false
 qdrant:
   enabled: false
+ingestion:
+  enabled: false
+  synthetic_only: true

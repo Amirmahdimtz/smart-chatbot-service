@@ -77,6 +77,21 @@ class QdrantSettings(StrictModel):
     batch_size: int = Field(default=64, ge=1, le=512)
 
 
+class IngestionSettings(StrictModel):
+    enabled: bool = False
+    synthetic_only: bool = True
+    s3_url: str | None = None
+    s3_bucket: str = Field(default="scb-quarantine", pattern=r"^[a-z0-9][a-z0-9.-]{2,62}$")
+    s3_access_key: str | None = Field(default=None, repr=False)
+    s3_secret_key: str | None = Field(default=None, repr=False)
+    clamd_host: str = "127.0.0.1"
+    clamd_port: int = Field(default=3310, ge=1, le=65535)
+    timeout_seconds: float = Field(default=8, gt=0, le=30)
+    max_file_bytes: int = Field(default=1048576, ge=1024, le=5242880)
+    lease_seconds: int = Field(default=45, ge=15, le=600)
+    max_attempts: int = Field(default=3, ge=1, le=10)
+
+
 class Settings(StrictModel):
     environment: Literal["development", "integration", "staging", "production"]
     deployment_zone: Literal["public", "internal"]
@@ -86,6 +101,7 @@ class Settings(StrictModel):
     vaulthc: VaultSettings
     database: DatabaseSettings = DatabaseSettings()
     qdrant: QdrantSettings = QdrantSettings()
+    ingestion: IngestionSettings = IngestionSettings()
 
     @model_validator(mode="after")
     def validate_security(self):
@@ -141,6 +157,30 @@ class Settings(StrictModel):
                 self.environment not in {"development", "integration"} or url.hostname not in {"127.0.0.1", "localhost"}
             ):
                 raise ValueError("Qdrant plaintext requires disposable local loopback")
+        i = self.ingestion
+        if i.enabled:
+            if (
+                self.environment not in {"development", "integration"}
+                or self.deployment_zone != "internal"
+                or not i.synthetic_only
+                or not db.enabled
+                or i.max_file_bytes >= self.server.max_request_bytes
+            ):
+                raise ValueError("Ingestion restricted to synthetic integration")
+            url = urlparse(i.s3_url or "")
+            if (
+                url.scheme != "http"
+                or url.hostname not in {"127.0.0.1", "localhost"}
+                or url.username
+                or url.password
+                or url.query
+                or url.fragment
+                or url.path not in {"", "/"}
+                or not i.s3_access_key
+                or not i.s3_secret_key
+                or i.clamd_host not in {"127.0.0.1", "localhost"}
+            ):
+                raise ValueError("Synthetic ingestion dependencies must use loopback")
         a = self.auth
         values = (a.jwks_url, a.issuer, a.audience)
         if any(values) and not all(values):
@@ -244,6 +284,26 @@ class ConfigReader:
             ):
                 if name in os.environ:
                     qdrant[field] = os.environ[name]
+            ingestion = data.setdefault("ingestion", {})
+            flag = os.environ.get("SCB_INGESTION_ENABLED")
+            if flag is not None:
+                if flag.lower() not in {"true", "false"}:
+                    raise ValueError("Invalid ingestion enable flag")
+                ingestion["enabled"] = flag.lower() == "true"
+            for name, field in (
+                ("SCB_INGESTION_S3_URL", "s3_url"),
+                ("SCB_INGESTION_S3_BUCKET", "s3_bucket"),
+                ("SCB_INGESTION_S3_ACCESS_KEY", "s3_access_key"),
+                ("SCB_INGESTION_S3_SECRET_KEY", "s3_secret_key"),
+                ("SCB_INGESTION_CLAMD_HOST", "clamd_host"),
+                ("SCB_INGESTION_CLAMD_PORT", "clamd_port"),
+                ("SCB_INGESTION_MAX_FILE_BYTES", "max_file_bytes"),
+                ("SCB_INGESTION_TIMEOUT_SECONDS", "timeout_seconds"),
+                ("SCB_INGESTION_LEASE_SECONDS", "lease_seconds"),
+                ("SCB_INGESTION_MAX_ATTEMPTS", "max_attempts"),
+            ):
+                if name in os.environ:
+                    ingestion[field] = os.environ[name]
             self.settings = Settings.model_validate(data)
         except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError):
             raise ConfigurationError() from None
