@@ -209,9 +209,7 @@ def test_s3_cold_restart_preserves_immutable_quarantined_bytes():
                 # Docker restart forcibly stops and cold-starts the actual S3
                 # server process; the service's persisted /data is retained.
                 _docker("restart", "--time", "1", "scb-phase05-s3")
-                restored = await _wait_restored(
-                    lambda: store.get_async(version.object_key), (StorageUnavailable,)
-                )
+                restored = await _wait_restored(lambda: store.get_async(version.object_key), (StorageUnavailable,))
                 assert restored == payload
                 assert (await repo.get_job_owned_async(job.id, owner, "internal"))[0].status == "queued"
                 assert await worker.run_once_async("s3-cold-restart")
