@@ -96,6 +96,29 @@ def test_signature_and_corruption_rejected(body, type_, expected):
     assert exc.value.code == expected
 
 
+@pytest.mark.parametrize(
+    ("name", "mime"),
+    [
+        ("malware.exe", "text/plain"),
+        ("wrong.pdf", "text/plain"),
+        ("wrong.txt", "application/pdf"),
+        ("missingextension", "text/plain"),
+    ],
+)
+def test_allowed_media_type_does_not_bypass_filename_allowlist(name, mime):
+    async def exercise():
+        upload = UploadFile(
+            file=BytesIO(b"synthetic content"),
+            filename=name,
+            headers=Headers({"content-type": mime}),
+        )
+        with pytest.raises(UploadRejected) as exc:
+            await validate_upload_async(upload, 1024)
+        assert exc.value.code == "content_type_mismatch"
+
+    asyncio.run(exercise())
+
+
 def test_utf8_allowed():
     validate_content("سلام\nworld".encode(), "text/plain")
 
