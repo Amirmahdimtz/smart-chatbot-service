@@ -3,10 +3,11 @@
 Revision ID: 0001_foundation
 Revises:
 """
+
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "0001_foundation"
@@ -37,9 +38,9 @@ def upgrade() -> None:
         sa.CheckConstraint("status IN ('active', 'archived')", name="ck_conversation_status"),
         sa.UniqueConstraint("id", "deployment_scope", name="uq_conversation_id_scope"),
     )
-    op.create_index("ix_conversation_owner_created", "conversation", [
-        "deployment_scope", "owner_principal_id", "created_at"
-    ])
+    op.create_index(
+        "ix_conversation_owner_created", "conversation", ["deployment_scope", "owner_principal_id", "created_at"]
+    )
     op.create_table(
         "message",
         sa.Column("id", _uuid(), primary_key=True),
@@ -51,8 +52,10 @@ def upgrade() -> None:
         sa.Column("idempotency_key", sa.String(128)),
         _created(),
         sa.ForeignKeyConstraint(
-            ["conversation_id", "deployment_scope"], ["conversation.id", "conversation.deployment_scope"],
-            name="fk_message_conversation_scope", ondelete="RESTRICT"
+            ["conversation_id", "deployment_scope"],
+            ["conversation.id", "conversation.deployment_scope"],
+            name="fk_message_conversation_scope",
+            ondelete="RESTRICT",
         ),
         sa.CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_message_scope"),
         sa.CheckConstraint("role IN ('user', 'assistant')", name="ck_message_role"),
@@ -79,8 +82,10 @@ def upgrade() -> None:
         sa.Column("classification", sa.String(64)),
         _created(),
         sa.ForeignKeyConstraint(
-            ["source_id", "deployment_scope"], ["knowledge_source.id", "knowledge_source.deployment_scope"],
-            name="fk_document_source_scope", ondelete="RESTRICT"
+            ["source_id", "deployment_scope"],
+            ["knowledge_source.id", "knowledge_source.deployment_scope"],
+            name="fk_document_source_scope",
+            ondelete="RESTRICT",
         ),
         sa.CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_document_scope"),
         sa.UniqueConstraint("id", "deployment_scope", name="uq_document_id_scope"),
@@ -95,8 +100,10 @@ def upgrade() -> None:
         sa.Column("state", sa.String(16), nullable=False, server_default="draft"),
         _created(),
         sa.ForeignKeyConstraint(
-            ["document_id", "deployment_scope"], ["knowledge_document.id", "knowledge_document.deployment_scope"],
-            name="fk_version_document_scope", ondelete="RESTRICT"
+            ["document_id", "deployment_scope"],
+            ["knowledge_document.id", "knowledge_document.deployment_scope"],
+            name="fk_version_document_scope",
+            ondelete="RESTRICT",
         ),
         sa.CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_version_scope"),
         sa.CheckConstraint("version_number > 0", name="ck_version_number"),
@@ -114,8 +121,10 @@ def upgrade() -> None:
         sa.Column("canonical_text_ref", sa.String(1024)),
         _created(),
         sa.ForeignKeyConstraint(
-            ["version_id", "deployment_scope"], ["document_version.id", "document_version.deployment_scope"],
-            name="fk_chunk_version_scope", ondelete="RESTRICT"
+            ["version_id", "deployment_scope"],
+            ["document_version.id", "document_version.deployment_scope"],
+            name="fk_chunk_version_scope",
+            ondelete="RESTRICT",
         ),
         sa.CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_chunk_scope"),
         sa.CheckConstraint("ordinal >= 0", name="ck_chunk_ordinal"),

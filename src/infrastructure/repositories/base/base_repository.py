@@ -1,4 +1,5 @@
 """Generic persistence primitives; caller-owned sessions are never committed here."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager

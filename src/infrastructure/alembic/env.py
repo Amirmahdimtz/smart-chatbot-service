@@ -1,4 +1,5 @@
 """Alembic online-only migration environment with a PostgreSQL advisory lock."""
+
 from __future__ import annotations
 
 import asyncio

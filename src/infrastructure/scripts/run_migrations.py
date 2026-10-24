@@ -1,4 +1,5 @@
 """Guarded migration runner; no implicit schema creation at application startup."""
+
 from __future__ import annotations
 
 import argparse
@@ -38,8 +39,7 @@ def main() -> None:
     try:
         settings, url = asyncio.run(_settings_async())
         if args.downgrade_test_only and (
-            settings.environment not in {"development", "integration"}
-            or not make_url(url).database.endswith("_test")
+            settings.environment not in {"development", "integration"} or not make_url(url).database.endswith("_test")
         ):
             raise RuntimeError("Downgrade permitted only for disposable *_test databases")
         cfg = Config()

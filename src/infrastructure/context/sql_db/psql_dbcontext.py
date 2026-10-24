@@ -1,4 +1,5 @@
 """PostgreSQL engine lifecycle and explicit per-operation transaction boundaries."""
+
 from __future__ import annotations
 
 import ssl
@@ -25,9 +26,7 @@ class DatabaseUnavailable(RuntimeError):
 
 def connection_options(settings: DatabaseSettings) -> dict:
     ssl_option = (
-        ssl.create_default_context(cafile=settings.tls_ca_file)
-        if settings.tls_mode == "verify-full"
-        else False
+        ssl.create_default_context(cafile=settings.tls_ca_file) if settings.tls_mode == "verify-full" else False
     )
     return {
         "pool_size": settings.pool_size,

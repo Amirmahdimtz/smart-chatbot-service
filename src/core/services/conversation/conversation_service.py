@@ -1,4 +1,5 @@
 """Internal conversation workflow; not exposed over HTTP until identity/policy approval."""
+
 from __future__ import annotations
 
 from uuid import UUID

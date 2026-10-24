@@ -1,4 +1,5 @@
 """PostgreSQL-only integration tests use disposable synthetic *_test databases."""
+
 from __future__ import annotations
 
 import asyncio
@@ -30,7 +31,12 @@ def test_metadata_and_dependency_discovery(monkeypatch):
     assert container.resolve(ConfigReader).settings.database.enabled is False
     assert container.resolve(PsqlDbContext) is container.resolve(PsqlDbContext)
     assert set(Base.metadata.tables) == {
-        "conversation", "message", "knowledge_source", "knowledge_document", "document_version", "knowledge_chunk"
+        "conversation",
+        "message",
+        "knowledge_source",
+        "knowledge_document",
+        "document_version",
+        "knowledge_chunk",
     }
     assert len(Base.metadata.tables["message"].foreign_key_constraints) == 1
     assert Conversation.__mapper__.version_id_col is Conversation.__table__.c.revision
@@ -107,13 +113,27 @@ def test_real_postgresql_transactions_constraints_and_concurrency(monkeypatch):
             assert sorted(m.sequence_number for m in produced) == [2, 3, 4, 5]
             with pytest.raises(IntegrityError):
                 async with db.transaction_async() as session:
-                    session.add(Message(conversation_id=c.id, deployment_scope="internal",
-                                        sequence_number=100, role="user", content="cross-scope"))
+                    session.add(
+                        Message(
+                            conversation_id=c.id,
+                            deployment_scope="internal",
+                            sequence_number=100,
+                            role="user",
+                            content="cross-scope",
+                        )
+                    )
                     await session.flush()
             with pytest.raises(IntegrityError):
                 async with db.transaction_async() as session:
-                    session.add(Message(conversation_id=c.id, deployment_scope="public",
-                                        sequence_number=1, role="user", content="duplicate-seq"))
+                    session.add(
+                        Message(
+                            conversation_id=c.id,
+                            deployment_scope="public",
+                            sequence_number=1,
+                            role="user",
+                            content="duplicate-seq",
+                        )
+                    )
                     await session.flush()
             aborted = Conversation(owner_principal_id=owner, deployment_scope="public")
             with pytest.raises(RuntimeError):
@@ -137,23 +157,25 @@ def test_real_postgresql_transactions_constraints_and_concurrency(monkeypatch):
                 await session.flush()
             with pytest.raises(IntegrityError):
                 async with db.transaction_async() as session:
-                    session.add(KnowledgeDocument(
-                        source_id=source.id, deployment_scope="public", title="isolated"
-                    ))
+                    session.add(KnowledgeDocument(source_id=source.id, deployment_scope="public", title="isolated"))
                     await session.flush()
             doc = KnowledgeDocument(source_id=source.id, deployment_scope="internal", title="synthetic")
             async with db.transaction_async() as session:
                 session.add(doc)
                 await session.flush()
-            version = DocumentVersion(document_id=doc.id, deployment_scope="internal",
-                                      version_number=1, checksum_sha256="a" * 64)
+            version = DocumentVersion(
+                document_id=doc.id, deployment_scope="internal", version_number=1, checksum_sha256="a" * 64
+            )
             async with db.transaction_async() as session:
                 session.add(version)
                 await session.flush()
             with pytest.raises(IntegrityError):
                 async with db.transaction_async() as session:
-                    session.add(DocumentVersion(document_id=doc.id, deployment_scope="internal",
-                                                version_number=1, checksum_sha256="b" * 64))
+                    session.add(
+                        DocumentVersion(
+                            document_id=doc.id, deployment_scope="internal", version_number=1, checksum_sha256="b" * 64
+                        )
+                    )
                     await session.flush()
             chunk = KnowledgeChunk(
                 version_id=version.id, deployment_scope="internal", ordinal=0, checksum_sha256="c" * 64
@@ -166,8 +188,7 @@ def test_real_postgresql_transactions_constraints_and_concurrency(monkeypatch):
                     await session.delete(await session.get(KnowledgeSource, source.id))
                     await session.flush()
             async with db.transaction_async() as session:
-                assert (await session.scalars(select(Message).where(
-                    Message.conversation_id == c.id))).all()
+                assert (await session.scalars(select(Message).where(Message.conversation_id == c.id))).all()
         finally:
             await db.close_async()
 
