@@ -352,3 +352,20 @@ def test_real_qdrant_disposable_snapshot_restore_round_trip(monkeypatch):
             await provider.close_async()
 
     asyncio.run(exercise())
+
+
+def test_real_qdrant_concurrent_collection_bootstrap(monkeypatch):
+    """Idempotent bootstrap when independent startup tasks race on one collection."""
+    provider = _integration_provider(monkeypatch)
+
+    async def exercise():
+        await provider.start_async()
+        try:
+            expected = provider.collection_name
+            results = await asyncio.gather(*(provider.ensure_collection_async() for _ in range(4)))
+            assert results == [expected] * 4
+            assert (await provider._client.get_collection(expected)).config.params.vectors.size == 4
+        finally:
+            await provider.close_async()
+
+    asyncio.run(exercise())
