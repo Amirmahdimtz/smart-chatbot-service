@@ -17,6 +17,7 @@ from src.infrastructure.context.vault.vault_service import VaultService
 from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.observability.telemetry import HttpMetrics, SafeJsonFormatter, TelemetryMiddleware
 from src.infrastructure.providers.qdrant.qdrant_provider import QdrantProvider
+from src.infrastructure.providers.storage.quarantine_storage import QuarantineStorage
 from src.infrastructure.security.http_security import HttpSecurityMiddleware
 from src.infrastructure.security.request_auth import RequestAuthenticationMiddleware
 from src.infrastructure.security.token_validator import TokenValidator
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     validator = container.resolve(TokenValidator)
     database = container.resolve(PsqlDbContext) if settings.database.enabled else None
     qdrant = container.resolve(QdrantProvider) if settings.qdrant.enabled else None
+    storage = container.resolve(QuarantineStorage) if settings.ingestion.enabled else None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -40,6 +42,8 @@ def create_app() -> FastAPI:
                 await database.start_async()
             if qdrant is not None:
                 await qdrant.start_async()
+            if storage is not None:
+                await storage.start_async()
             if settings.vaulthc.enabled:
                 await container.resolve(VaultService).check_async()
             if settings.auth.jwks_url:
@@ -52,6 +56,8 @@ def create_app() -> FastAPI:
         finally:
             app.state.started = False
             try:
+                if storage is not None:
+                    await storage.close_async()
                 if qdrant is not None:
                     await qdrant.close_async()
             finally:
@@ -99,7 +105,7 @@ def create_app() -> FastAPI:
         allow_origins=settings.server.cors_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Correlation-ID"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Correlation-ID", "Idempotency-Key"],
     )
     app.add_middleware(
         HttpSecurityMiddleware,
