@@ -157,10 +157,10 @@ jobs:
           docker run -d --rm --name scb-phase05-s3 \
             -e MINIO_ROOT_USER="$user" -e MINIO_ROOT_PASSWORD="$password" \
             -p 127.0.0.1:9000:9000 \
-            ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z server /data
+            ghcr.io/coollabsio/minio@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9 server /data
           docker run -d --rm --name scb-phase05-clamav \
             -e CLAMAV_NO_FRESHCLAMD=true \
-            -p 127.0.0.1:3310:3310 clamav/clamav:1.4
+            -p 127.0.0.1:3310:3310 clamav/clamav@sha256:3bba6dd5ac6663d55b80f86a3126e146612d93b593cc2617188d13f637d91260
       - name: Wait for real dependencies and create private quarantine bucket
         shell: bash
         run: |
