@@ -119,16 +119,10 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                 )
             )
             if repeated:
-                version = await session.get(DocumentVersion, repeated.version_id)
-                if (
-                    repeated.status == "dead"
-                    and repeated.attempts == 0
-                    and repeated.error_code in {"storage_unavailable", "staging_abandoned"}
-                ):
-                    repeated.status, repeated.error_code, version.state = "staging", None, "draft"
-                    self._audit(session, repeated, source.id, scope, actor, "staging_retried")
-                    return repeated, version, True
-                return repeated, version, False
+                # Dedup must not silently alias a new key to another request.
+                # Otherwise replaying that key with different bytes would create
+                # a new document instead of detecting idempotency-key misuse.
+                raise ValueError("Duplicate content requires the original idempotency key")
             document = KnowledgeDocument(
                 source_id=source.id, deployment_scope=scope, title=filename, classification=None
             )
