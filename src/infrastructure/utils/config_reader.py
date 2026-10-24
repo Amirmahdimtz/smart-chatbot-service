@@ -138,8 +138,7 @@ class Settings(StrictModel):
             ):
                 raise ValueError("Invalid Qdrant endpoint")
             if url.scheme == "http" and (
-                self.environment not in {"development", "integration"}
-                or url.hostname not in {"127.0.0.1", "localhost"}
+                self.environment not in {"development", "integration"} or url.hostname not in {"127.0.0.1", "localhost"}
             ):
                 raise ValueError("Qdrant plaintext requires disposable local loopback")
         a = self.auth

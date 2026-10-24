@@ -156,6 +156,7 @@ def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
             assert await provider.check_async()
         finally:
             await provider.close_async()
+
     asyncio.run(exercise())
 
 
@@ -169,7 +170,6 @@ def test_qdrant_unavailable_does_not_leak_endpoint(monkeypatch):
         assert "127.0.0.1" not in str(exc.value)
 
     asyncio.run(exercise())
-
 
 
 def test_real_qdrant_isolated_rebuild_schema_mismatch_and_alias_rollback(monkeypatch):
