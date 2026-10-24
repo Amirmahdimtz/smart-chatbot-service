@@ -62,6 +62,21 @@ class DatabaseSettings(StrictModel):
     statement_timeout_ms: int = Field(default=30000, ge=1000, le=300000)
 
 
+class QdrantSettings(StrictModel):
+    enabled: bool = False
+    zone: Literal["public", "internal"] | None = None
+    url: str | None = None
+    api_key: str | None = Field(default=None, repr=False)
+    vault_secret_path: str | None = None
+    collection_prefix: str = Field(default="scb_vectors", pattern=r"^[a-z][a-z0-9_]{2,39}$")
+    schema_version: int = Field(default=1, ge=1, le=100000)
+    dimension: int | None = Field(default=None, ge=1, le=65536)
+    distance: Literal["Cosine", "Dot", "Euclid"] = "Cosine"
+    timeout_seconds: float = Field(default=5, gt=0, le=120)
+    max_retries: int = Field(default=2, ge=0, le=3)
+    batch_size: int = Field(default=64, ge=1, le=512)
+
+
 class Settings(StrictModel):
     environment: Literal["development", "integration", "staging", "production"]
     deployment_zone: Literal["public", "internal"]
@@ -70,6 +85,7 @@ class Settings(StrictModel):
     auth: AuthSettings
     vaulthc: VaultSettings
     database: DatabaseSettings = DatabaseSettings()
+    qdrant: QdrantSettings = QdrantSettings()
 
     @model_validator(mode="after")
     def validate_security(self):
@@ -97,6 +113,36 @@ class Settings(StrictModel):
                     raise ValueError("Invalid database URL")
             if self.environment != "development" and db.tls_mode != "verify-full":
                 raise ValueError("Database TLS verification required")
+        q = self.qdrant
+        if q.enabled:
+            if q.zone != self.deployment_zone or not q.dimension:
+                raise ValueError("Qdrant scope or schema is incomplete")
+            if bool(q.api_key) == bool(q.vault_secret_path):
+                raise ValueError("Exactly one Qdrant credential source is required")
+            if q.vault_secret_path and (
+                not self.vaulthc.enabled
+                or q.vault_secret_path.startswith("/")
+                or ".." in q.vault_secret_path.split("/")
+            ):
+                raise ValueError("Invalid Qdrant Vault integration")
+            url = urlparse(q.url or "")
+            if (
+                url.scheme not in {"https", "http"}
+                or not url.hostname
+                or url.username
+                or url.password
+                or url.query
+                or url.fragment
+                or url.path not in {"", "/"}
+                or (url.port is not None and not 1 <= url.port <= 65535)
+            ):
+                raise ValueError("Invalid Qdrant endpoint")
+            if self.environment not in {"development", "integration"} and url.scheme != "https":
+                raise ValueError("Qdrant TLS required outside development/integration")
+            if self.environment == "integration" and url.scheme != "https" and url.hostname not in {
+                "127.0.0.1", "localhost"
+            }:
+                raise ValueError("Integration Qdrant must be loopback or TLS")
         a = self.auth
         values = (a.jwks_url, a.issuer, a.audience)
         if any(values) and not all(values):
@@ -179,6 +225,27 @@ class ConfigReader:
             ):
                 if name in os.environ:
                     database[field] = os.environ[name]
+            qdrant = data.setdefault("qdrant", {})
+            flag = os.environ.get("SCB_QDRANT_ENABLED")
+            if flag is not None:
+                if flag.lower() not in {"true", "false"}:
+                    raise ValueError("Invalid Qdrant enable flag")
+                qdrant["enabled"] = flag.lower() == "true"
+            for name, field in (
+                ("SCB_QDRANT_ZONE", "zone"),
+                ("SCB_QDRANT_URL", "url"),
+                ("SCB_QDRANT_API_KEY", "api_key"),
+                ("SCB_QDRANT_VAULT_PATH", "vault_secret_path"),
+                ("SCB_QDRANT_COLLECTION_PREFIX", "collection_prefix"),
+                ("SCB_QDRANT_SCHEMA_VERSION", "schema_version"),
+                ("SCB_QDRANT_DIMENSION", "dimension"),
+                ("SCB_QDRANT_DISTANCE", "distance"),
+                ("SCB_QDRANT_TIMEOUT_SECONDS", "timeout_seconds"),
+                ("SCB_QDRANT_MAX_RETRIES", "max_retries"),
+                ("SCB_QDRANT_BATCH_SIZE", "batch_size"),
+            ):
+                if name in os.environ:
+                    qdrant[field] = os.environ[name]
             self.settings = Settings.model_validate(data)
         except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError):
             raise ConfigurationError() from None

@@ -13,3 +13,5 @@ vaulthc:
   enabled: false
 database:
   enabled: false
+qdrant:
+  enabled: false
