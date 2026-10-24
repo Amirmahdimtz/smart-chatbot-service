@@ -54,7 +54,7 @@ def test_upload_disabled_no_public_endpoints(disabled):
         assert client.get(f"/api/v1/knowledge/jobs/{uuid4()}").status_code == 401
         assert client.post("/api/v1/knowledge/sources", json={"domain": "research"}).status_code == 401
         paths = client.app.openapi()["paths"]
-        assert "/api/v1/knowledge/sources" in paths
+        assert "/api/v1/knowledge/sources" not in paths
         assert not any("/publish" in path for path in paths)
 
 
