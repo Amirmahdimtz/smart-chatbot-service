@@ -22,7 +22,9 @@ class HttpSecurityMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-        headers = {k.lower(): v for k, v in scope.get("headers", [])}
+        raw_headers = scope.get("headers", [])
+        content_lengths = [value for name, value in raw_headers if name.lower() == b"content-length"]
+        has_transfer_encoding = any(name.lower() == b"transfer-encoding" for name, _ in raw_headers)
         headers_to_add = [
             (b"x-content-type-options", b"nosniff"),
             (b"x-frame-options", b"DENY"),
@@ -43,12 +45,20 @@ class HttpSecurityMiddleware:
         async def reject(status, code):
             await JSONResponse({"error": code}, status_code=status)(scope, receive, secured_send)
 
+        # Conflicting framing is rejected before reading a body: proxy interpretation
+        # must not differ from the application's interpretation.
+        if len(content_lengths) > 1 or (content_lengths and has_transfer_encoding):
+            await reject(400, "bad_request")
+            return
         try:
-            length = int(headers.get(b"content-length", b"0"))
+            declared_length = int(content_lengths[0]) if content_lengths else None
         except ValueError:
             await reject(400, "bad_request")
             return
-        if length < 0 or length > self.max_bytes:
+        if declared_length is not None and declared_length < 0:
+            await reject(400, "bad_request")
+            return
+        if declared_length is not None and declared_length > self.max_bytes:
             await reject(413, "payload_too_large")
             return
         ip = scope.get("client")
@@ -83,25 +93,30 @@ class HttpSecurityMiddleware:
             return
 
         async def handle_request():
-            # Buffer a bounded request body before entering handlers, including transfer-encoded bodies.
-            # This closes the gap where a handler never consumes the request stream.
-            events = []
-            size = 0
-            if scope["method"] in ("POST", "PUT", "PATCH", "DELETE"):
-                while True:
-                    event = await receive()
-                    if event["type"] == "http.disconnect":
-                        return
-                    events.append(event)
-                    size += len(event.get("body", b""))
-                    if size > self.max_bytes:
-                        raise RequestTooLarge()
-                    if not event.get("more_body", False):
-                        break
+            # Every HTTP method may carry a body, including GET/HEAD/OPTIONS.
+            # Aggregate payload bytes into a single bounded frame: storing every
+            # incoming ASGI frame separately has unbounded overhead for empty chunks.
+            body = bytearray()
+            while True:
+                event = await receive()
+                if event["type"] == "http.disconnect":
+                    return
+                chunk = event.get("body", b"")
+                if len(body) + len(chunk) > self.max_bytes:
+                    raise RequestTooLarge()
+                body.extend(chunk)
+                if not event.get("more_body", False):
+                    break
+            if declared_length is not None and len(body) != declared_length:
+                raise InvalidRequestBody()
+
+            delivered = False
 
             async def replay_receive():
-                if events:
-                    return events.pop(0)
+                nonlocal delivered
+                if not delivered:
+                    delivered = True
+                    return {"type": "http.request", "body": bytes(body), "more_body": False}
                 return await receive()
 
             await self.app(scope, replay_receive, secured_send)
@@ -110,6 +125,8 @@ class HttpSecurityMiddleware:
             await asyncio.wait_for(handle_request(), timeout=self.timeout)
         except RequestTooLarge:
             await reject(413, "payload_too_large")
+        except InvalidRequestBody:
+            await reject(400, "bad_request")
         except TimeoutError:
             if response_started:
                 # A second http.response.start is invalid after headers were sent.
@@ -119,4 +136,8 @@ class HttpSecurityMiddleware:
 
 
 class RequestTooLarge(Exception):
+    pass
+
+
+class InvalidRequestBody(Exception):
     pass
