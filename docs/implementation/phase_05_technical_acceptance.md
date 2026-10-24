@@ -29,3 +29,10 @@ Remaining mandatory DoD: actual disposable service stop/restart under in-flight 
 All six CI jobs in run 40098823479 PASSED on source 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0: general 74 passes/17 skips; ingestion 7 real tests and 3 real reversible outage/recovery tests; PostgreSQL 4 passes, Qdrant 9 passes; Ruff/compile, SBOM, dependency audit, Docker build and secret scan PASS. S3 and ClamAV container digests are pinned to registry digests obtained from CI. Actual pause/unpause with denial and recovery is proven, NOT a complete service process stop/recreate test.
 
 Unresolved: independent accountable security/architecture review, provenance assessment/attestation for the community S3 CI image, and any separately deemed essential full stop/recreate fault injection. No Technical Verifier signature has been provided. Decision remains DO_NOT_CLOSE; PR #3 stays Draft; no merger or Production authorization. All P18-P05-C01–C08 deferred controls remain pending until Phase18.
+
+
+## Latest verification baseline prior to independent sign-off
+
+Source 5c9096ace5983a8876bb3f4a37ef1c4ef325d098 (CI 40099162282) has all six jobs successful, including 75 Group A test passes (18 skips) and real B 8 ingestion + 3 reversible Docker outage passes, plus PostgreSQL 4 / Qdrant 9 regressions. Successful digital PDF E2E is evidenced rather than assumed. Ruff, vulnerability audit, SBOM, Docker and secret scan passed. Image digests remain pinned.
+
+There is no independent accountable reviewer signature or organizational policy approval. Production and publication remain prohibited. The PR must remain Draft; do not mark Phase05 CLOSED unless the verifier accepts all A/B evidence, the community image provenance and determines whether true cold restart tests are essential. Technical DoD PENDING; Production NOT_READY; Group C deferred to Phase18.

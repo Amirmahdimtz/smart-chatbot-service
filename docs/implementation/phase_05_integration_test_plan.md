@@ -23,3 +23,8 @@ Seven actual ingestion integration checks PASS, including real separate Worker O
 ## Additional real service outage matrix executed
 
 CI run 40098823479 executed tests/test_phase05_service_outages.py in the real Phase05 integration job. Three of three PASS: Docker-paused private S3 refuses reads and returns valid quarantined bytes on resume while durable job remains queued; Docker-paused ClamAV prevents approval and induces durable retry_wait, then real daemon rescan reaches awaiting_approval; Docker-paused PostgreSQL rejects startup, and after resume a fresh DB-backed repository persists/reads a synthetic source. Runner CI, disposable database and unique container names are enforced before pause. The tests unpause each service in finally blocks. They demonstrate service unavailability and recovery, not destruction, cold start or multi-node disaster recovery.
+
+
+## Digital PDF positive validation evidence
+
+CI 40099162282 adds and passes one generated PDF validation test in Group A and one real PDF multipart → S3 quarantine → ClamAV → PostgreSQL awaiting_approval path in Group B. This is a synthetic one-page digital PDF, not scanned/OCR, extraction, layout preservation or Phase06 parser benchmark evidence. The full run recorded 75 general PASS / 18 SKIP, 8 real ingestion PASS and 3 real reversible dependency outage PASS on the cited source SHA.
