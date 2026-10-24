@@ -220,3 +220,20 @@ The project owner submitted a new PowerShell transcript with the following **own
 **Category C / Owner gates:** Real org IdP/JWKS rotation (including second lifespan), Vault trust/auth/secret lifecycle, two genuinely separate test deployments and credentials, ingress/TLS and firewall deny probes, authorized metrics, tracing exporter, distributed quotas, load/HA/recovery and approved security sign-off remain **NOT_RUN / AWAITING_APPROVAL / BLOCKED_DECISION** according to their respective evidence needs.
 
 **Disposition:** Phase 02 status remains `IMPLEMENTED_AWAITING_VERIFICATION` (no closure marker); Phase 01 status unchanged. ADR-0005's `TECHNICAL_GO_FOR_DEVELOPMENT_ONLY` remains a **conditional authorization** for isolated Phase 03 work after explicit owner instruction, **not** Phase 02 `CLOSED` or Production permission.
+
+## Owner workstation final Phase 02 36-test verification — 2026-10-24
+
+**Category B actual reported transcript:** In a single Windows PowerShell session, the owner showed a fast-forward pull on `main`, exact `git rev-parse HEAD` **`6e45ced93b2d8e051453cc346f2960f63c396fc1`**, and a clean `git status --short`. The following checks were reported against that source commit:
+
+| Check | Result in owner's transcript |
+|---|---|
+| `.venv/Scripts/python.exe -m pytest -q` | **36 passed, 1 warning in 31.18s** |
+| `.venv/Scripts/ruff.exe check src tests` | **PASS** — `All checks passed!` |
+| `.venv/Scripts/ruff.exe format --check src tests` | **PASS** — `17 files already formatted` |
+| `.venv/Scripts/pip-audit.exe -r requirements.txt --strict --timeout 60` | **PASS** — `No known vulnerabilities found` at that execution time |
+
+The one non-fatal warning is `StarletteDeprecationWarning` in FastAPI's TestClient regarding `httpx`. The previous workstation `pip-audit` network ReadTimeout (at 15 seconds) is superseded by the successful rerun with an explicit 60-second timeout on the exact tested SHA; it was a network/lookup failure, not a detected vulnerability. This transcript does **not** repeat Python compile, Phase 01 validators, live HTTP smoke or operational integration tests; they must not be silently attributed to this run.
+
+**Category A independent CI:** the same source SHA `6e45ced93b2d8e051453cc346f2960f63c396fc1` was successfully built and checked by [GitHub Actions run 40075945657](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40075945657), with all three jobs `verify`, `docker-build`, and `secret-scan` **PASS**; **36 tests PASS**, Python compile, both normal and optimized Phase 01 validators, Ruff, strict dependency audit and SBOM upload completed.
+
+**Outstanding acceptance:** Real IdP/SSO and JWKS rotation, Vault trust and lifecycle, actual independent Public/Internal credentials plus network/firewall isolation, gateway/TLS, authorized metrics, tracing exporter, load/HA/restore and relevant owner approvals remain **NOT_VERIFIED**. Phase 02 stays `IMPLEMENTED_AWAITING_VERIFICATION`, not `CLOSED`. ADR-0005's conditional Phase 03 **development-only** gate is unchanged; Phase 03 is still `NOT_STARTED`.
