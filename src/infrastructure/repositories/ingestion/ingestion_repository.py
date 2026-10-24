@@ -101,7 +101,14 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             if prior:
                 if prior.checksum_sha256 != checksum:
                     raise ValueError("Idempotency key conflict")
-                return prior, await session.get(DocumentVersion, prior.version_id), False
+                version = await session.get(DocumentVersion, prior.version_id)
+                if prior.status == "dead" and prior.attempts == 0 and prior.error_code in {
+                    "storage_unavailable", "staging_abandoned"
+                }:
+                    prior.status, prior.error_code, version.state = "staging", None, "draft"
+                    self._audit(session, prior, source.id, scope, actor, "staging_retried")
+                    return prior, version, True
+                return prior, version, False
             repeated = await session.scalar(
                 select(IngestionJob).where(
                     IngestionJob.source_id == source.id,
@@ -110,7 +117,14 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                 )
             )
             if repeated:
-                return repeated, await session.get(DocumentVersion, repeated.version_id), False
+                version = await session.get(DocumentVersion, repeated.version_id)
+                if repeated.status == "dead" and repeated.attempts == 0 and repeated.error_code in {
+                    "storage_unavailable", "staging_abandoned"
+                }:
+                    repeated.status, repeated.error_code, version.state = "staging", None, "draft"
+                    self._audit(session, repeated, source.id, scope, actor, "staging_retried")
+                    return repeated, version, True
+                return repeated, version, False
             document = KnowledgeDocument(
                 source_id=source.id, deployment_scope=scope, title=filename, classification=None
             )
@@ -233,6 +247,7 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                 select(IngestionJob)
                 .where(
                     IngestionJob.deployment_scope == scope,
+                    IngestionJob.attempts < IngestionJob.max_attempts,
                     or_(
                         IngestionJob.status == "queued",
                         and_(IngestionJob.status == "retry_wait", IngestionJob.next_retry_at <= func.now()),
@@ -280,12 +295,13 @@ class IngestionRepository(BaseRepository[IngestionJob]):
     ) -> bool:
         async with self._db.transaction_async() as session:
             job = await session.scalar(select(IngestionJob).where(IngestionJob.id == job_id).with_for_update())
+            db_now = await session.scalar(select(func.now()))
             if (
                 job is None
                 or job.status != "leased"
                 or job.lease_owner != token
                 or job.lease_expires_at is None
-                or job.lease_expires_at <= datetime.now(UTC)
+                or job.lease_expires_at <= db_now
             ):
                 return False
             version = await session.get(DocumentVersion, job.version_id)
@@ -301,23 +317,50 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             self._audit(session, job, job.source_id, job.deployment_scope, "worker", job.status, error_code)
             return True
 
-    async def expire_staging_async(self, scope: str, age_seconds: int = 300) -> int:
+    async def list_stale_staging_async(self, scope: str, age_seconds: int = 30):
+        """Only read committed stale intents. Never hold a transaction across object network I/O."""
+        async with self._db.transaction_async() as session:
+            rows = await session.execute(
+                select(
+                    IngestionJob.id,
+                    IngestionJob.owner_principal_id,
+                    IngestionJob.checksum_sha256,
+                    IngestionJob.created_at,
+                    DocumentVersion.object_key,
+                    DocumentVersion.byte_size,
+                )
+                .join(DocumentVersion, IngestionJob.version_id == DocumentVersion.id)
+                .where(
+                    IngestionJob.deployment_scope == scope,
+                    IngestionJob.status == "staging",
+                    IngestionJob.created_at < func.now() - timedelta(seconds=age_seconds),
+                )
+                .order_by(IngestionJob.created_at)
+                .limit(20)
+            )
+            return [tuple(x) for x in rows.all()]
+
+    async def exhaust_expired_async(self, scope: str) -> int:
+        """Terminally fence leases after their final attempted execution."""
         async with self._db.transaction_async() as session:
             jobs = await session.scalars(
                 select(IngestionJob)
                 .where(
                     IngestionJob.deployment_scope == scope,
-                    IngestionJob.status == "staging",
-                    IngestionJob.created_at < func.now() - timedelta(seconds=age_seconds),
+                    IngestionJob.status == "leased",
+                    IngestionJob.lease_expires_at <= func.now(),
+                    IngestionJob.attempts >= IngestionJob.max_attempts,
                 )
                 .limit(20)
                 .with_for_update(skip_locked=True)
             )
             count = 0
             for job in jobs:
-                job.status, job.error_code = "dead", "staging_abandoned"
+                job.status, job.error_code = "dead", "lease_expired"
+                job.lease_owner = None
+                job.lease_expires_at = None
                 version = await session.get(DocumentVersion, job.version_id)
                 version.state = "failed"
-                self._audit(session, job, job.source_id, scope, "worker", "staging_abandoned", job.error_code)
+                self._audit(session, job, job.source_id, scope, "worker", "dead", job.error_code)
                 count += 1
             return count
