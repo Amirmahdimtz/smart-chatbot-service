@@ -72,11 +72,15 @@ class KnowledgeSource(Base):
     __table_args__ = (
         CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_source_scope"),
         UniqueConstraint("id", "deployment_scope", name="uq_source_id_scope"),
+        CheckConstraint("source_type IN ('file')", name="ck_source_type"),
+        CheckConstraint("status IN ('active', 'disabled')", name="ck_source_status"),
     )
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
     deployment_scope: Mapped[str] = mapped_column(String(8), nullable=False)
     owner_principal_id: Mapped[str] = mapped_column(String(255), nullable=False)
     domain: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(16), nullable=False, server_default="file")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
@@ -111,7 +115,7 @@ class DocumentVersion(Base):
         ),
         CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_version_scope"),
         CheckConstraint("version_number > 0", name="ck_version_number"),
-        CheckConstraint("state IN ('draft', 'revoked')", name="ck_version_state"),
+        CheckConstraint("state IN ('draft', 'processing', 'failed', 'awaiting_approval', 'published', 'revoked', 'superseded')", name="ck_version_state"),
         UniqueConstraint("document_id", "version_number", name="uq_document_version"),
         UniqueConstraint("id", "deployment_scope", name="uq_version_id_scope"),
     )
@@ -120,6 +124,10 @@ class DocumentVersion(Base):
     deployment_scope: Mapped[str] = mapped_column(String(8), nullable=False)
     version_number: Mapped[int] = mapped_column(Integer, nullable=False)
     checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    safe_filename: Mapped[str | None] = mapped_column(String(255))
+    content_type: Mapped[str | None] = mapped_column(String(80))
+    object_key: Mapped[str | None] = mapped_column(String(256), unique=True)
+    byte_size: Mapped[int | None] = mapped_column(Integer)
     state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
