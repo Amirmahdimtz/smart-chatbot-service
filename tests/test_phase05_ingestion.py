@@ -247,3 +247,35 @@ def test_scanner_malware_response_is_rejected(disabled):
             await server.wait_closed()
 
     asyncio.run(exercise())
+
+
+def test_scanner_timeout_without_clean_verdict_fails_closed():
+    async def exercise():
+        stop = asyncio.Event()
+
+        async def daemon_without_verdict(reader, writer):
+            try:
+                await stop.wait()
+            finally:
+                writer.close()
+                await writer.wait_closed()
+
+        listener = await asyncio.start_server(daemon_without_verdict, "127.0.0.1", 0)
+        try:
+            cfg = SimpleNamespace(
+                ingestion=SimpleNamespace(
+                    enabled=True,
+                    max_file_bytes=1024,
+                    clamd_host="127.0.0.1",
+                    clamd_port=listener.sockets[0].getsockname()[1],
+                    timeout_seconds=0.05,
+                )
+            )
+            with pytest.raises(ScanUnavailable):
+                await ClamAvScanner(SimpleNamespace(settings=cfg)).scan_async(b"synthetic")
+        finally:
+            stop.set()
+            listener.close()
+            await listener.wait_closed()
+
+    asyncio.run(exercise())
