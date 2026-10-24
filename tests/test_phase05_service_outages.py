@@ -226,7 +226,7 @@ def test_s3_cold_restart_preserves_immutable_quarantined_bytes():
 
 def test_clamav_cold_restart_restores_genuine_malware_verdict():
     _guard()
-    eicar = b"X5O!P%@AP[4\\\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
 
     async def exercise():
         container = bootstrap_di()
@@ -278,6 +278,11 @@ def test_postgresql_cold_restart_reclaims_persisted_inflight_lease():
                 owner, job, version, checksum = await _stage(repo, payload)
                 await store.put_async(version.object_key, payload, checksum)
                 assert await repo.mark_queued_async(job.id, owner, "internal")
+                # Earlier integration tests may leave older synthetic retry jobs;
+                # make THIS test's disposable job the oldest eligible candidate.
+                async with db.transaction_async() as session:
+                    own_row = await session.get(IngestionJob, job.id)
+                    own_row.created_at = datetime.now(UTC) - timedelta(days=2)
                 old_lease = await repo.claim_async("before-postgres-restart", "internal", 2)
                 assert old_lease and old_lease[0] == job.id
                 await db.close_async()
