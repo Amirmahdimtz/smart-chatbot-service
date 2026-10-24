@@ -30,7 +30,7 @@ This file is not a PASS claim. After each real execution record source SHA, runn
 - `postgres-integration`: GitHub Actions isolated PostgreSQL **16.15**, synthetic `scb_phase03_test` database; first Alembic `--upgrade` PASS; repeated `--upgrade` PASS; `--check` reports **No new upgrade operations detected**; `pytest -q tests/test_phase03_postgresql.py`: **3 passed** (metadata/negative config/real PostgreSQL constraints and concurrent transactional operations); `--downgrade-test-only`, re-upgrade and repeat drift check PASS. This is a destructive reverse strategy **only on ephemeral CI test database**, not a proof of production backup/restore.
 - PostgreSQL expected negative-test ERROR entries for forbidden composite FK scope, duplicate message sequence, duplicate version, and RESTRICT delete appear in PostgreSQL service log; those errors are intentional inputs under `pytest.raises(IntegrityError)` and do not represent failing integration tests.
 - `docker-build`: PASS. `secret-scan`: PASS. No credentials for organization systems, no real HR/PII records, and no shared PostgreSQL touched.
-- Latest documentation-only status/evidence commit must not be described as having passed CI until its workflow actually completes.
+- Documentation-only status commit `ae46126266d8b55857077480f7c0792e174fad9a`: [CI 40079253726](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40079253726) 4/4 jobs PASS.
 
 ## Still pending
 
@@ -38,3 +38,11 @@ This file is not a PASS claim. After each real execution record source SHA, runn
 - **C — On-Prem:** separate Public/Internal PostgreSQL network, role/credential isolation, organization CA/TLS, migrations and verified backup/PITR restore, deadlocks/soak/load/HA, D-07/D-08 classification/retention/consent/approval and Security/Infrastructure/Privacy sign-offs. **NOT_RUN**.
 - **Benchmark:** no throughput, database latency, QPS, RPO or RTO values measured or claimed.
 - Outcome: `IMPLEMENTED_AWAITING_VERIFICATION`; marker `PHASE_03_IMPLEMENTED_AWAITING_VERIFICATION` is justified for source and CI but not `CLOSED`.
+
+## Latest source validation — scope gate and CRUD transaction coverage
+
+- [Commit `35bbff3ec9d5b806904b8c0be5427e8c92fd3fd7`](https://github.com/Amirmahdimtz/smart-chatbot-service/commit/35bbff3ec9d5b806904b8c0be5427e8c92fd3fd7) adds `ConfigReader` constructor injection to `ConversationService` and validates that every requested `scope` equals deployment configuration; adds negative cross-zone tests, generic repository CRUD / caller-owned rollback integration and production empty-password configuration denial.
+- [CI run 40079517611](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40079517611): **4/4 jobs PASS**, same-day GitHub Actions. `verify`: compile PASS; both Phase 01 validators PASS; **38 pytest passed, 1 PostgreSQL-only test skipped, 1 known Starlette warning**; Ruff lint PASS (`All checks passed!`); Ruff format PASS (`26 files already formatted`); `pip-audit --strict` PASS (`No known vulnerabilities found`); SBOM generation/upload PASS.
+- `postgres-integration` with isolated PostgreSQL 16.15: migration upgrade/re-upgrade PASS; Alembic `--check`: `No new upgrade operations detected`; real `tests/test_phase03_postgresql.py` **3 passed in 0.93s**; disposable test-only downgrade/re-upgrade and final `--check` PASS. Three pytest tests contain multiple assertions for concurrency, owner/cross-zone isolation, scoped FKs, unique constraints, transaction rollback and generic repository CRUD. No separate per-assertion pass counts claimed.
+- `docker-build` PASS; `secret-scan` PASS.
+- No real organization data or organization database touched; **no Windows run, organizational backup/restore, TLS/network isolation or policy approval evidence**.

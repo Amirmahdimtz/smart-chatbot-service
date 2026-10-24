@@ -39,7 +39,7 @@ erDiagram
 
 - IDs are application-generated UUIDs, PostgreSQL `uuid`, and `created_at`/`updated_at` are `timestamptz` (PostgreSQL session timezone should be UTC); monotonic message sequence unique per conversation.
 - Composite FKs enforce deployment scope on each edge. Public/Internal also require **physically distinct PostgreSQL databases, network controls and credentials**; a column is *not* a cross-deployment security boundary.
-- `owner_principal_id` and `deployment_scope` are mandatory for conversation/source; `ConversationRepository` requires both for read/list/append. Other tables have no external read APIs and cannot be published. Actual identity principal must come from the authenticated request context in Phase 10, never a client-controlled string.
+- `owner_principal_id` and `deployment_scope` are mandatory for conversation/source; `ConversationRepository` requires both for read/list/append, and `ConversationService` enforces the configured deployment zone before repository I/O. Other tables have no external read APIs and cannot be published. Actual identity principal must come from the authenticated request context in Phase 10, never a client-controlled string.
 - `Conversation.revision` uses SQLAlchemy optimistic version detection. Appending serializes on a row-level `FOR UPDATE` lock, allocates sequence inside a single transaction, and enforces a unique scoped idempotency key. Concurrent unrelated tasks must use independent `AsyncSession`.
 - `document_version.state` is restricted to `draft` and `revoked`; no SQL state can publish to Public at this gate. `classification` is nullable because official categories/policy are still unapproved; an unset value must mean DENY, not Public.
 - Foreign keys use RESTRICT, not cascading content deletion. Retention, legal hold, archive and purge remain D-08 decisions; never infer retention from these columns.
@@ -58,5 +58,5 @@ erDiagram
 
 - **BLOCKED_DECISION:** D-07 principal format/SSO, D-08 classifications, content retention, audit storage, ownership and approval policy; domain owners Security/Privacy/HR/Knowledge; due: prior to consuming real data or exposing any Phase 10/05 write route.
 - **BLOCKED_EXTERNAL:** live test/staging PostgreSQL, separate public/internal credentials and network boundaries, TLS CA, migrations performed by an approved migration identity; Infrastructure/Security owner, due before organizational acceptance.
-- **NOT_RUN pending test evidence:** PostgreSQL CI/container verification, concurrent duplicate/revision tests, backup/restore and real deployment integration must have separate recorded outputs.
+- **Verified isolated CI:** PostgreSQL 16.15 migration, concurrent append/optimistic conflict, scope/duplicate/FK/rollback tests, disposable test-only reverse and schema drift check PASS in [Actions run 40079517611](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40079517611). **NOT_RUN:** Windows system tests, true backup/restore, on-prem TLS/network/auth separation, load and operational recovery.
 - Phase 04 (Qdrant) is outside this work. No agent, upload, OCR or LLM provider is introduced.
