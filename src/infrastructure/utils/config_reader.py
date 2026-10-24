@@ -90,6 +90,7 @@ class Settings(StrictModel):
                     or not parts.hostname
                     or not parts.username
                     or parts.password is None
+                    or (self.environment != "development" and parts.password == "")
                     or not parts.path.strip("/")
                     or parts.query
                 ):

@@ -22,6 +22,7 @@ from src.infrastructure.models.entities import (
     KnowledgeSource,
     Message,
 )
+from src.infrastructure.repositories.base.base_repository import BaseRepository
 from src.infrastructure.utils.config_reader import ConfigReader, ConfigurationError
 
 
@@ -91,7 +92,10 @@ def test_real_postgresql_transactions_constraints_and_concurrency(monkeypatch):
             foreign_owner = "synthetic-" + str(uuid4())
             c = await service.create_async(owner, "public")
             assert await service.get_owned_async(c.id, foreign_owner, "public") is None
-            assert await service.get_owned_async(c.id, owner, "internal") is None
+            with pytest.raises(PermissionError):
+                await service.get_owned_async(c.id, owner, "internal")
+            with pytest.raises(PermissionError):
+                await service.create_async(owner, "internal")
             assert (await service.list_owned_async(owner, "public", limit=1))[0].id == c.id
             with pytest.raises(ValueError):
                 await service.list_owned_async(owner, "public", limit=101)
@@ -151,6 +155,21 @@ def test_real_postgresql_transactions_constraints_and_concurrency(monkeypatch):
                 with pytest.raises(StaleDataError):
                     await b.commit()
                 await b.rollback()
+            generic = BaseRepository(db_context=db, model=KnowledgeSource)
+            scratch = KnowledgeSource(owner_principal_id=owner, deployment_scope="public", domain="synthetic")
+            assert await generic.insert_and_get_id_async(scratch) == scratch.id
+            assert (await generic.get_by_id_async(scratch.id)).id == scratch.id
+            assert any(item.id == scratch.id for item in await generic.get_all_async())
+            scratch.domain = "synthetic-updated"
+            assert (await generic.update_async(scratch)).domain == "synthetic-updated"
+            assert await generic.delete_async(scratch.id) is True
+            assert await generic.delete_async(scratch.id) is False
+            aborted_source = KnowledgeSource(owner_principal_id=owner, deployment_scope="public", domain="rollback")
+            with pytest.raises(RuntimeError):
+                async with db.transaction_async() as session:
+                    await generic.insert_async(aborted_source, session=session)
+                    raise RuntimeError("rollback caller-owned session")
+            assert await generic.get_by_id_async(aborted_source.id) is None
             source = KnowledgeSource(owner_principal_id=owner, deployment_scope="internal", domain="research")
             async with db.transaction_async() as session:
                 session.add(source)

@@ -7,19 +7,22 @@ from uuid import UUID
 from src.infrastructure.di.inject import inject
 from src.infrastructure.models.entities import Conversation, Message
 from src.infrastructure.repositories.conversation.conversation_repository import ConversationRepository
+from src.infrastructure.utils.config_reader import ConfigReader
 
 
 @inject
 class ConversationService:
-    def __init__(self, conversation_repository: ConversationRepository):
+    def __init__(self, conversation_repository: ConversationRepository, config_reader: ConfigReader):
         self._repository = conversation_repository
+        self._deployment_scope = config_reader.settings.deployment_zone
 
-    @staticmethod
-    def _identity(principal: str, scope: str) -> tuple[str, str]:
+    def _identity(self, principal: str, scope: str) -> tuple[str, str]:
         if not isinstance(principal, str) or not principal.strip() or len(principal) > 255:
             raise ValueError("Invalid principal")
         if scope not in {"public", "internal"}:
             raise ValueError("Invalid deployment scope")
+        if scope != self._deployment_scope:
+            raise PermissionError("Cross-deployment scope rejected")
         return principal, scope
 
     async def create_async(self, principal: str, scope: str) -> Conversation:
