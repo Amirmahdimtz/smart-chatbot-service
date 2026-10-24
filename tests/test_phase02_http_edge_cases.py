@@ -59,9 +59,7 @@ def test_empty_chunk_flood_is_coalesced_to_one_bounded_asgi_event():
 
 def test_declared_length_mismatch_rejected_without_invoking_application():
     frames = [{"type": "http.request", "body": b"abc", "more_body": False}]
-    statuses, called, _ = asyncio.run(
-        _exercise_async(frames, method="POST", headers=[(b"content-length", b"4")])
-    )
+    statuses, called, _ = asyncio.run(_exercise_async(frames, method="POST", headers=[(b"content-length", b"4")]))
     assert statuses == [400]
     assert not called
 
