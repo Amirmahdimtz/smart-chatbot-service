@@ -29,6 +29,9 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\ruff.exe check src tests
 .\.venv\Scripts\ruff.exe format --check src tests
 .\.venv\Scripts\pip-audit.exe -r requirements.txt --strict --timeout 60
+# A ConnectionError/RemoteDisconnected means audit INCONCLUSIVE, not PASS or vulnerable.
+# Check approved HTTPS/proxy/PyPI connectivity, and retry once reachable; never disable TLS.
+# A successful GitHub CI audit is recorded separately from a failed Windows audit.
 ```
 
 For the isolated PostgreSQL test (requires Docker; never run against a real dataset):
@@ -36,7 +39,19 @@ For the isolated PostgreSQL test (requires Docker; never run against a real data
 ```powershell
 $testPassword = [guid]::NewGuid().ToString("N")
 docker run -d --name scb-phase03-postgres -p 127.0.0.1:55433:5432 -e POSTGRES_USER=scb_test -e POSTGRES_PASSWORD=$testPassword -e POSTGRES_DB=scb_phase03_test postgres:16
-docker exec scb-phase03-postgres pg_isready -U scb_test -d scb_phase03_test
+# Docker starts asynchronously; wait for disposable PostgreSQL to accept connections.
+$postgresReady = $false
+for ($attempt = 1; $attempt -le 30; $attempt++) {
+    docker exec scb-phase03-postgres pg_isready -q -U scb_test -d scb_phase03_test
+    if ($LASTEXITCODE -eq 0) {
+        $postgresReady = $true
+        break
+    }
+    Start-Sleep -Seconds 2
+}
+if (-not $postgresReady) {
+    throw "Disposable PostgreSQL did not become ready; inspect container logs before retrying."
+}
 $env:SCB_ENV = "development"
 $env:SCB_ZONE = "public"
 $env:SCB_DATABASE_ENABLED = "true"
@@ -54,7 +69,7 @@ Remove-Item Env:SCB_DATABASE_ENABLED -ErrorAction SilentlyContinue
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-`--downgrade-test-only` **drops all six foundation tables**; run only after explicitly confirming the test database is disposable, has no needed data and its name ends `_test`. To test reverse/reinstall in that scenario:
+`--downgrade-test-only` **drops all six foundation tables**; run only after explicitly confirming the test database is disposable, has no needed data and its name ends `_test`. This optional step was **NOT_RUN on the owner's Windows workstation**. The main workflow above clears database environment variables; to run the separate reverse-test snippet, first explicitly restore only the isolated disposable `_test` connection settings, and do not point at shared, persistent or organization PostgreSQL. To test reverse/reinstall in that scenario:
 
 ```powershell
 .\.venv\Scripts\python.exe src/infrastructure/scripts/run_migrations.py --downgrade-test-only
