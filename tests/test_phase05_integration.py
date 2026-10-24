@@ -134,11 +134,14 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
     assert collision.json() == {"error": "idempotency_conflict"}
 
     outsider = {"Authorization": "Bearer " + token("synthetic-foreign", ["knowledge:test:ingest"])}
-    assert http.post(
-        f"/api/v1/knowledge/sources/{source}/documents",
-        headers={**outsider, "Idempotency-Key": uuid4().hex},
-        files={"file": ("paper.txt", b"foreign", "text/plain")},
-    ).status_code == 403
+    assert (
+        http.post(
+            f"/api/v1/knowledge/sources/{source}/documents",
+            headers={**outsider, "Idempotency-Key": uuid4().hex},
+            files={"file": ("paper.txt", b"foreign", "text/plain")},
+        ).status_code
+        == 403
+    )
 
     for filename, body, mime, expected in (
         ("../traversal.txt", b"safe", "text/plain", 422),
@@ -152,11 +155,14 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
             files={"file": (filename, body, mime)},
         )
         assert rejected.status_code == expected, (filename, rejected.status_code, rejected.text)
-    assert http.post(
-        f"/api/v1/knowledge/sources/{source}/documents",
-        headers={**bearer, "Idempotency-Key": uuid4().hex, "x-user-id": "synthetic-victim"},
-        files={"file": ("ok.txt", b"safe", "text/plain")},
-    ).status_code == 400
+    assert (
+        http.post(
+            f"/api/v1/knowledge/sources/{source}/documents",
+            headers={**bearer, "Idempotency-Key": uuid4().hex, "x-user-id": "synthetic-victim"},
+            files={"file": ("ok.txt", b"safe", "text/plain")},
+        ).status_code
+        == 400
+    )
     malformed = http.post(
         f"/api/v1/knowledge/sources/{source}/documents",
         headers={**bearer, "Idempotency-Key": uuid4().hex, "content-type": "multipart/form-data; boundary=broken"},
@@ -460,8 +466,15 @@ def test_real_malware_corrupted_object_and_scanner_network_failure():
             source = await repo.create_source_async(actor, "internal", "research")
             malware_hash = hashlib.sha256(EICAR).hexdigest()
             infected, infected_version, created = await repo.stage_async(
-                source.id, actor, "internal", "eicar.txt", "text/plain",
-                len(EICAR), malware_hash, uuid4().hex, 1,
+                source.id,
+                actor,
+                "internal",
+                "eicar.txt",
+                "text/plain",
+                len(EICAR),
+                malware_hash,
+                uuid4().hex,
+                1,
             )
             assert created
             await store.put_async(infected_version.object_key, EICAR, malware_hash)
@@ -475,8 +488,15 @@ def test_real_malware_corrupted_object_and_scanner_network_failure():
             original = ("expected-" + uuid4().hex).encode()
             changed = ("modified-" + uuid4().hex).encode()
             queued, version, _ = await repo.stage_async(
-                source.id, actor, "internal", "changed.txt", "text/plain",
-                len(original), hashlib.sha256(original).hexdigest(), uuid4().hex, 1,
+                source.id,
+                actor,
+                "internal",
+                "changed.txt",
+                "text/plain",
+                len(original),
+                hashlib.sha256(original).hexdigest(),
+                uuid4().hex,
+                1,
             )
             await store.put_async(version.object_key, original, hashlib.sha256(original).hexdigest())
             assert await repo.mark_queued_async(queued.id, actor, "internal")
@@ -494,8 +514,11 @@ def test_real_malware_corrupted_object_and_scanner_network_failure():
             cfg = SimpleNamespace(
                 settings=SimpleNamespace(
                     ingestion=SimpleNamespace(
-                        enabled=True, max_file_bytes=1048576, clamd_host="127.0.0.1",
-                        clamd_port=unused_port, timeout_seconds=0.5,
+                        enabled=True,
+                        max_file_bytes=1048576,
+                        clamd_host="127.0.0.1",
+                        clamd_port=unused_port,
+                        timeout_seconds=0.5,
                     )
                 )
             )
