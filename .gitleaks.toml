@@ -1,9 +1,3 @@
-# Extend default secret rules. This narrowly exempts a PUBLICLY KNOWN,
-# nonproduction, synthetic CI-only value from an older PR commit.
-# It cannot authenticate to any current CI, shared, or organization service.
+# Default rules apply. Historical synthetic CI fixtures are ignored by exact fingerprint only.
 [extend]
 useDefault = true
-
-[[allowlists]]
-description = "Historical synthetic-only Qdrant CI fixture, rotated to ephemeral random credentials"
-regexes = ['scb_phase04_synthetic_ci']
