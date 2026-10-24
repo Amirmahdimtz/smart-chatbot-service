@@ -231,7 +231,6 @@ def test_duplicate_authorization_headers_are_rejected(client):
     assert response.status_code == 400
 
 
-
 def test_enabled_qdrant_readiness_fails_closed_after_outage(client, monkeypatch):
     http, _, app = client
     cfg = app.state.container.resolve(ConfigReader)
