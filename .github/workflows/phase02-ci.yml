@@ -155,9 +155,11 @@ jobs:
           echo "SCB_INGESTION_S3_ACCESS_KEY=$user" >> "$GITHUB_ENV"
           echo "SCB_INGESTION_S3_SECRET_KEY=$password" >> "$GITHUB_ENV"
           docker run -d --rm --name scb-phase05-s3 \
-            -e MINIO_ROOT_USER="$user" -e MINIO_ROOT_PASSWORD="$password" \
-            -p 127.0.0.1:9000:9000 \
-            ghcr.io/coollabsio/minio@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9 server /data
+            -e AWS_ACCESS_KEY_ID="$user" -e AWS_SECRET_ACCESS_KEY="$password" \
+            -e S3_BUCKET=scb-quarantine \
+            -p 127.0.0.1:9000:8333 \
+            -v scb-phase05-seaweed-data:/data \
+            chrislusf/seaweedfs:4.44
           docker run -d --rm --name scb-phase05-clamav \
             -e CLAMAV_NO_FRESHCLAMD=true \
             -p 127.0.0.1:3310:3310 clamav/clamav@sha256:3bba6dd5ac6663d55b80f86a3126e146612d93b593cc2617188d13f637d91260
@@ -181,7 +183,8 @@ jobs:
           for i in range(100):
               try:
                   with socket.create_connection(("127.0.0.1", 3310), timeout=2):
-                      s3.create_bucket(Bucket="scb-quarantine")
+                      # SeaweedFS mini may create S3_BUCKET at startup.
+                      s3.head_bucket(Bucket="scb-quarantine")
                       break
               except Exception:
                   time.sleep(2)
@@ -206,3 +209,4 @@ jobs:
         run: |
           docker logs --tail 30 scb-phase05-clamav || true
           docker rm -f scb-phase05-clamav scb-phase05-s3 || true
+          docker volume rm scb-phase05-seaweed-data || true
