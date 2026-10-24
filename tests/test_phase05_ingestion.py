@@ -119,6 +119,16 @@ def test_allowed_media_type_does_not_bypass_filename_allowlist(name, mime):
     asyncio.run(exercise())
 
 
+def test_structurally_valid_digital_pdf_is_accepted():
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=100)
+    output = BytesIO()
+    writer.write(output)
+    validate_content(output.getvalue(), "application/pdf")
+
+
 def test_utf8_allowed():
     validate_content("سلام\nworld".encode(), "text/plain")
 
