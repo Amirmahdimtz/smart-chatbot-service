@@ -199,6 +199,8 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
       - run: python -m pytest -q tests/test_phase05_integration.py
+      - name: Real dependency outage/recovery injection on disposable CI containers only
+        run: python -m pytest -q tests/test_phase05_service_outages.py
       - name: Remove synthetic containers
         if: always()
         run: |
