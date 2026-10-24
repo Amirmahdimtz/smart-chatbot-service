@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from src.host.app import create_app
 from src.infrastructure.di.bootstrap import bootstrap_di
+from src.infrastructure.providers.qdrant.qdrant_provider import QdrantProvider, QdrantUnavailable
 from src.infrastructure.security.token_validator import TokenValidator
 from src.infrastructure.utils.config_reader import ConfigReader, ConfigurationError
 
@@ -85,7 +86,8 @@ def test_discovery_is_deterministic_and_singletons_are_per_app(monkeypatch):
     assert a.state.container.resolve(ConfigReader) is a.state.container.resolve(ConfigReader)
     assert a.state.container.resolve(ConfigReader) is not b.state.container.resolve(ConfigReader)
     container = bootstrap_di()
-    assert len(container._providers) == 8
+    assert len(container._providers) == 9
+    assert QdrantProvider in container._providers
 
 
 def test_health_and_telemetry(client):
@@ -227,3 +229,18 @@ def test_duplicate_authorization_headers_are_rejected(client):
         headers=[("Authorization", auth), ("Authorization", "Bearer invalid")],
     )
     assert response.status_code == 400
+
+
+def test_enabled_qdrant_readiness_fails_closed_after_outage(client, monkeypatch):
+    http, _, app = client
+    cfg = app.state.container.resolve(ConfigReader)
+    cfg.settings = cfg.settings.model_copy(update={"qdrant": cfg.settings.qdrant.model_copy(update={"enabled": True})})
+    provider = app.state.container.resolve(QdrantProvider)
+
+    async def failed_health_async():
+        raise QdrantUnavailable()
+
+    monkeypatch.setattr(provider, "check_async", failed_health_async)
+    response = http.get("/api/v1/health_check/ready")
+    assert response.status_code == 503
+    assert response.json() == {"error": "service_unavailable"}

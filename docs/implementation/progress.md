@@ -21,7 +21,8 @@
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
 | 02 | IMPLEMENTED_AWAITING_VERIFICATION | Code included in owner-verified `main` SHA `${sha}`: **36/36 pytest PASS on Windows and GitHub CI** (3/3 jobs); Windows Ruff and `pip-audit --strict --timeout 60` PASS. Real IdP/Vault, independent Public/Internal test credentials and network isolation, ingress/TLS, HA/restore and owner sign-off remain pending — [Phase 02 evidence](phase_02_evidence.md) |
 | 03 | **CLOSED — TECHNICAL ONLY** | Reviewed source `33c215945676c9d84bca7b6511f059a7b3a6c171`, [CI run 40087999023](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40087999023): 4/4 success, 39 passed/1 skipped general tests; 4 passed isolated real PostgreSQL integration; migrations and audit PASS. [Technical acceptance](phase_03_technical_acceptance.md); Group C `P18-P03-C01`–`C06` [deferred to Phase 18](phase_18_verification_register.md). D-07/D-08 needed for real data; **NOT PRODUCTION_READY**. |
-| 04–14 | NOT_STARTED | Follow implementation plan dependencies |
+| 04 | **CLOSED — TECHNICAL ONLY** | [Phase 04 technical acceptance](phase_04_technical_acceptance.md), CI [40091297919](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40091297919): 5/5 jobs SUCCESS, 43 passed/5 skipped general, 7 real Qdrant, 4 real PostgreSQL; P18-P04-C01–C10 deferred. NOT_PRODUCTION_READY |
+| 05–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
 | 18 | NOT_STARTED | Full deployment/release verification |
@@ -83,3 +84,30 @@ Phase 03 retains `PHASE_03_IMPLEMENTED_AWAITING_VERIFICATION`: security scan suc
 [ADR-0007](../decisions/ADR-0007-phase04-conditional-development-gate.md) records a **CONDITIONAL_GO_FOR_DEVELOPMENT_ONLY** after independent verification of the `main` source and the Phase 03 technical closure. [CI run 40088290757](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40088290757) completed **4/4 jobs SUCCESS** on the approved Phase 03 closure SHA `ce3def7094bafbd505dd51e4059b285ae7852d09`.
 
 **Phase 04 remains `NOT_STARTED`.** Entry is authorized only for isolated, synthetic-data Qdrant development **after explicit owner instruction**. Phase 01 and Phase 02 remain `IMPLEMENTED_AWAITING_VERIFICATION`, and the exception does not approve their missing owner decisions. Phase 03 remains `CLOSED` (technical). Phase 04 Group A/B must include actual Qdrant Docker/CI Integration; Group C organization infrastructure tests are deferred **only to Phase 18** and must be registered with immutable IDs when Phase 04 is carried out. D-03/D-04 production embedding dimensions/sparse strategy and D-07/D-08 data policy/identity approval remain open. **Production Release Status: NOT_READY.** No Qdrant provider, migrations, test results or Phase 04 CLOSED marker is asserted by the gate review.
+
+
+## Phase 04 implementation initiated (2026-10-24)
+
+Owner's explicit command starts Phase 04 under ADR-0007 from verified main SHA `0b34f457bacfe4aba704ff01563fcd1c4e62a97c`. Development is on PR #1 `feat/phase04-qdrant`. The phase adds a real asynchronous Qdrant infrastructure boundary, synthetic-only CI integration, independent deployment-zone config/credential validation and planned versioned index/alias contract. Baseline CI [40088833699](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40088833699) passed; first Phase 04 PR CI [40089879822](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40089879822) had actual failures, documented in [Phase 04 evidence](phase_04_evidence.md) and addressed in subsequent commits. No `PHASE_04_CLOSED` marker until current-source A/B evidence is reviewed.
+
+- Tests A: initial failures recorded; follow-up evidence pending.
+- Tests B: genuine isolated Qdrant Docker container started; operation-level integration must be retested and evaluated.
+- Tests A/B required but missing: current verified green full CI, real scoped query/index/alias/rebuild, bounded retries and schema incompatibility proof pending.
+- Tests C: ten unique `P18-P04-C01`–`P18-P04-C10` records in the [Phase 18 Register](phase_18_verification_register.md), all `DEFERRED_TO_PHASE_18`.
+- Technical DoD: pending; Phase Before `NOT_STARTED` → Current `IN_PROGRESS`.
+- Prior statuses: Phase 01/02 unchanged; Phase 03 technically CLOSED.
+- Production Release: NOT_READY. Phase 05 not started, requires explicit separate instruction.
+
+
+## Phase 04 technical closure — independently reviewed (2026-10-24)
+
+**Marker: `PHASE_04_CLOSED` — technical only, synthetic-data Qdrant infrastructure.**
+- Owner start instruction and approved ADR-0007 scope; Phase Status Before `NOT_STARTED` → After `CLOSED` after implementation, corrections and independent review.
+- Implementation source `29e846070dd1089321520222b39688219a5e7cb2` on PR #1. [CI 40091297919](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40091297919) 5/5 SUCCESS, details in [Phase04 evidence](phase_04_evidence.md) and [acceptance](phase_04_technical_acceptance.md).
+- Tests A: compile, validator, Ruff check/format, unit/negative/regression (43 passed/5 skipped), pip-audit strict, SBOM, Docker and gitleaks PASS. CI historic failures preserved.
+- Tests B: real Qdrant 1.20 isolated with synthetic data, auth/filter/rebuild/alias/index/schema/snapshot/timeout integration 7 passed; PostgreSQL 16 real integration 4 passed and migration/reverse/drift PASS.
+- Tests A/B Required but Missing: none for Phase04 approved synthetic technical scope.
+- Tests C deferred: `P18-P04-C01` through `P18-P04-C10` all registered `DEFERRED_TO_PHASE_18` with role owners, expectations, evidence. No organization test executed.
+- D-03/D-04/D-07/D-08 and Phase01/02 approvals remain open/unchanged; no data publication, organizational security approval or model dimension finalization.
+- Technical DoD PASS for this limited scope; AI-assisted technical review does not replace accountable organization Security/Operations signoff.
+- Production Release Status: **NOT_READY**; Phase18 remains the only On-Prem production verification and release gate. Phase05 not started.

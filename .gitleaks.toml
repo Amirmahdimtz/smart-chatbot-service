@@ -1,0 +1,3 @@
+# Default rules apply. Historical synthetic CI fixtures are ignored by exact fingerprint only.
+[extend]
+useDefault = true
