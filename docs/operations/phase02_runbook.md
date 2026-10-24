@@ -123,3 +123,19 @@ Stop instances, revert to a known-good image by immutable image digest, restore 
 - Expired IP buckets are cleaned before the 10,000-client capacity test. Limits are still per process and use the socket peer. Do not trust client-supplied X-Forwarded-For; distribute limits through an approved ingress configuration and trusted-proxy list (open D-01/D-07).
 - Windows PowerShell 5.1: the smoke-test Invoke-WebRequest command uses -UseBasicParsing to avoid interactive HTML parsing prompts.
 - Pinning the base image by an approved digest, transitive dependency hashes, and configuring an on-prem trace exporter require approved supply-chain and operations decisions. Neither is represented as completed in this remediation.
+
+## HTTP framing remediation and test command (2026-10-24)
+
+Requests with bodies are bounded by the configured `server.max_request_bytes` regardless of method. Duplicate Content-Length, simultaneous Content-Length/Transfer-Encoding and mismatched declared/actual body lengths yield HTTP **400**, while an actual body above the limit yields **413**. Small multi-frame request bodies are aggregated and replayed as one ASGI request event. Gateway-provided transport validation and TLS remain mandatory.
+
+The newly added ASGI tests are in `tests/test_phase02_http_edge_cases.py`. For an existing Windows checkout (in the directory containing `.git`), run `git pull --ff-only`, check `git rev-parse HEAD`, then run:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\ruff.exe check src tests
+.\.venv\Scripts\ruff.exe format --check src tests
+.\.venv\Scripts\pip-audit.exe -r requirements.txt --strict
+```
+
+Expected current CI baseline: **32 pytest PASS**, one known non-blocking framework warning. Do not mark owner Windows validation PASS until the actual updated PowerShell transcript is supplied.

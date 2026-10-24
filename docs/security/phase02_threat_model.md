@@ -22,3 +22,10 @@
 - Mid-response timeout: aborts incomplete ASGI response instead of sending conflicting HTTP status; actual ingress behavior requires verification.
 - Full IP cache: expired buckets are evicted before 10k capacity denial; proxy IP fairness and distributed edge limits remain open.
 - Base image digest, transitive lockfile, monitoring exporter, IAM roles, and network zone isolation remain unapproved or unverified. No organizational sign-off is implied.
+
+## Phase 02 second technical audit — HTTP framing (2026-10-24)
+
+- **All-method request size enforcement:** GET, HEAD and OPTIONS are now subject to the same actual-stream payload cap as POST/PUT/PATCH/DELETE; Content-Length alone is not relied upon. CI regression covers an oversized chunked GET with absent Content-Length.
+- **Memory boundedness:** many empty or tiny ASGI request events are coalesced into a single bounded request-body event before the application executes; CI regression verifies 2,000 empty frames do not create 2,000 retained event objects. An ingress transport-level timeout and buffering policy are still required for slow clients.
+- **Framing ambiguity:** duplicated Content-Length, combined Content-Length/Transfer-Encoding or mismatch between declared and observed body length returns 400. This is defense in depth and does not replace an approved reverse proxy's HTTP request-smuggling safeguards.
+- **Acceptance:** four earlier high-priority source defects and these newly identified HTTP framing gaps are covered by tests. Actual two-zone production-equivalent credential/network testing, audit retention and real IdP/Vault are still pending. **NO Phase 02 security or release sign-off has been issued.**

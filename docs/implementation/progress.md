@@ -19,7 +19,7 @@
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
-| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Runtime and security remediation committed on `main` (`c95c8bbe1c9982d5f9c806837350afc52c9c87bf`); CI 3/3 jobs PASS, owner-reported Windows 27/27 tests and lint/audit PASS. Real IdP/Vault, public/internal isolation, approved ingress, operational drills and owner acceptance pending — [Phase 02 evidence](phase_02_evidence.md) |
+| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Source hardening on `main` (`f01862d66e67c547df1638cc80fdd931bac1b3da`), CI 3/3 PASS and 32/32 tests PASS; prior Windows 27/27 tests PASS, newest five test cases still need owner Windows verification. Real IdP/Vault, separate test deployments and credentials, network isolation, ingress, HA/DR and sign-off outstanding — [Phase 02 evidence](phase_02_evidence.md) |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
@@ -36,3 +36,7 @@ Phase 01 workstation compile, validator and 12/12 negative/unit tests were previ
 ## Phase 02 development gate (2026-10-21)
 
 Phase 02 independent implementation was authorized by an explicit GO_FOR_DEVELOPMENT exception, recorded in [ADR-0004](../decisions/ADR-0004-phase02-development-gate.md). Phase 01 formal approval G-01–G-08 is **not** implied or changed. Phase 02 evidence is in [phase_02_evidence](phase_02_evidence.md); deployment guidance is in [Phase 02 runbook](../operations/phase02_runbook.md). No Phase 01 CLOSED marker and no production approval have been issued.
+
+## Phase 03 technical advance gate — conditional only (2026-10-24)
+
+A Phase 02 technical re-audit resulted in [ADR-0005](../decisions/ADR-0005-phase03-conditional-development-gate.md): **conditional GO_FOR_DEVELOPMENT only** for Phase 03 independent PostgreSQL architecture/design and isolated implementation under a reviewed ERD and migration plan. This is an exception to assuming completed Phase 02 acceptance; **Phase 01 and Phase 02 remain IMPLEMENTED_AWAITING_VERIFICATION, Phase 03 remains NOT_STARTED**, and no production use, organizational identity integration or sensitive corpus is approved. Actual Phase 03 work starts only on explicit owner instruction, subject to checking dependencies and current repository baseline again.
