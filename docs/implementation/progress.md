@@ -19,7 +19,7 @@
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
-| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Development-only GO granted; code/tests staged; CI, SSO/Vault, on-prem isolation and owner acceptance pending — [Phase 02 progress](phase_02_progress.md) |
+| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Runtime and security remediation committed on `main` (`c95c8bbe1c9982d5f9c806837350afc52c9c87bf`); CI 3/3 jobs PASS, owner-reported Windows 27/27 tests and lint/audit PASS. Real IdP/Vault, public/internal isolation, approved ingress, operational drills and owner acceptance pending — [Phase 02 evidence](phase_02_evidence.md) |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
@@ -31,7 +31,7 @@ Architecture Owner; Security Owner; Product Owner; Religious Content Lead; HR Po
 
 ## Next action
 
-Workstation compile, validator and 12/12 negative/unit tests were reported PASS for the validated SHA. Obtain attributable acceptance decisions and evidence for G-01–G-07, plus formal Technical Verifier sign-off for G-08; resolve the public repository classification, decision governance and source inventory (or authorized deferrals). Phase 02 has not started. No completion marker until all gates are actually approved.
+Phase 01 workstation compile, validator and 12/12 negative/unit tests were previously reported PASS for their validated SHA. Obtain attributable acceptance decisions for G-01–G-07 and Technical Verifier sign-off for G-08; resolve public repository classification, decision governance and source inventory (or approved deferrals). Phase 02 is implemented and has passed GitHub CI and the latest owner-reported 27-test Windows regression; finish organizational IdP/Vault/Public–Internal security checks, operational verification and owner sign-offs. No `CLOSED` marker until the corresponding gates are approved.
 
 ## Phase 02 development gate (2026-10-21)
 

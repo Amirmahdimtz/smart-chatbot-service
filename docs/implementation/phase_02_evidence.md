@@ -107,3 +107,25 @@ CI results must be recorded only after real execution. Local runtime cannot clon
 - Four new regression tests in the file named tests/test_phase02_security_regressions.py cover expired rate-limit bucket eviction, timeout-before/after-headers, concurrent unknown JWT key IDs and periodic JWKS refresh, and stale-key failure on IdP outage. These are actual CI tests with MockTransport solely in test fixtures, not organizational IdP/Proxy E2E verification.
 - Earlier CI runs failed exclusively on introduced Ruff lint/format issues; two forward-only follow-up commits corrected those issues. A temporary diagnostic workflow was removed from the final source tree.
 - Live IdP/Vault, authorized metrics retrieval, independent public/internal network and credential boundary, distributed edge rate limits, image digest/lockfile policy, tracing export, HA and DR remain **NOT_RUN / BLOCKED_DECISION or BLOCKED_EXTERNAL** as applicable. No Phase 02 CLOSED marker is issued.
+
+## Owner-reported Windows verification after Phase 02 remediation — 2026-10-24
+
+The project owner supplied a 103-line Windows PowerShell transcript after previously demonstrating a clean local `main` checkout at commit `c95c8bbe1c9982d5f9c806837350afc52c9c87bf` (the earlier `git pull --ff-only` and `git rev-parse HEAD` were shown in a separate message). The new testing transcript itself does **not** print a fresh `git rev-parse HEAD`. It is therefore **owner-reported local execution, contextually attributable** to the previously confirmed checkout, not an independently captured SHA within the test output.
+
+| Category B check | Actual observed result |
+|---|---|
+| `.venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt` | All requirements already satisfied inside the repository's isolated `.venv` |
+| `.venv\\Scripts\\python.exe -m pip check` | `No broken requirements found.` |
+| `.venv\\Scripts\\python.exe -m compileall -q src scripts tests` | Completed without reported errors |
+| `.venv\\Scripts\\python.exe scripts/validate_phase01.py` | `PHASE_01_CONTRACT_VALIDATION_OK`: 8 gates, 19 linked Markdown files, 20 open decisions, 9 policies, 21 requirements, 7 scenarios |
+| `.venv\\Scripts\\python.exe -O scripts/validate_phase01.py` | Same `PHASE_01_CONTRACT_VALIDATION_OK` result |
+| `.venv\\Scripts\\python.exe -m pytest -q` | **27 passed, 1 warning in 60.51 seconds**; all four added Phase 02 security-regression tests included in the suite |
+| `.venv\\Scripts\\ruff.exe check src tests` | `All checks passed!` |
+| `.venv\\Scripts\\ruff.exe format --check src tests` | `16 files already formatted` |
+| `.venv\\Scripts\\pip-audit.exe -r requirements.txt --strict` | `No known vulnerabilities found` at execution time |
+
+**Warning:** `StarletteDeprecationWarning` emitted from the installed FastAPI/Starlette TestClient dependency for using `httpx`; the warning is non-blocking but remains a framework-upgrade compatibility item.
+
+**Evidence classification:** This transcript verifies Windows Category B isolated setup, source compilation, Phase 01 contract validation, full 27-test regression, lint/format and strict runtime requirements audit. The independently confirmed GitHub Actions [run 40070252396](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40070252396) for source/document commit `c95c8bbe1c9982d5f9c806837350afc52c9c87bf` completed **SUCCESS** in all three jobs. No file changes, CI rerun, or on-prem service interactions occurred as part of the owner's PowerShell transcript.
+
+**Still open:** Real IdP/JWKS key-rotation and outage behavior, Vault HTTPS and secret lifecycle, authorized metrics retrieval, dual-zone credential/network isolation, trusted proxy and distributed limits, external monitoring/tracing, base-image/lockfile policy, load/HA/DR and owner acceptance. These remain Category C `NOT_RUN` or approval/decision dependent. Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION` and no `CLOSED` marker is justified. Do not treat a clean dependency audit as proof that deployment and runtime security are complete.
