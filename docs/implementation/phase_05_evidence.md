@@ -87,3 +87,25 @@ This supersedes historical test-count snapshots above only for the stated source
 **Technical DoD Status:** PENDING_INDEPENDENT_REVIEW. **Phase Status Before/After:** IN_PROGRESS -> IN_PROGRESS. **Production Release Status:** NOT_READY. D-07/D-08 organizational-data decisions remain blocked.
 
 Historic intermediate CI failures (formatter, unpublished image tag, unsigned-image test setup, temporary malformed workflow) were corrected and are not represented as passed.
+
+
+## 2026-10-24 final phase05 engineering hardening A/B evidence
+
+**Verified code SHA:** `18b679283305b4c3f634be5ce55362557b8bf5dc`; **exact-source CI:** [40106419648](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40106419648), all **6/6 jobs SUCCESS**. Owner authorized the AI implementer to continue the technical completion and requested this review. This records owner direction only; it does **not** constitute a separately sourced independent Architecture/Security review or a signed approval by those accountable roles.
+
+**Tests A Executed + Actual Results:** 78 passed, 25 skipped, 1 third-party warning. Compile, optimized/normal architecture validations, Ruff import/style checks, strict Python dependency pip-audit, SBOM, Docker image build, Gitleaks SUCCESS. The 25 skipped tests are not labeled PASSED; B executed genuine integration in its own jobs.
+
+**Tests B Executed + Actual Results:** 10 real authenticated S3/ClamAV/PostgreSQL ingestion tests PASS including **new** Source synthetic classification/policy metadata, source-specific 1KiB upload guard and owner-only idempotent Source disable with negative foreign-owner and post-disable upload tests; existing actual digital PDF/EICAR/scanner/worker/lease and denial paths PASS. 8 genuine dependency outage/recovery tests PASS including three pause/unpause, three process cold restarts and two complete S3/ClamAV container remove/recreate. PostgreSQL regression 4 PASS; Qdrant regression 9 PASS. Additive `0002_ingestion` migration upgrades, repeat/drift and isolated test-only downgrade/reupgrade PASS. Actual upstream SeaweedFS immutable digest signature verified via CI Cosign before server startup.
+
+**Gap remediation:**
+1. Source contract now persists immutable, narrowly synthetic `classification = synthetic_unclassified`, `policy_ref = synthetic-only`, owner/domain/source_type/status and optional owner-configured max_file_bytes; none grants organization Policy/ACL privileges. D-07/D-08 **remain undecided** for real data.
+2. Source `POST /sources/{id}/disable` is owner-only, audited and idempotent; disallow new uploads once disabled. It does not automatically purge/terminate already accepted jobs or issue publication rights.
+3. Digital PDF preflight is in a separate interpreter process, with subprocess kill on 4-second deadline and POSIX 256MiB address-space/CPU resource ceilings; no uncancellable in-process PDF parsing Thread. The subprocess does not replace antivirus, and Windows lacks POSIX resource ceiling but enforces subprocess deadline. Extra A negative test confirms timeout fails closed.
+4. `UploadFile` parsing is now confined to Application adapter and the Core service takes normalized bytes/metadata, honoring layering. Postgres revision gating dynamically matches Alembic ScriptDirectory's unique head while keeping migration execution explicitly out of startup.
+5. `0002_ingestion` was edited **before first merge** and tested only on fresh disposable CI data; any private test DB already provisioned from the former unmerged definition must be discarded/recreated, never silently migrated in place.
+
+**Tests A/B Required but Missing:** No known unrun mandatory scoped A/B test following these changes. **Independent accountable Architecture + Security source review, and written CI-only SeaweedFS OCI vulnerability/license/runtime risk disposition are still NOT_SIGNED**; verifier may request additional targeted evidence. A green CI and AI self-review are not an independent signature.
+
+**Tests C Deferred to Phase18:** `P18-P05-C01`–`P18-P05-C08`, each `DEFERRED_TO_PHASE_18`, NOT_RUN/NOT_PASSED. **Phase18 Verification Register IDs:** P18-P05-C01, C02, C03, C04, C05, C06, C07, C08 (all prefixed P18-P05-).
+
+**Technical DoD Status:** `PENDING_INDEPENDENT_REVIEW`. **Phase Status Before/After:** `IN_PROGRESS → IMPLEMENTED_AWAITING_VERIFICATION` (engineering/tests finished, not CLOSED). **Production Release Status:** `NOT_READY`; PR #3 still Draft/unmerged; no corporate data or On-Prem test conducted.

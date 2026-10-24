@@ -70,3 +70,11 @@ Engineering self-review of the application boundaries, database job leases/fenci
 **Outstanding acceptance:** An actual independent Architecture/Security reviewer must inspect current SHA and CI evidence, disposition image runtime vulnerability/license risk for synthetic CI-only use, and record a signed/attributable acceptance or change request. Complete enterprise PostgreSQL node removal/restore and On-Prem HA/DR remain Phase18 Group C, not a Phase05 technical gate. No known required scoped A/B test is left unrun before new reviewer findings.
 
 **Do not merge or close Phase05 without human acceptance.** Technical DoD PENDING_INDEPENDENT_REVIEW; Phase05 IN_PROGRESS -> IN_PROGRESS; Production NOT_READY. P18-P05-C01–C08 remain deferred and not PASSED.
+
+## Engineering hardening decision — 2026-10-24
+
+Latest exact-code CI [40106419648](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40106419648) on SHA `18b679283305b4c3f634be5ce55362557b8bf5dc`: **6/6 SUCCESS**, A 78 passed/25 skipped, B 10 ingestion + 8 outage/recreation + 4 Postgres + 9 Qdrant PASS. New scoped source fields and synthetic-only policy assertions, owner-only disable/limits, PDF separate-process deadline/resource limits, Core/Application boundary cleanup, dynamic Alembic revision-head check and fresh-database migration evidence are present.
+
+The project owner explicitly authorized the assistant to proceed with item 5 and complete engineering work. **This is owner authorization to work, not a verified independent Architecture/Security review or attributable owner acceptance of the remaining OCI runtime/license/vulnerability risk.** Independent Security/Architecture sign-off was not provided on GitHub and may not be imputed to the AI implementer.
+
+**Engineering work status:** IMPLEMENTED and A/B VERIFIED. **Technical DoD:** PENDING_INDEPENDENT_REVIEW; **Phase Status Before/After:** IN_PROGRESS → IMPLEMENTED_AWAITING_VERIFICATION; **Production:** NOT_READY. `P18-P05-C01`–`C08` remain deferred. No Group C server access required. Keep PR Draft and unmerged pending proper acceptance.
