@@ -118,6 +118,7 @@ class DocumentVersion(Base):
         CheckConstraint("state IN ('draft', 'processing', 'failed', 'awaiting_approval', 'published', 'revoked', 'superseded')", name="ck_version_state"),
         UniqueConstraint("document_id", "version_number", name="uq_document_version"),
         UniqueConstraint("id", "deployment_scope", name="uq_version_id_scope"),
+        UniqueConstraint("object_key", name="uq_document_version_object_key"),
     )
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
     document_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
@@ -126,7 +127,7 @@ class DocumentVersion(Base):
     checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     safe_filename: Mapped[str | None] = mapped_column(String(255))
     content_type: Mapped[str | None] = mapped_column(String(80))
-    object_key: Mapped[str | None] = mapped_column(String(256), unique=True)
+    object_key: Mapped[str | None] = mapped_column(String(256))
     byte_size: Mapped[int | None] = mapped_column(Integer)
     state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
