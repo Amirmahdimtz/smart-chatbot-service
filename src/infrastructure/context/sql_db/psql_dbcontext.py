@@ -6,6 +6,7 @@ import ssl
 from contextlib import asynccontextmanager
 
 from sqlalchemy import text
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -52,9 +53,10 @@ def validate_database_url(url: str) -> str:
             or not parsed.username
             or parsed.password is None
             or parsed.query
+            or (parsed.port is not None and not 1 <= parsed.port <= 65535)
         ):
             raise ValueError("Invalid driver/URL")
-    except (ValueError, TypeError, AttributeError):
+    except (ValueError, TypeError, AttributeError, ArgumentError):
         raise DatabaseUnavailable() from None
     return url
 
@@ -87,15 +89,17 @@ class PsqlDbContext:
         if self._engine is not None:
             return
         url = await self.connection_url_async()
-        engine = create_async_engine(url, **connection_options(self._cfg))
+        engine: AsyncEngine | None = None
         try:
+            engine = create_async_engine(url, **connection_options(self._cfg))
             async with engine.connect() as connection:
                 await connection.execute(text("SELECT 1"))
                 revision = await connection.scalar(text("SELECT version_num FROM alembic_version"))
                 if revision != "0001_foundation":
                     raise DatabaseUnavailable()
         except Exception:
-            await engine.dispose()
+            if engine is not None:
+                await engine.dispose()
             raise DatabaseUnavailable() from None
         self._engine = engine
         self._factory = async_sessionmaker(engine, expire_on_commit=False)

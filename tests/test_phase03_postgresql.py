@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 
 from src.core.services.conversation.conversation_service import ConversationService
-from src.infrastructure.context.sql_db.psql_dbcontext import Base, PsqlDbContext
+from src.infrastructure.context.sql_db.psql_dbcontext import Base, DatabaseUnavailable, PsqlDbContext, validate_database_url
 from src.infrastructure.di.bootstrap import bootstrap_di
 from src.infrastructure.models.entities import (
     Conversation,
@@ -53,6 +53,18 @@ def test_database_settings_fail_closed_and_redact(monkeypatch):
     monkeypatch.setenv("SCB_DATABASE_ENABLED", "not-boolean")
     with pytest.raises(ConfigurationError):
         bootstrap_di().resolve(ConfigReader)
+
+
+def test_database_url_validation_is_fail_closed_and_redacted():
+    invalid_urls = (
+        "not-a-database-url-topsecret",
+        "postgresql+asyncpg://user:topsecret@127.0.0.1:bad/scb_phase03_test",
+        "postgresql+asyncpg://user:topsecret@127.0.0.1/scb_phase03_test?ssl=disable",
+    )
+    for url in invalid_urls:
+        with pytest.raises(DatabaseUnavailable) as exc:
+            validate_database_url(url)
+        assert "topsecret" not in str(exc.value)
 
 
 def _test_url():
@@ -151,6 +163,8 @@ def test_real_postgresql_transactions_constraints_and_concurrency(monkeypatch):
                 right = await b.get(Conversation, c.id)
                 left.status = "archived"
                 await a.commit()
+                with pytest.raises(PermissionError):
+                    await service.append_message_async(c.id, owner, "public", "assistant", "after-archive")
                 right.status = "archived"
                 with pytest.raises(StaleDataError):
                     await b.commit()
