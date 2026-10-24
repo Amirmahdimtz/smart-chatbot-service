@@ -8,7 +8,11 @@ from datetime import UTC, datetime, timedelta
 
 from src.infrastructure.di.inject import inject
 from src.infrastructure.providers.scanner.clamav_scanner import ClamAvScanner, MalwareDetected, ScanUnavailable
-from src.infrastructure.providers.storage.quarantine_storage import QuarantineStorage, StorageMissing, StorageUnavailable
+from src.infrastructure.providers.storage.quarantine_storage import (
+    QuarantineStorage,
+    StorageMissing,
+    StorageUnavailable,
+)
 from src.infrastructure.repositories.ingestion.ingestion_repository import IngestionRepository
 from src.infrastructure.utils.config_reader import ConfigReader
 
