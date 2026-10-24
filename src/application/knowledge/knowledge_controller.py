@@ -28,6 +28,9 @@ class KnowledgeController:
 
     def api(self) -> APIRouter:
         router = APIRouter(tags=["Knowledge ingestion (synthetic only)"])
+        if not self._enabled:
+            # Do not register experimental upload routes in any disabled deployment.
+            return router
 
         def principal(request: Request):
             return getattr(request.state, "principal", None)
