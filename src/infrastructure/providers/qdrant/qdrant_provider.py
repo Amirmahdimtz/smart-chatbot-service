@@ -217,6 +217,7 @@ class QdrantProvider:
                 or not all(isinstance(v, UUID) for v in (record.chunk_id, record.document_id, record.document_version_id))
                 or not _safe_token(record.domain)
                 or not _safe_token(record.classification)
+                or not isinstance(record.published, bool)
             ):
                 raise QdrantContractError()
             point_id = deterministic_point_id(record, self._cfg.schema_version)

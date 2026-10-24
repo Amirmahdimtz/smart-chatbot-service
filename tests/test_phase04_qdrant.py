@@ -101,12 +101,15 @@ def _integration_provider(monkeypatch):
 def test_real_qdrant_auth_schema_filter_alias_idempotence_snapshot(monkeypatch):
     provider = _integration_provider(monkeypatch)
     async def exercise():
-        async with AsyncQdrantClient(
+        invalid = AsyncQdrantClient(
             url=os.environ["SCB_PHASE04_TEST_QDRANT_URL"], api_key="wrong_ci_key", timeout=3
-        ) as invalid:
+        )
+        try:
             with pytest.raises(UnexpectedResponse) as exc:
                 await invalid.get_collections()
             assert exc.value.status_code in {401, 403}
+        finally:
+            await invalid.close()
         await provider.start_async()
         try:
             name = await provider.ensure_collection_async()
