@@ -47,6 +47,10 @@ $env:SCB_PHASE03_TEST_DATABASE_URL = $env:SCB_DATABASE_URL
 .\.venv\Scripts\python.exe src/infrastructure/scripts/run_migrations.py --current
 .\.venv\Scripts\python.exe src/infrastructure/scripts/run_migrations.py --check
 .\.venv\Scripts\python.exe -m pytest -q tests/test_phase03_postgresql.py
+# Clear the PostgreSQL test URL before running deployment-independent regressions.
+Remove-Item Env:SCB_PHASE03_TEST_DATABASE_URL -ErrorAction SilentlyContinue
+Remove-Item Env:SCB_DATABASE_URL -ErrorAction SilentlyContinue
+Remove-Item Env:SCB_DATABASE_ENABLED -ErrorAction SilentlyContinue
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
