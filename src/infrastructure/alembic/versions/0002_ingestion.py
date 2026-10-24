@@ -33,7 +33,8 @@ def upgrade() -> None:
     op.drop_constraint("ck_version_state", "document_version", type_="check")
     op.alter_column("document_version", "state", existing_type=sa.String(16), type_=sa.String(32), existing_nullable=False)
     op.create_check_constraint(
-        "ck_version_state", "document_version",
+        "ck_version_state",
+        "document_version",
         "state IN ('draft', 'processing', 'failed', 'awaiting_approval', 'published', 'revoked', 'superseded')",
     )
     op.create_table(
@@ -56,12 +57,16 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.ForeignKeyConstraint(
-            ["source_id", "deployment_scope"], ["knowledge_source.id", "knowledge_source.deployment_scope"],
-            name="fk_ingestion_source_scope", ondelete="RESTRICT",
+            ["source_id", "deployment_scope"],
+            ["knowledge_source.id", "knowledge_source.deployment_scope"],
+            name="fk_ingestion_source_scope",
+            ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["version_id", "deployment_scope"], ["document_version.id", "document_version.deployment_scope"],
-            name="fk_ingestion_version_scope", ondelete="RESTRICT",
+            ["version_id", "deployment_scope"],
+            ["document_version.id", "document_version.deployment_scope"],
+            name="fk_ingestion_version_scope",
+            ondelete="RESTRICT",
         ),
         sa.CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_ingestion_scope"),
         sa.CheckConstraint(
@@ -70,7 +75,10 @@ def upgrade() -> None:
         ),
         sa.CheckConstraint("attempts >= 0 AND max_attempts > 0", name="ck_ingestion_attempts"),
         sa.UniqueConstraint(
-            "source_id", "deployment_scope", "owner_principal_id", "idempotency_key",
+            "source_id",
+            "deployment_scope",
+            "owner_principal_id",
+            "idempotency_key",
             name="uq_ingestion_idempotency",
         ),
         sa.UniqueConstraint("source_id", "checksum_sha256", name="uq_ingestion_source_checksum"),

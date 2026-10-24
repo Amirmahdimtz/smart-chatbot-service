@@ -74,9 +74,7 @@ async def validate_upload_async(file: UploadFile, limit: int) -> tuple[str, byte
             content.extend(chunk)
         data = bytes(content)
         # PDF parser runs off the HTTP event loop, bounded by edge request size.
-        await asyncio.wait_for(
-            asyncio.to_thread(validate_content, data, file.content_type), timeout=5
-        )
+        await asyncio.wait_for(asyncio.to_thread(validate_content, data, file.content_type), timeout=5)
         return name, data, hashlib.sha256(data).hexdigest()
     except TimeoutError:
         raise UploadRejected("invalid_document") from None

@@ -34,7 +34,10 @@ class IngestionJob(Base):
         ),
         CheckConstraint("attempts >= 0 AND max_attempts > 0", name="ck_ingestion_attempts"),
         UniqueConstraint(
-            "source_id", "deployment_scope", "owner_principal_id", "idempotency_key",
+            "source_id",
+            "deployment_scope",
+            "owner_principal_id",
+            "idempotency_key",
             name="uq_ingestion_idempotency",
         ),
         UniqueConstraint("source_id", "checksum_sha256", name="uq_ingestion_source_checksum"),

@@ -60,7 +60,17 @@ def test_upload_disabled_no_public_endpoints(disabled):
 
 @pytest.mark.parametrize(
     "name",
-    ["../escape.txt", "/absolute.txt", "..\\secret.txt", "dir/file.txt", ".hidden", "x\n.txt", "evil\u202e.txt", "", " "],
+    [
+        "../escape.txt",
+        "/absolute.txt",
+        "..\\secret.txt",
+        "dir/file.txt",
+        ".hidden",
+        "x\n.txt",
+        "evil\u202e.txt",
+        "",
+        " ",
+    ],
 )
 def test_filename_rejections(name):
     with pytest.raises(UploadRejected) as exc:
@@ -92,10 +102,13 @@ def test_utf8_allowed():
 
 def test_stream_guard():
     async def exercise():
-        file = UploadFile(file=BytesIO(b"A" * 1025), filename="sample.txt", headers=Headers({"content-type": "text/plain"}))
+        file = UploadFile(
+            file=BytesIO(b"A" * 1025), filename="sample.txt", headers=Headers({"content-type": "text/plain"})
+        )
         with pytest.raises(UploadRejected) as exc:
             await validate_upload_async(file, 1024)
         assert exc.value.code == "file_too_large"
+
     asyncio.run(exercise())
 
 
@@ -128,14 +141,16 @@ def test_synthetic_principal_gate(monkeypatch):
     service = IngestionService.__wrapped__ if hasattr(IngestionService, "__wrapped__") else IngestionService
     obj = service.__new__(service)
     obj._settings = config.settings
-    obj._security = SimpleNamespace(authorize=lambda p, permission: (
-        None if p is not None and permission in p.permissions else (_ for _ in ()).throw(PermissionError())
-    ))
+    obj._security = SimpleNamespace(
+        authorize=lambda p, permission: (
+            None if p is not None and permission in p.permissions else (_ for _ in ()).throw(PermissionError())
+        )
+    )
     with pytest.raises(PermissionError):
         obj._actor(Principal("real-user", "issuer", "audience", frozenset(), frozenset({"knowledge:test:ingest"})))
-    assert obj._actor(Principal("synthetic-test", "issuer", "audience", frozenset(), frozenset({"knowledge:test:ingest"}))) == (
-        "synthetic-test", "internal"
-    )
+    assert obj._actor(
+        Principal("synthetic-test", "issuer", "audience", frozenset(), frozenset({"knowledge:test:ingest"}))
+    ) == ("synthetic-test", "internal")
 
 
 def test_scanner_unavailable_fails_closed(disabled):
@@ -148,6 +163,7 @@ def test_scanner_actual_stream_protocol_through_local_socket(disabled):
     # A protocol-only TCP test; actual malware signature integration is Group B.
     async def exercise():
         chunks = []
+
         async def handler(reader, writer):
             chunks.append(await reader.readexactly(10))
             length = int.from_bytes(await reader.readexactly(4), "big")
@@ -160,10 +176,15 @@ def test_scanner_actual_stream_protocol_through_local_socket(disabled):
 
         server = await asyncio.start_server(handler, host="127.0.0.1", port=0)
         try:
-            cfg = SimpleNamespace(ingestion=SimpleNamespace(
-                enabled=True, max_file_bytes=4096, clamd_host="127.0.0.1",
-                clamd_port=server.sockets[0].getsockname()[1], timeout_seconds=2,
-            ))
+            cfg = SimpleNamespace(
+                ingestion=SimpleNamespace(
+                    enabled=True,
+                    max_file_bytes=4096,
+                    clamd_host="127.0.0.1",
+                    clamd_port=server.sockets[0].getsockname()[1],
+                    timeout_seconds=2,
+                )
+            )
             scanner = ClamAvScanner(SimpleNamespace(settings=cfg))
             await scanner.scan_async(b"test123")
             assert chunks[0] == b"zINSTREAM\x00"
@@ -172,6 +193,7 @@ def test_scanner_actual_stream_protocol_through_local_socket(disabled):
         finally:
             server.close()
             await server.wait_closed()
+
     asyncio.run(exercise())
 
 
@@ -186,13 +208,19 @@ def test_scanner_malware_response_is_rejected(disabled):
 
         server = await asyncio.start_server(handler, "127.0.0.1", 0)
         try:
-            cfg = SimpleNamespace(ingestion=SimpleNamespace(
-                enabled=True, max_file_bytes=1024, clamd_host="127.0.0.1",
-                clamd_port=server.sockets[0].getsockname()[1], timeout_seconds=2,
-            ))
+            cfg = SimpleNamespace(
+                ingestion=SimpleNamespace(
+                    enabled=True,
+                    max_file_bytes=1024,
+                    clamd_host="127.0.0.1",
+                    clamd_port=server.sockets[0].getsockname()[1],
+                    timeout_seconds=2,
+                )
+            )
             with pytest.raises(MalwareDetected):
                 await ClamAvScanner(SimpleNamespace(settings=cfg)).scan_async(b"synthetic")
         finally:
             server.close()
             await server.wait_closed()
+
     asyncio.run(exercise())

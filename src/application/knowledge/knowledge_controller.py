@@ -60,19 +60,20 @@ class KnowledgeController:
             return SourceResponseDto.model_validate(source)
 
         @router.post(
-            "/sources/{source_id}/documents", response_model=JobResponseDto,
+            "/sources/{source_id}/documents",
+            response_model=JobResponseDto,
             status_code=status.HTTP_202_ACCEPTED,
         )
         async def upload_async(
-            source_id: UUID, request: Request, file: UploadFile = File(...),
+            source_id: UUID,
+            request: Request,
+            file: UploadFile = File(...),
             idempotency_key: str = Header(..., alias="Idempotency-Key"),
         ):
             if (denied := disabled()) is not None:
                 return denied
             try:
-                job, _, _ = await self._service.upload_async(
-                    principal(request), source_id, file, idempotency_key
-                )
+                job, _, _ = await self._service.upload_async(principal(request), source_id, file, idempotency_key)
                 return JobResponseDto.model_validate(job)
             except UploadRejected as exc:
                 code = exc.code

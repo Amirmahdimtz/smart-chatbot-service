@@ -52,15 +52,26 @@ class IngestionService:
         return await self._repo.get_source_owned_async(source_id, actor, scope)
 
     async def upload_async(
-        self, principal: Principal | None, source_id: UUID, file: UploadFile, idempotency_key: str,
+        self,
+        principal: Principal | None,
+        source_id: UUID,
+        file: UploadFile,
+        idempotency_key: str,
     ):
         actor, scope = self._actor(principal)
         if not isinstance(idempotency_key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", idempotency_key):
             raise UploadRejected("invalid_idempotency_key")
         name, content, checksum = await validate_upload_async(file, self._settings.ingestion.max_file_bytes)
         job, version, created = await self._repo.stage_async(
-            source_id, actor, scope, name, file.content_type, len(content),
-            checksum, idempotency_key, self._settings.ingestion.max_attempts,
+            source_id,
+            actor,
+            scope,
+            name,
+            file.content_type,
+            len(content),
+            checksum,
+            idempotency_key,
+            self._settings.ingestion.max_attempts,
         )
         if created:
             try:

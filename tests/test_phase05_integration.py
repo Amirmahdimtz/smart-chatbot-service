@@ -52,16 +52,27 @@ def _auth():
     def b64(n):
         return base64.urlsafe_b64encode(n.to_bytes((n.bit_length() + 7) // 8, "big")).rstrip(b"=").decode()
 
-    jwks = {"keys": [{"kty": "RSA", "use": "sig", "alg": "RS256", "kid": "synthetic",
-                      "n": b64(public.n), "e": b64(public.e)}]}
+    jwks = {
+        "keys": [
+            {"kty": "RSA", "use": "sig", "alg": "RS256", "kid": "synthetic", "n": b64(public.n), "e": b64(public.e)}
+        ]
+    }
 
     def token(subject, permissions=None, audience="synthetic-internal"):
         now = datetime.now(UTC)
         return jwt.encode(
-            {"iss": "https://identity.example.test/", "aud": audience, "sub": subject,
-             "iat": now, "nbf": now, "exp": now + timedelta(minutes=10),
-             "permissions": permissions or []},
-            private, algorithm="RS256", headers={"kid": "synthetic"},
+            {
+                "iss": "https://identity.example.test/",
+                "aud": audience,
+                "sub": subject,
+                "iat": now,
+                "nbf": now,
+                "exp": now + timedelta(minutes=10),
+                "permissions": permissions or [],
+            },
+            private,
+            algorithm="RS256",
+            headers={"kid": "synthetic"},
         )
 
     return jwks, token
@@ -103,16 +114,21 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
     job = uploaded.json()
     assert job["status"] == "queued"
     assert http.get(f"/api/v1/knowledge/jobs/{job['id']}", headers=bearer).status_code == 200
-    assert http.post(
-        f"/api/v1/knowledge/sources/{source}/documents",
-        headers={**bearer, "Idempotency-Key": idem},
-        files={"file": ("paper.txt", payload, "text/plain")},
-    ).json()["id"] == job["id"]
+    assert (
+        http.post(
+            f"/api/v1/knowledge/sources/{source}/documents",
+            headers={**bearer, "Idempotency-Key": idem},
+            files={"file": ("paper.txt", payload, "text/plain")},
+        ).json()["id"]
+        == job["id"]
+    )
 
     # Real OS process; no request-loop background queue. Poll the actual persisted job.
     process = subprocess.Popen(
         [sys.executable, "-m", "src.host.ingestion_worker"],
-        env=os.environ.copy(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        env=os.environ.copy(),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     try:
         deadline = time.monotonic() + 40
@@ -133,11 +149,19 @@ def test_live_upload_to_durable_job_and_independent_worker(client):
         # No other owner / no other audience can observe the job.
         stranger = {"Authorization": "Bearer " + token("synthetic-other", ["knowledge:test:ingest"])}
         assert http.get(f"/api/v1/knowledge/jobs/{job['id']}", headers=stranger).status_code == 404
-        assert http.get(f"/api/v1/knowledge/jobs/{job['id']}",
-                        headers={"Authorization": "Bearer " + token(owner, [])}).status_code == 403
-        assert http.get(f"/api/v1/knowledge/jobs/{job['id']}",
-                        headers={"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"],
-                                                                   audience="other")}).status_code == 401
+        assert (
+            http.get(
+                f"/api/v1/knowledge/jobs/{job['id']}", headers={"Authorization": "Bearer " + token(owner, [])}
+            ).status_code
+            == 403
+        )
+        assert (
+            http.get(
+                f"/api/v1/knowledge/jobs/{job['id']}",
+                headers={"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"], audience="other")},
+            ).status_code
+            == 401
+        )
         assert http.get("/api/v1/knowledge/jobs/" + job["id"]).status_code == 401
     finally:
         process.terminate()
@@ -187,8 +211,15 @@ def test_durable_concurrent_claim_fencing_retry_and_cancellation():
             content = ("synthetic-" + uuid4().hex).encode()
             checksum = hashlib.sha256(content).hexdigest()
             job, version, created = await repo.stage_async(
-                source.id, source.owner_principal_id, "internal", "test.txt", "text/plain",
-                len(content), checksum, uuid4().hex, 2,
+                source.id,
+                source.owner_principal_id,
+                "internal",
+                "test.txt",
+                "text/plain",
+                len(content),
+                checksum,
+                uuid4().hex,
+                2,
             )
             assert created
             await storage.put_async(version.object_key, content, checksum)
@@ -219,14 +250,23 @@ def test_durable_concurrent_claim_fencing_retry_and_cancellation():
             another = ("synthetic-" + uuid4().hex).encode()
             other_hash = hashlib.sha256(another).hexdigest()
             next_job, next_ver, _ = await repo.stage_async(
-                source.id, source.owner_principal_id, "internal", "another.txt", "text/plain",
-                len(another), other_hash, uuid4().hex, 2,
+                source.id,
+                source.owner_principal_id,
+                "internal",
+                "another.txt",
+                "text/plain",
+                len(another),
+                other_hash,
+                uuid4().hex,
+                2,
             )
             await storage.put_async(next_ver.object_key, another, other_hash)
             assert await repo.mark_queued_async(next_job.id, source.owner_principal_id, "internal")
             assert await repo.cancel_async(next_job.id, source.owner_principal_id, "internal")
             assert not await repo.cancel_async(next_job.id, source.owner_principal_id, "internal")
-            assert (await repo.get_job_owned_async(next_job.id, source.owner_principal_id, "internal"))[0].status == "cancelled"
+            assert (await repo.get_job_owned_async(next_job.id, source.owner_principal_id, "internal"))[
+                0
+            ].status == "cancelled"
             assert await worker.run_once_async("worker-after-cancel") is False
         finally:
             await storage.close_async()

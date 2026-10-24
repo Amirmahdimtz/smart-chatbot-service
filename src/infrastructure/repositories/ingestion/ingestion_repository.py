@@ -66,17 +66,27 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             )
 
     async def stage_async(
-        self, source_id: UUID, actor: str, scope: str, filename: str, content_type: str,
-        size: int, checksum: str, idempotency_key: str, max_attempts: int,
+        self,
+        source_id: UUID,
+        actor: str,
+        scope: str,
+        filename: str,
+        content_type: str,
+        size: int,
+        checksum: str,
+        idempotency_key: str,
+        max_attempts: int,
     ) -> tuple[IngestionJob, DocumentVersion, bool]:
         async with self._db.transaction_async() as session:
             source = await session.scalar(
-                select(KnowledgeSource).where(
+                select(KnowledgeSource)
+                .where(
                     KnowledgeSource.id == source_id,
                     KnowledgeSource.owner_principal_id == actor,
                     KnowledgeSource.deployment_scope == scope,
                     KnowledgeSource.status == "active",
-                ).with_for_update()
+                )
+                .with_for_update()
             )
             if source is None:
                 raise PermissionError("Source unavailable")
@@ -108,16 +118,27 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             await session.flush()
             key = f"quarantine/{scope}/{uuid4()}"
             version = DocumentVersion(
-                document_id=document.id, deployment_scope=scope, version_number=1,
-                checksum_sha256=checksum, state="draft", safe_filename=filename,
-                content_type=content_type, byte_size=size, object_key=key,
+                document_id=document.id,
+                deployment_scope=scope,
+                version_number=1,
+                checksum_sha256=checksum,
+                state="draft",
+                safe_filename=filename,
+                content_type=content_type,
+                byte_size=size,
+                object_key=key,
             )
             session.add(version)
             await session.flush()
             job = IngestionJob(
-                source_id=source.id, version_id=version.id, deployment_scope=scope,
-                owner_principal_id=actor, idempotency_key=idempotency_key,
-                checksum_sha256=checksum, status="staging", max_attempts=max_attempts,
+                source_id=source.id,
+                version_id=version.id,
+                deployment_scope=scope,
+                owner_principal_id=actor,
+                idempotency_key=idempotency_key,
+                checksum_sha256=checksum,
+                status="staging",
+                max_attempts=max_attempts,
             )
             session.add(job)
             await session.flush()
@@ -127,11 +148,13 @@ class IngestionRepository(BaseRepository[IngestionJob]):
     async def mark_queued_async(self, job_id: UUID, actor: str, scope: str) -> bool:
         async with self._db.transaction_async() as session:
             job = await session.scalar(
-                select(IngestionJob).where(
+                select(IngestionJob)
+                .where(
                     IngestionJob.id == job_id,
                     IngestionJob.owner_principal_id == actor,
                     IngestionJob.deployment_scope == scope,
-                ).with_for_update()
+                )
+                .with_for_update()
             )
             if job is None or job.status != "staging":
                 return False
@@ -142,11 +165,13 @@ class IngestionRepository(BaseRepository[IngestionJob]):
     async def fail_staging_async(self, job_id: UUID, actor: str, scope: str, code: str) -> None:
         async with self._db.transaction_async() as session:
             job = await session.scalar(
-                select(IngestionJob).where(
+                select(IngestionJob)
+                .where(
                     IngestionJob.id == job_id,
                     IngestionJob.owner_principal_id == actor,
                     IngestionJob.deployment_scope == scope,
-                ).with_for_update()
+                )
+                .with_for_update()
             )
             if job and job.status == "staging":
                 job.status, job.error_code = "dead", code
@@ -184,11 +209,13 @@ class IngestionRepository(BaseRepository[IngestionJob]):
     async def cancel_async(self, job_id: UUID, actor: str, scope: str) -> bool:
         async with self._db.transaction_async() as session:
             job = await session.scalar(
-                select(IngestionJob).where(
+                select(IngestionJob)
+                .where(
                     IngestionJob.id == job_id,
                     IngestionJob.owner_principal_id == actor,
                     IngestionJob.deployment_scope == scope,
-                ).with_for_update()
+                )
+                .with_for_update()
             )
             if job is None or job.status in {"completed", "dead", "cancelled"}:
                 return False
@@ -248,13 +275,17 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             result = await session.execute(statement)
             return result.rowcount == 1
 
-    async def finish_async(self, job_id: UUID, token: str, success: bool, error_code: str | None = None,
-                           retriable: bool = False) -> bool:
+    async def finish_async(
+        self, job_id: UUID, token: str, success: bool, error_code: str | None = None, retriable: bool = False
+    ) -> bool:
         async with self._db.transaction_async() as session:
             job = await session.scalar(select(IngestionJob).where(IngestionJob.id == job_id).with_for_update())
             if (
-                job is None or job.status != "leased" or job.lease_owner != token
-                or job.lease_expires_at is None or job.lease_expires_at <= datetime.now(UTC)
+                job is None
+                or job.status != "leased"
+                or job.lease_owner != token
+                or job.lease_expires_at is None
+                or job.lease_expires_at <= datetime.now(UTC)
             ):
                 return False
             version = await session.get(DocumentVersion, job.version_id)
@@ -262,7 +293,7 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                 job.status, job.error_code, version.state = "completed", None, "awaiting_approval"
             elif retriable and job.attempts < job.max_attempts:
                 job.status, job.error_code = "retry_wait", error_code
-                job.next_retry_at = datetime.now(UTC) + timedelta(seconds=min(60, 2 ** job.attempts))
+                job.next_retry_at = datetime.now(UTC) + timedelta(seconds=min(60, 2**job.attempts))
             else:
                 job.status, job.error_code, version.state = "dead", error_code, "failed"
             job.lease_owner = None
@@ -273,11 +304,14 @@ class IngestionRepository(BaseRepository[IngestionJob]):
     async def expire_staging_async(self, scope: str, age_seconds: int = 300) -> int:
         async with self._db.transaction_async() as session:
             jobs = await session.scalars(
-                select(IngestionJob).where(
+                select(IngestionJob)
+                .where(
                     IngestionJob.deployment_scope == scope,
                     IngestionJob.status == "staging",
                     IngestionJob.created_at < func.now() - timedelta(seconds=age_seconds),
-                ).limit(20).with_for_update(skip_locked=True)
+                )
+                .limit(20)
+                .with_for_update(skip_locked=True)
             )
             count = 0
             for job in jobs:

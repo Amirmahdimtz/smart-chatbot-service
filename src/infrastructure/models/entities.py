@@ -115,7 +115,10 @@ class DocumentVersion(Base):
         ),
         CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_version_scope"),
         CheckConstraint("version_number > 0", name="ck_version_number"),
-        CheckConstraint("state IN ('draft', 'processing', 'failed', 'awaiting_approval', 'published', 'revoked', 'superseded')", name="ck_version_state"),
+        CheckConstraint(
+            "state IN ('draft', 'processing', 'failed', 'awaiting_approval', 'published', 'revoked', 'superseded')",
+            name="ck_version_state",
+        ),
         UniqueConstraint("document_id", "version_number", name="uq_document_version"),
         UniqueConstraint("id", "deployment_scope", name="uq_version_id_scope"),
         UniqueConstraint("object_key", name="uq_document_version_object_key"),

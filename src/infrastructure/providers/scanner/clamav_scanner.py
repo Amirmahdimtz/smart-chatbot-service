@@ -33,7 +33,7 @@ class ClamAvScanner:
             try:
                 writer.write(b"zINSTREAM" + bytes((0,)))
                 for offset in range(0, len(contents), 65536):
-                    chunk = contents[offset:offset + 65536]
+                    chunk = contents[offset : offset + 65536]
                     writer.write(struct.pack("!I", len(chunk)) + chunk)
                     await writer.drain()
                 writer.write(struct.pack("!I", 0))

@@ -171,9 +171,13 @@ class Settings(StrictModel):
             if (
                 url.scheme != "http"
                 or url.hostname not in {"127.0.0.1", "localhost"}
-                or url.username or url.password or url.query or url.fragment
+                or url.username
+                or url.password
+                or url.query
+                or url.fragment
                 or url.path not in {"", "/"}
-                or not i.s3_access_key or not i.s3_secret_key
+                or not i.s3_access_key
+                or not i.s3_secret_key
                 or i.clamd_host not in {"127.0.0.1", "localhost"}
             ):
                 raise ValueError("Synthetic ingestion dependencies must use loopback")
