@@ -144,3 +144,25 @@ The project owner supplied a 103-line Windows PowerShell transcript after previo
 **Execution evidence:** [GitHub Actions run 40072315115](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40072315115) for source SHA `f01862d66e67c547df1638cc80fdd931bac1b3da` finished **SUCCESS**: verify, docker-build and secret-scan **3/3 PASS**; **32 pytest PASS, 1 known Starlette deprecation warning in 1.65 s**; both Phase 01 validators, Ruff lint/format, strict pip-audit, SBOM generation and upload **PASS**. Earlier source CI for SHA `c8632bad4bdad24274ff56687fe06a8c94949793` had 32 pytest PASS but a **Ruff formatting-only failure**, resolved by follow-up SHA `f01862d66e67c547df1638cc80fdd931bac1b3da`. This is actual GitHub CI, not a claim of current Windows/On-Prem tests for the new five cases.
 
 **Acceptance classification:** source-level Phase 02 security/HTTP foundations have CI evidence. Actual two-zone credentials, real IdP/SSO and JWKS rotation, Vault, TLS and ingress controls, real Public/Internal network isolation, authorized metrics, on-prem telemetry, HA/restore and Security/Infrastructure Owner approvals remain **UNVERIFIED / BLOCKED_EXTERNAL or BLOCKED_DECISION**. `IMPLEMENTED_AWAITING_VERIFICATION` is retained; `CLOSED` is not granted. See [ADR-0005](../decisions/ADR-0005-phase03-conditional-development-gate.md) for the separate **conditional development-only** Phase 03 technical gate.
+
+## Owner Windows Phase 02 HTTP framing regression verification — 2026-10-24
+
+The project owner supplied a PowerShell transcript from an existing Windows checkout. This transcript itself confirms a clean `main` working tree **and** SHA `5607c51032ff4828822b04fa155add7fc2a38f07` after a successful fast-forward `git pull --ff-only`. The results below are **owner-reported execution evidence** rather than commands run by the technical reviewer.
+
+| Workstation command / check | Actual reported result |
+|---|---|
+| `git switch main`, `git pull --ff-only` | PASS; repository fast-forwarded to this SHA |
+| `git rev-parse HEAD` | `5607c51032ff4828822b04fa155add7fc2a38f07` |
+| `git status --short` | Clean (no output) |
+| `.venv/Scripts/python.exe -m pip install -r requirements-dev.txt` | PASS; pinned direct requirements already present inside isolated `.venv` |
+| `.venv/Scripts/python.exe -m pip check` | PASS: `No broken requirements found.` |
+| `.venv/Scripts/python.exe -m pytest -q` | **32 passed, 1 warning in 48.68s**; includes five newly introduced Phase 02 HTTP-framing regression cases |
+| `.venv/Scripts/ruff.exe check src tests` | PASS: `All checks passed!` |
+| `.venv/Scripts/ruff.exe format --check src tests` | PASS: `17 files already formatted` |
+| `.venv/Scripts/pip-audit.exe -r requirements.txt --strict` | PASS: `No known vulnerabilities found` as of this execution |
+
+The non-blocking warning is a `StarletteDeprecationWarning` from the framework TestClient dependency about using `httpx`. It is tracked for dependency-compatibility review; it is not a failing test.
+
+**Precise scope:** This new transcript did **not** rerun the separate compile/Phase 01 contract validator commands, but those checks previously passed in GitHub Actions [run 40072543004](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40072543004) on the same `5607c51032ff4828822b04fa155add7fc2a38f07` source SHA. The same GitHub run had three successful jobs (verify, docker-build, secret-scan), 32 passed tests, Ruff, strict pip-audit and SBOM upload. The earlier Windows HTTP live/startup/ready/unauthenticated metrics smoke check was carried out on a preceding source revision, **not** rerun in this latest Windows transcript.
+
+**Acceptance:** Category B Windows regression, environment and dependency verification for Phase 02 HTTP framing is now evidenced as PASS. Category C remains outstanding: production-equivalent test environments with distinct Public/Internal credentials, real IdP/JWKS rotation, Vault, gateway/TLS/firewall negative tests, authenticated metrics, observability export, HA/restore and responsible-owner approvals. Phase 02 stays `IMPLEMENTED_AWAITING_VERIFICATION`, not `CLOSED`. ADR-0005's conditional development-only Phase 03 gate remains unchanged; Phase 03 remains `NOT_STARTED`.

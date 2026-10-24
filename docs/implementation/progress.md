@@ -19,7 +19,7 @@
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
-| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Source hardening on `main` (`f01862d66e67c547df1638cc80fdd931bac1b3da`), CI 3/3 PASS and 32/32 tests PASS; prior Windows 27/27 tests PASS, newest five test cases still need owner Windows verification. Real IdP/Vault, separate test deployments and credentials, network isolation, ingress, HA/DR and sign-off outstanding — [Phase 02 evidence](phase_02_evidence.md) |
+| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Current source baseline `5607c51032ff4828822b04fa155add7fc2a38f07`; GitHub CI **3/3 PASS** and Windows owner transcript confirms the **same SHA** with **32/32 pytest PASS**, Ruff/audit PASS. Real IdP/Vault, separate Public/Internal test deployments and credentials, gateway/network isolation, HA/DR and sign-offs outstanding — [Phase 02 evidence](phase_02_evidence.md) |
 | 03–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
