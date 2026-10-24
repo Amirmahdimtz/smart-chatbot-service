@@ -37,6 +37,7 @@ def create_app() -> FastAPI:
                 await validator.refresh_async()
             if settings.environment != "development" and not validator.ready:
                 raise RuntimeError("Identity service unavailable during startup")
+            await validator.start_async()
             app.state.started = True
             yield
         finally:

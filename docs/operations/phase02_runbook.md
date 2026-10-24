@@ -114,3 +114,12 @@ Vault support is a real HashiCorp KV v2 HTTPS read boundary: set `SCB_VAULT_ENAB
 ## Rollback, release and verification gates
 
 Stop instances, revert to a known-good image by immutable image digest, restore approved secrets/config, rerun liveness/readiness and negative authorization tests. For Git history, use a forward revert commit; never force push. There are no database migrations or Qdrant collections in Phase 02. Still pending: end-to-end IdP/SSO, Vault, TLS/rotation, firewall deny tests, distributed rate limiting, metrics/tracing exporter, CI run evidence, SBOM/vulnerability approval, load, HA and restore drills. Record each command, runner/platform, SHA, owner decision and sanitized output before upgrading phase status.
+
+## Security remediation — JWKS, deadlines, rate limits (2026-10-24)
+
+- A single per-process background refresh task fetches approved JWKS every 60 seconds after startup. Trusted keys are considered fresh for five minutes; if the IdP stays unavailable beyond this TTL, readiness returns 503 and token validation fails closed.
+- JWKS fetches from unknown kid headers and stale caches share a lock and 15-second refresh-attempt cooldown, including failed attempts. A real key rotation may therefore take up to 15 seconds to become accepted; obtain IAM sign-off and measure rotation and outage behavior with the actual organization IdP.
+- HTTP timeouts before response headers return 504. After response headers have begun, the ASGI request is aborted to avoid a protocol-invalid second response. The ingress must close incomplete requests and enforce upstream deadlines.
+- Expired IP buckets are cleaned before the 10,000-client capacity test. Limits are still per process and use the socket peer. Do not trust client-supplied X-Forwarded-For; distribute limits through an approved ingress configuration and trusted-proxy list (open D-01/D-07).
+- Windows PowerShell 5.1: the smoke-test Invoke-WebRequest command uses -UseBasicParsing to avoid interactive HTML parsing prompts.
+- Pinning the base image by an approved digest, transitive dependency hashes, and configuring an on-prem trace exporter require approved supply-chain and operations decisions. Neither is represented as completed in this remediation.

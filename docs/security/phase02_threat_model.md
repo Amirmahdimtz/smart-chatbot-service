@@ -14,3 +14,11 @@
 | Agent/data-source leaks | No Qdrant/HR/Agent connectors or domain endpoints introduced in Phase 02 | Repository discovery; later-phase mandatory access checks |
 
 **Security signoff:** AWAITING_APPROVAL. The repository is public; disclosure review and branch rules D-18 are outstanding. No runtime integration is considered production-certified.
+
+## Remediation findings (2026-10-24)
+
+- Idle-traffic JWKS expiry: a 60-second periodic task now refreshes trusted keys; five-minute TTL still fails closed during extended outages.
+- Unknown-kid refresh storm: lock and 15-second fetch-attempt cooldown now bound refresh requests; actual IdP rotation remains a required external test.
+- Mid-response timeout: aborts incomplete ASGI response instead of sending conflicting HTTP status; actual ingress behavior requires verification.
+- Full IP cache: expired buckets are evicted before 10k capacity denial; proxy IP fairness and distributed edge limits remain open.
+- Base image digest, transitive lockfile, monitoring exporter, IAM roles, and network zone isolation remain unapproved or unverified. No organizational sign-off is implied.

@@ -92,3 +92,9 @@ Windows PowerShell displayed its legacy `Invoke-WebRequest` content-parsing secu
 **Disposition:** the previously pending **Category B virtual-environment plus local HTTP smoke test is now evidenced as PASS**, limited to the documented development configuration and unauthenticated metrics request. No organizational IAM/SSO, Vault, dual-deployment Public/Internal isolation, TLS, authorized metrics read or operational HA/DR behavior was verified by this run. Runtime, dependency, and test-source files were **not modified** for this evidence update.
 
 **Open gate:** Phase 02 remains `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 approvals are unchanged. This latest transcript did **not** include a fresh `git rev-parse HEAD`; matching an exact commit should be reconfirmed before formal acceptance.
+
+## Phase 02 targeted security remediation (2026-10-24)
+
+Baseline main source SHA: `2f52c58c2be1f15831b2226c7c4591eb809e08b9`. Runtime changes are restricted to JWKS cache lifecycle/refresh throttling, ASGI timeout correctness, and expired rate-limit cache eviction. Dedicated negative/concurrency/TTL regression tests are added to `tests/test_phase02_security_regressions.py`. On-prem IdP, Vault, gateway isolation, HA, trace exporter and supply-chain digest decisions remain untested/unapproved. Phase 02 is still `IMPLEMENTED_AWAITING_VERIFICATION`; Phase 01 approval state is unchanged.
+
+CI results must be recorded only after real execution. Local runtime cannot clone GitHub due DNS/network restrictions; therefore full-project local tests have not been claimed here.

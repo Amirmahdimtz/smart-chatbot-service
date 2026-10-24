@@ -31,9 +31,13 @@ class HttpSecurityMiddleware:
             (b"cache-control", b"no-store"),
         ]
 
+        response_started = False
+
         async def secured_send(message):
+            nonlocal response_started
             if message["type"] == "http.response.start":
                 message["headers"] = list(message.get("headers", [])) + headers_to_add
+                response_started = True
             await send(message)
 
         async def reject(status, code):
@@ -50,10 +54,17 @@ class HttpSecurityMiddleware:
         ip = scope.get("client")
         key = ip[0] if ip else "unknown"
         async with self._lock:
-            if key not in self._hits and len(self._hits) >= 10000:
-                await reject(429, "rate_limited")
-                return
             now = time.monotonic()
+            if key not in self._hits and len(self._hits) >= 10000:
+                # Clear expired entries before enforcing the tracking capacity.
+                for host, bucket in list(self._hits.items()):
+                    while bucket and bucket[0] <= now - 60:
+                        bucket.popleft()
+                    if not bucket:
+                        del self._hits[host]
+                if len(self._hits) >= 10000:
+                    await reject(429, "rate_limited")
+                    return
             hits = self._hits[key]
             while hits and hits[0] < now - 60:
                 hits.popleft()
@@ -100,6 +111,10 @@ class HttpSecurityMiddleware:
         except RequestTooLarge:
             await reject(413, "payload_too_large")
         except TimeoutError:
+            if response_started:
+                # A second http.response.start is invalid after headers were sent.
+                # Abort the incomplete response rather than misreporting a new status.
+                raise
             await reject(504, "request_timeout")
 
 
