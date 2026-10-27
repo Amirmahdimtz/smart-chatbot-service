@@ -283,3 +283,14 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Phase 18 Verification Register IDs:** P18-P08-C01, C02, C03, C04, C05, C06.
 **Technical DoD Status:** IN_PROGRESS — FULL_SCOPE_NOT_SATISFIED.
 **Production Release Status:** NOT_READY.
+
+### Phase08 exact-source Group A/B verification — 2026-10-27
+
+**Verified source SHA** `55faa70beee768c749294016853cf8ea8611e69d`, [CI 40504920953](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40504920953) **6/6 successful jobs**. Previous failed formatter/test-fixture runs 40504365806 and 40504684041 are retained as failures, not called pass. **Tests A Executed + Actual Results:** 108 PASSED, 31 SKIPPED, compile, Ruff, strict dependency audit, SBOM, Docker and secret scan SUCCESS. **Tests B Executed + Actual Results:** real isolated Qdrant 9 Phase04 + 1 Phase07 + 1 Phase08 PASS; real Phase08 PostgreSQL owner/domain/revoke 1 PASS; inherited real ingestion 13, OCR 2, recovery 8, PostgreSQL 4 PASS. Phase08 tests use *synthetic numeric vectors* and a fixture-level manual `published` state, **not** a real approved Embedding/Reranker or Phase07 publication.
+
+**Tests A/B Required but Missing:** actual model benchmark/selection D-03, real sparse/lexical D-04, real Reranker lifecycle/timeout, full PG+Qdrant approved Phase07 publication read path, mixed Persian Gold Corpus and D-12 thresholds, actual RRF/Rerank quality, contradiction/abstention and formal security acceptance.
+**Tests C Deferred to Phase18:** P18-P08-C01..C06 remain DEFERRED_TO_PHASE_18 / NOT_RUN / NOT_PASSED.
+**Phase 18 Verification Register IDs:** P18-P08-C01, C02, C03, C04, C05, C06.
+**Technical DoD Status:** INITIAL_ENGINEERING_AB_VERIFIED — FULL_SCOPE_NOT_SATISFIED.
+**Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+**Production Release Status:** NOT_READY; predecessor Phase05/06/07 statuses unchanged and all Draft PRs unmerged.
