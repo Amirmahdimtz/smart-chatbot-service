@@ -860,9 +860,9 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
                 assert chunks
                 assert all(item.page_number == 1 and item.extractor_method == "digital_pdf" for item in chunks)
                 assert "Synthetic digital PDF evidence" in chunks[0].canonical_text
-                assert chunks[0].original_text[
-                    : len(chunks[0].original_text)
-                ] == chunks[0].canonical_text  # Unchanged ASCII fixture
+                from src.core.services.persian_text.persian_processing import normalize_persian
+
+                assert normalize_persian(chunks[0].original_text) == chunks[0].canonical_text
                 assert all(item.source_end > item.source_start for item in chunks)
                 assert all(item.processor_version == "fa-structure-v1" for item in chunks)
         finally:
