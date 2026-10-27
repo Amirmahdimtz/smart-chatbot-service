@@ -23,12 +23,13 @@ _MAX_TEXT_PER_PAGE = 4_000_000
 _WORD_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
-def _limits() -> None:
+def _limits(memory_mb: int, cpu_seconds: int) -> None:
     if os.name == "posix":
         import resource
 
-        resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 * 1024, 768 * 1024 * 1024))
-        resource.setrlimit(resource.RLIMIT_CPU, (32, 34))
+        memory_bytes = memory_mb * 1024 * 1024
+        resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds + 2))
 
 
 def _docx_zip_guard(data: bytes) -> None:
@@ -85,7 +86,7 @@ def _docx(data: bytes) -> list[dict]:
     return [{"number": None, "text": text, "method": "docx", "engine_version": "python-docx/" + version("python-docx")}]
 
 
-def _ocr_pdf_page(data: bytes, number: int) -> str:
+def _ocr_pdf_page(data: bytes, number: int, max_page_text_chars: int) -> str:
     rendered = subprocess.run(
         ["pdftoppm", "-f", str(number), "-l", str(number), "-scale-to", "1500", "-gray", "-png", "-singlefile", "-"],
         input=data,
@@ -102,7 +103,7 @@ def _ocr_pdf_page(data: bytes, number: int) -> str:
         timeout=12,
         check=False,
     )
-    if recognized.returncode or len(recognized.stdout) > _MAX_TEXT_PER_PAGE:
+    if recognized.returncode or len(recognized.stdout) > max_page_text_chars * 4:
         raise ValueError("ocr_failed")
     return recognized.stdout.decode("utf-8", errors="strict")
 
@@ -118,9 +119,9 @@ def _binary_version(binary: str, flag: str) -> str:
     return output[0].strip()[:50]
 
 
-def _pdf(data: bytes) -> list[dict]:
+def _pdf(data: bytes, max_pages: int, max_ocr_pages: int, max_page_text_chars: int) -> list[dict]:
     reader = PdfReader(BytesIO(data), strict=True)
-    if reader.is_encrypted or not 1 <= len(reader.pages) <= _MAX_PAGES:
+    if reader.is_encrypted or not 1 <= len(reader.pages) <= max_pages:
         raise ValueError("invalid_document")
     result = []
     ocr_count = 0
@@ -128,35 +129,42 @@ def _pdf(data: bytes) -> list[dict]:
     ocr_versions = None
     for number, page in enumerate(reader.pages, 1):
         contents = page.get_contents()
-        if contents is not None and len(contents.get_data()) > 4_000_000:
+        if contents is not None and len(contents.get_data()) > max_page_text_chars:
             raise ValueError("oversized_pdf_page")
         raw = page.extract_text() or ""
         if not raw.strip():
             ocr_count += 1
-            if ocr_count > _MAX_OCR_PAGES:
+            if ocr_count > max_ocr_pages:
                 raise ValueError("ocr_page_limit")
             if ocr_versions is None:
                 ocr_versions = _binary_version("tesseract", "--version") + "; " + _binary_version("pdftoppm", "-v")
-            raw = _ocr_pdf_page(data, number)
+            raw = _ocr_pdf_page(data, number, max_page_text_chars)
             method = "tesseract_ocr"
         else:
             method = "digital_pdf"
-        if len(raw) > _MAX_TEXT_PER_PAGE:
+        if len(raw) > max_page_text_chars:
             raise ValueError("oversized_extraction")
         engine = parser_version if method == "digital_pdf" else (parser_version + "; " + ocr_versions)
         result.append({"number": number, "text": raw, "method": method, "engine_version": engine})
     return result
 
 
-def extract(data: bytes, mime: str) -> list[dict]:
-    if not data or len(data) > _MAX_BYTES:
+def extract(
+    data: bytes, mime: str, max_bytes: int, max_pages: int, max_ocr_pages: int, max_page_text_chars: int
+) -> list[dict]:
+    if not data or len(data) > max_bytes:
         raise ValueError("invalid_document")
     if mime == "application/pdf":
-        return _pdf(data)
+        return _pdf(data, max_pages, max_ocr_pages, max_page_text_chars)
     if mime == _WORD_MIME:
-        return _docx(data)
+        output = _docx(data)
+        if len(output[0]["text"]) > max_page_text_chars:
+            raise ValueError("oversized_extraction")
+        return output
     if mime == "text/plain":
         text = data.decode("utf-8-sig")
+        if len(text) > max_page_text_chars:
+            raise ValueError("oversized_extraction")
         if any(ord(c) < 32 and c not in "\t\r\n" for c in text):
             raise ValueError("invalid_document")
         return [
@@ -171,12 +179,27 @@ def extract(data: bytes, mime: str) -> list[dict]:
 
 
 def main() -> int:
-    _limits()
-    if len(sys.argv) != 2:
+    # Defensive upper bounds remain enforced in the subprocess even if invoked
+    # without the validated parent provider or its configuration.
+    if len(sys.argv) != 8:
         return 2
     try:
-        data = sys.stdin.buffer.read(_MAX_BYTES + 1)
-        result = extract(data, sys.argv[1])
+        max_bytes, max_pages, max_ocr_pages, memory_mb, cpu_seconds, max_page_text_chars = map(int, sys.argv[2:8])
+    except ValueError:
+        return 2
+    if not (
+        1024 <= max_bytes <= _MAX_BYTES
+        and 1 <= max_pages <= _MAX_PAGES
+        and 1 <= max_ocr_pages <= min(16, max_pages)
+        and 128 <= memory_mb <= 1024
+        and 2 <= cpu_seconds <= 60
+        and 1024 <= max_page_text_chars <= _MAX_TEXT_PER_PAGE
+    ):
+        return 2
+    _limits(memory_mb, cpu_seconds)
+    try:
+        data = sys.stdin.buffer.read(max_bytes + 1)
+        result = extract(data, sys.argv[1], max_bytes, max_pages, max_ocr_pages, max_page_text_chars)
         if not any(item["text"].strip() for item in result):
             return 3
         encoded = json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode()
