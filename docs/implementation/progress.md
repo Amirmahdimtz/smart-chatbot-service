@@ -199,3 +199,18 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Tests C Deferred to Phase18:** `P18-P05-C01`–`P18-P05-C08`, each `DEFERRED_TO_PHASE_18`, NOT_RUN/NOT_PASSED. **Phase18 Verification Register IDs:** P18-P05-C01, C02, C03, C04, C05, C06, C07, C08 (all prefixed P18-P05-).
 
 **Technical DoD Status:** `PENDING_INDEPENDENT_REVIEW`. **Phase Status Before/After:** `IN_PROGRESS → IMPLEMENTED_AWAITING_VERIFICATION` (engineering/tests finished, not CLOSED). **Production Release Status:** `NOT_READY`; PR #3 still Draft/unmerged; no corporate data or On-Prem test conducted.
+
+
+## Phase 06 — Dependent Persian Processing / OCR / Chunking (2026-10-27)
+
+**Authorization:** GO_FOR_PHASE06_DEVELOPMENT_ONLY, Project Owner. This does not imply independent acceptance or Production.
+**Status Before:** NOT_STARTED.
+**Status After at engineering start:** IN_PROGRESS; **Marker:** PHASE_06_IN_PROGRESS.
+**Repository:** main 0c817b1886b1668576e2037394f4b2d5cbf4997b; source baseline Phase05 PR #3 head 26dc557fb432d8830cdb522009f795d96aabdc54. Stacked Phase06 PR #4 (Draft) targets feat/phase05-ingestion, does NOT merge PR #3.
+**Phase05 dependency:** IMPLEMENTED_AWAITING_VERIFICATION, exact-head CI 40464098716 6/6 SUCCESS; ADR-0008 independent technical acceptance not signed, synthetic-only OCI runtime/license risk disposition pending. No prior phase state modified.
+**Implemented development scope:** Real bounded PDF text/OCR, DOCX/FAQ/table transcript and TXT extraction via child, reversible/Persian normalization preserving original, structure-aware deterministic UUIDv5 chunks, true extracted-source page/offset traces, engine/normalizer/chunker versions, incremental 0003 knowledge_chunk migration and lease-fenced atomic chunk persistence in existing scanned worker. Zero automatic publishing/Qdrant indexing. Data synthetic-only.
+**Early observed Group A/B evidence:** Exact code SHA 4f9bf086ea3758a3caaa231c35a30d1deb139b33, GitHub Actions 40468179266 6/6 SUCCESS: Group A 86 passed / 25 skipped, strict Ruff/dependency-audit/SBOM/secret/Docker success; Group B real ingestion 10 and outage 8, PostgreSQL 4, Qdrant 9 passes. Later code/metadata/fixture additions require their own exact-SHA CI confirmation; these earlier results do not validate later commits.
+**Tests A/B Required but Missing at status entry:** Latest-head full A/B result and independent technical/quality review; see phase_06_test_matrix.md and phase_06_evidence.md for updated evidence and any failures.
+**Tests C Deferred to Phase18:** P18-P06-C01 through C06, all DEFERRED_TO_PHASE_18 and NOT_RUN. No server test requested.
+**Technical DoD:** PENDING_SAME_SHA_AB_AND_REVIEW.
+**Production Release:** NOT_READY; D-07/D-08 policy approval not granted.
