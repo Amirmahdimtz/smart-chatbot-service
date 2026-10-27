@@ -132,14 +132,29 @@ def _pdf(data: bytes, max_pages: int, max_ocr_pages: int, max_page_text_chars: i
         if contents is not None and len(contents.get_data()) > max_page_text_chars:
             raise ValueError("oversized_pdf_page")
         raw = page.extract_text() or ""
-        if not raw.strip():
+        has_digital_text = bool(raw.strip())
+        # A text layer does not prove that raster content on the same page is
+        # searchable. OCR image-bearing pages as well as image-only pages.
+        needs_ocr = not has_digital_text or bool(page.images)
+        if needs_ocr:
             ocr_count += 1
             if ocr_count > max_ocr_pages:
                 raise ValueError("ocr_page_limit")
             if ocr_versions is None:
                 ocr_versions = _binary_version("tesseract", "--version") + "; " + _binary_version("pdftoppm", "-v")
-            raw = _ocr_pdf_page(data, number, max_page_text_chars)
-            method = "tesseract_ocr"
+            recognized = _ocr_pdf_page(data, number, max_page_text_chars)
+            if has_digital_text:
+                # Preserve the independently extracted digital text. OCR sees
+                # the rendered whole page and may repeat it; deduplication of
+                # uncertain OCR output would risk discarding actual content.
+                if recognized.strip():
+                    raw = raw.rstrip() + "\n\n" + recognized.strip()
+                    method = "hybrid_pdf_ocr"
+                else:
+                    method = "digital_pdf"
+            else:
+                raw = recognized
+                method = "tesseract_ocr"
         else:
             method = "digital_pdf"
         if len(raw) > max_page_text_chars:
