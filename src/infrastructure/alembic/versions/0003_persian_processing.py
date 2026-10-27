@@ -24,6 +24,8 @@ def upgrade() -> None:
     op.add_column("knowledge_chunk", sa.Column("section_title", sa.String(200)))
     op.add_column("knowledge_chunk", sa.Column("extractor_method", sa.String(32)))
     op.add_column("knowledge_chunk", sa.Column("processor_version", sa.String(64)))
+    op.add_column("knowledge_chunk", sa.Column("normalizer_version", sa.String(64)))
+    op.add_column("knowledge_chunk", sa.Column("engine_version", sa.String(180)))
     op.create_check_constraint(
         "ck_chunk_source_span",
         "knowledge_chunk",
@@ -36,6 +38,8 @@ def downgrade() -> None:
     op.drop_constraint("ck_chunk_page_number", "knowledge_chunk", type_="check")
     op.drop_constraint("ck_chunk_source_span", "knowledge_chunk", type_="check")
     for name in (
+        "engine_version",
+        "normalizer_version",
         "processor_version",
         "extractor_method",
         "section_title",
