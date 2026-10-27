@@ -294,3 +294,36 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Technical DoD Status:** INITIAL_ENGINEERING_AB_VERIFIED — FULL_SCOPE_NOT_SATISFIED.
 **Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
 **Production Release Status:** NOT_READY; predecessor Phase05/06/07 statuses unchanged and all Draft PRs unmerged.
+
+
+## Phase08 bounded evidence handoff / Phase09 engineering start — 2026-10-27
+
+Phase08 latest code SHA `65128df11e7c51f7b74937113c2c4784d714e099` CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40508470092 **6/6 successful**, Group A **111 PASSED / 31 SKIPPED**. Implemented an additional source-correct bounded EvidenceWindow and no-evidence/over-budget abstention hints. No actual Embedding, lexical model, real Reranker, model benchmarking, D-03/D-04/D-12 decision or approved Phase07 atomic Publication was implemented/claimed. Phase08 remains `IN_PROGRESS` / `NOT_READY`, pending necessary A/B evidence and independent review. Its P18-P08-C01..C06 remain deferred to Phase18.
+
+**Phase09 authorization:** owner explicitly requested starting Phase09 once independently implementable Phase08 safeguards reached external-model dependency. Phase09 Draft branch is stacked on Phase08; Phase05/06/07/08 remain unmerged/technically open.
+
+**Phase09 implemented initial work:** versioned safe prompt envelope with bounded source-context JSON explicitly marked untrusted; real UUID/document-version/page/raw-span derived citation anchors, canonical checksum verification; no-evidence abstention; strict structured answer JSON/citation validation with fail-closed fake citations and parser output. Accepting a structurally valid citation is NOT semantic verification and stays `requires_grounding_review`, `grounding_verified=False`. No actual LLM, provider, public route or content release.
+
+**Tests A Executed + Actual Results:** Phase09 exact-head CI pending.
+**Tests B Executed + Actual Results:** No actual Phase09 LLM/provider Group B executed; prior real Qdrant/PG is not inference evidence.
+**Tests A/B Required but Missing:** selected D-02 actual self-hosted model + Persian Gold benchmark, real serving/runtime/timeout/streaming and safe cancellation, real Phase07/08 authorized source pipeline, contradiction/injection/false-grounding evaluation, fresh auth before any response, D-12 thresholds and accountable technical signoff.
+**Tests C Deferred to Phase18:** P18-P09-C01..C06, DEFERRED_TO_PHASE_18 / NOT_RUN / NOT_PASSED.
+**Phase 18 Verification Register IDs:** P18-P09-C01, C02, C03, C04, C05, C06.
+**Technical DoD:** NOT_SATISFIED; INITIAL_ENGINEERING_IN_PROGRESS.
+**Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+**Production Release Status:** NOT_READY. Neither corporate server tests nor production approval are requested.
+
+
+### Phase09 verified offline-contract A/B handoff — 2026-10-27
+
+**Exact tested implementation SHA** `448c89e501b5301d736ce545833a46c3f8e84da2`, [GitHub CI 40510020985](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40510020985) **6/6 SUCCESS**. Initial CI 40509515391 `verify` failure on formatter is preserved and **not** relabeled passed. **Tests A Executed + Actual Results:** 118 PASS, 31 SKIP, 2 warnings; Ruff Check/Format, compile, strict pip-audit, SBOM, Docker, secrets PASS. Source-bound citation ID additionally fingerprints real raw text SHA; citation source length and normalize(original)==canonical are enforced.
+
+**Tests B Executed + Actual Results:** inherited real isolated PostgreSQL, Qdrant, S3/ClamAV/ingestion/OCR and fault-recovery regressions PASS; **no actual Phase09 model serving or LLM output** executed. B01–B06 real LLM-serving/citation evaluation gates are still NOT_RUN.
+
+**Tests A/B Required but Missing:** real Development/Integration self-hosted D-02 model and benchmark, licensed/versioned Serving provider and A/B runtime evidence, fresh Phase07/08 authorized retrieval/visibility, per-claim faithfulness, D-12 annotated Persian Gold Dataset, prompt injection/abstention and reviewer approval.
+
+**Tests C Deferred to Phase18:** P18-P09-C01..C06, DEFERRED_TO_PHASE_18 and NOT_RUN.
+**Phase 18 Verification Register IDs:** P18-P09-C01, C02, C03, C04, C05, C06.
+**Technical DoD:** INITIAL_ENGINEERING_A_VERIFIED / REQUIRED_REAL_LLM_B_MISSING.
+**Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+**Production Release Status:** NOT_READY; Phase05–Phase08 stay unchanged, all dependent PRs Draft/unmerged.
