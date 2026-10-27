@@ -294,7 +294,15 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             version.state = "processing"
             self._audit(session, job, job.source_id, scope, worker_id, "claimed")
             await session.flush()
-            return job.id, token, version.object_key, job.checksum_sha256, version.byte_size, version.id, version.content_type
+            return (
+                job.id,
+                token,
+                version.object_key,
+                job.checksum_sha256,
+                version.byte_size,
+                version.id,
+                version.content_type,
+            )
 
     async def heartbeat_async(self, job_id: UUID, token: str, lease_seconds: int) -> bool:
         async with self._db.transaction_async() as session:
@@ -315,7 +323,12 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             return result.rowcount == 1
 
     async def finish_async(
-        self, job_id: UUID, token: str, success: bool, error_code: str | None = None, retriable: bool = False,
+        self,
+        job_id: UUID,
+        token: str,
+        success: bool,
+        error_code: str | None = None,
+        retriable: bool = False,
         chunks: list | None = None,
     ) -> bool:
         async with self._db.transaction_async() as session:
