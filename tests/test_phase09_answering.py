@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 
+from src.core.services.persian_text.persian_processing import normalize_persian
 from src.core.services.answering.grounded_answer import (
     AnswerContractError,
     CitationSource,
@@ -19,13 +20,14 @@ from src.core.services.answering.grounded_answer import (
 
 
 def _source(text: str = "ماده ۱۲ معتبر است.") -> CitationSource:
+    canonical = normalize_persian(text)
     return CitationSource(
         chunk_id=uuid4(),
         document_id=uuid4(),
         version_id=uuid4(),
         original=text,
-        canonical=text,
-        checksum_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        canonical=canonical,
+        checksum_sha256=hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
         page=3,
         source_start=8,
         source_end=8 + len(text),
@@ -55,6 +57,7 @@ def test_prompt_is_deterministic_and_source_offsets_are_real():
     assert first.citations[0].version_id == source.version_id
     assert first.citations[0].document_id == source.document_id
     assert first.citations[0].chunk_id == source.chunk_id
+    assert first.citations[0].original_checksum_sha256 == hashlib.sha256(source.original.encode()).hexdigest()
 
 
 def test_untrusted_document_cannot_become_system_role():
@@ -122,6 +125,8 @@ def test_reject_bad_checksum_span_duplicate_and_over_budget():
         build_grounded_prompt(query="سلام", domain="research", audience_role="reader", sources=[_source("الف" * 800)], max_context_chars=256)
     with pytest.raises(AnswerContractError, match="invalid_or_duplicate_citation_source"):
         _prompt(replace(a, source_end=a.source_start))
+    with pytest.raises(AnswerContractError, match="invalid_or_duplicate_citation_source"):
+        _prompt(replace(a, original="محتوای متناقض", source_end=a.source_start + len("محتوای متناقض")))
 
 
 def test_unknown_domain_or_role_and_oversize_prompt_fail_closed():
