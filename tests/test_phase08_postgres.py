@@ -59,6 +59,7 @@ def test_real_postgres_authorization_deny_prepublication_and_revoke():
                         policy_ref="synthetic-only",
                     )
                 )
+                await session.flush()
                 session.add(
                     KnowledgeDocument(
                         id=doc_id,
@@ -67,6 +68,7 @@ def test_real_postgres_authorization_deny_prepublication_and_revoke():
                         title="Synthetic policy fixture",
                     )
                 )
+                await session.flush()
                 session.add(
                     DocumentVersion(
                         id=version_id,
@@ -77,6 +79,7 @@ def test_real_postgres_authorization_deny_prepublication_and_revoke():
                         state="awaiting_approval",
                     )
                 )
+                await session.flush()
                 session.add(
                     KnowledgeChunk(
                         id=chunk_id,
