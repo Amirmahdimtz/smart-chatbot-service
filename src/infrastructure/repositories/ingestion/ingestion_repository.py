@@ -370,6 +370,8 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                             section_title=item.section,
                             extractor_method=item.method,
                             processor_version=item.processor_version,
+                            normalizer_version=item.normalizer_version,
+                            engine_version=item.engine_version,
                         )
                         for item in chunks
                     ]
