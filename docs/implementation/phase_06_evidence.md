@@ -45,3 +45,30 @@ P18-P06-C01, P18-P06-C02, P18-P06-C03, P18-P06-C04, P18-P06-C05, P18-P06-C06: ea
 ## Decisions / Production
 
 Technical DoD: Engineering core implemented and source-specific initial A/B evidenced, but broader quality/independent technical review and latest source-SHA verification remain open. Phase06 cannot be reported CLOSED on this evidence alone. Phase05 remains IMPLEMENTED_AWAITING_VERIFICATION. No PR merge, real-data approval, Qdrant/embedding, publication or corporate-server test performed. Production Release Status: NOT_READY.
+
+
+## Updated complete implementation A/B verification — 2026-10-27
+
+**Exact fully tested implementation SHA:** 289f216ca4f6e77d30211064e6bb0202ad2fd182
+**CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40470440670
+
+All **6/6 CI jobs SUCCESS** on that exact implementation source. This supersedes the earlier 1f692a65 implementation results for scoped engineering. The code at this SHA includes the final source/normalizer/engine version metadata, explicit YAML configuration, Arabic-sensitive normalization, real DOCX Heading extraction, anti-malware first ordering, true PDF/DOCX/OCR persistence and encrypted-PDF negative test.
+
+**Tests A Executed + Actual Results:**
+- Python compile, DI/import/contract, Ruff check and format, Pydantic/config and full security/negative/regression: **90 PASSED, 27 SKIPPED**, one warning. Skips are not PASS.
+- strict pip-audit, SBOM, Docker image build/non-root validation, secret scan: SUCCESS in their respective jobs.
+
+**Tests B Executed + Actual Results:**
+- Actual PostgreSQL additive 0003 migration upgrade/repeat/drift, disposable reverse/upgrade: SUCCESS.
+- Actual scoped synthetic upload → immutable S3 → ClamAV → separate Worker → Chunk PostgreSQL atomic persistence for digital PDF, DOCX with heading/FAQ/table, and scanned Persian PDF: **12 PASSED**.
+- Genuine Poppler/Tesseract synthetic Gold Fixture run with real OCR: **2 PASSED** (Persian expected "سلام دنیا", Arabic expected "مرحبا بالعالم"). Measured CER **0.000 for Persian** and **0.000 for Arabic** for these *two synthetic fixtures only*. Actual binaries: Tesseract 5.3.4, Poppler 24.02.0.
+- Actual reversible and full stop/recovery of isolated dependencies: **8 PASSED**.
+- Real PostgreSQL regression **4 PASSED**; real Qdrant regression **9 PASSED**.
+- The new encrypted PDF is rejected at both upload and extraction boundaries; empty scanned PDF, malformed DOCX/PDF, expiry and timeout/cancellation tests execute within required synthetic test suite.
+
+**Tests A/B Required but Missing:** Independent accountable technical review/signoff of final Phase06 engineering and scoped security/licensing/quality decisions; representative Gold Fixtures and acceptance criteria for difficult PDF layout, longer scanned documents, sensitive Arabic/legal/religious structure, mixed digital+image PDFs. If their absence is determined essential for technical DoD, Phase06 cannot be CLOSED. Do not treat small zero-CER samples as general OCR quality evidence. Post-implementation documentation commits do not change tested behavior, but the final branch-head CI should be verified before status decisions.
+
+**Tests C Deferred:** P18-P06-C01 through C06, DEFERRED_TO_PHASE_18, NOT_EXECUTED. Prior Phase05 P18-P05-C01..C08 remain deferred.
+**Technical DoD:** ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING.
+**Phase status handoff:** NOT_STARTED → IMPLEMENTED_AWAITING_VERIFICATION (development work finished but independent quality/security review pending), subject to latest GitHub PR head verification.
+**Production Release Status:** NOT_READY. PR#3 and PR#4 must remain Draft and unmerged without explicit reviewer/owner decisions.
