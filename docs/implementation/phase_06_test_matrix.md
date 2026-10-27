@@ -22,9 +22,14 @@ Status: DEVELOPMENT ONLY. This matrix defines obligations, not their PASS status
 | P06-B08 | B | Scoped Qdrant nonregression, no Phase06 indexing | qdrant-integration | Prior Qdrant secure/provider regression PASS, no new indexing |
 | P06-B09 | B | Negative cross-owner/cross-zone/source, storage integrity and malicious document | existing Phase05 integration tests + Phase06 blank/malformed tests | Deny access, no approval before scanning/chunking |
 
+| P06-A09 | A | Worker must forward configured extraction resource limits after malware scan | test_scanned_worker_forwards_resource_limits_after_malware_gate | Exact ProcessingSettings identity propagated in scan → extract order |
+| P06-B10 | B | Configured PDF page cap enforced in genuine parser child | test_custom_pdf_page_limit_reaches_real_extractor_child | 2-page PDF rejected with max_pdf_pages=1 and accepted with max_pdf_pages=2 |
+| P06-B11 | B | Mixed PDF contains a digital text layer and an embedded raster text image | test_mixed_digital_and_raster_pdf_uses_real_ocr | Real OCR invoked; digital text, OCR text, true page and source spans retained |
+| P06-B12 | B | Phase05 disable_source does not cancel previously accepted jobs | test_previously_accepted_job_completes_after_source_disable | Future upload 403; accepted job finishes without publishing |
+
 ## Quality limitations requiring evidence / review
 
-- Semantic boundaries for complex PDF tables, footnotes, religious quotes and legal numbered articles need broader authorized synthetic/domain Gold Fixtures and scored evaluation. The parser does not claim absolute PDF table layout reconstruction.
+- Semantic boundaries for complex PDF tables, footnotes, religious quotes and legal numbered articles need broader authorized synthetic/domain Gold Fixtures and scored evaluation. The parser does not claim absolute PDF table layout reconstruction; mixed whole-page OCR may duplicate pre-existing digital text.
 - Runtime limits (8 OCR pages, 5MiB source, 38s deadline) are initial defensive constraints and need A/B performance/quality justification; organizational capacity benchmarks are deferred to Phase18.
 - Parser package source, engine version capture, binary/traineddata license/provenance and CI-only synthetic S3 OCI image residual risk must be reviewed, not silently marked approved.
 - Group C controls P18-P06-C01..C06 are distinct, deferred, not PASSED. D-07/D-08 do not authorize actual data.
