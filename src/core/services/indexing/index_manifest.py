@@ -58,8 +58,10 @@ class ValidatedVector:
 
 
 def _token(value: str) -> bool:
-    return isinstance(value, str) and 1 <= len(value) <= 100 and all(
-        c.isascii() and (c.islower() or c.isdigit() or c in "_-.") for c in value
+    return (
+        isinstance(value, str)
+        and 1 <= len(value) <= 100
+        and all(c.isascii() and (c.islower() or c.isdigit() or c in "_-.") for c in value)
     )
 
 
