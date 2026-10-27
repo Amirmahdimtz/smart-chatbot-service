@@ -32,6 +32,7 @@ def test_loss_aware_persian_arabic_mixed_normalization():
     assert normalize_persian(raw) == expected
     assert "علي" in raw and "علي" not in normalize_persian(raw)
     assert normalize_persian("Hello GPT-6 | سلام ٣") == "Hello GPT-6 | سلام 3"
+    assert normalize_persian("هدى") == "هدى"  # Arabic alef maqsura is not Persian yeh.
 
 
 def test_stable_chunk_ids_and_true_raw_spans():
@@ -114,6 +115,7 @@ def test_real_docx_paragraphs_and_table_extraction():
     pages = asyncio.run(DocumentExtractor().extract_async(data, DOCX_MIME))
     assert len(pages) == 1
     assert pages[0].number is None  # Word has no defensible fixed PDF page coordinates.
+    assert "# بخش اول" in pages[0].text  # OOXML Heading 1 remains a true structural boundary.
     assert "عنوان | پاسخ" in pages[0].text
     assert "سؤال | گزینه" in pages[0].text
     assert all(item.page is None for item in chunk_pages(uuid4(), pages))
