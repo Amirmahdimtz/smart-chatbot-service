@@ -54,6 +54,27 @@ def test_stable_chunk_ids_and_true_raw_spans():
     assert chunk_pages(uuid4(), pages, max_chars=256)[0].id != first[0].id
 
 
+def test_multipage_chunks_never_reuse_previous_page_offsets():
+    """Phase07 must not index incorrectly mapped chunks inherited from Phase06."""
+    pages = [
+        ExtractedPage(1, "ماده ۱\\n" + "الف" * 290, "digital_pdf"),
+        ExtractedPage(2, "فصل دوم\\n" + "ب" * 305, "digital_pdf"),
+        ExtractedPage(3, "سؤال: پاسخ آخر؟\\nپاسخ: " + "پ" * 280, "digital_pdf"),
+    ]
+    version = uuid4()
+    first = chunk_pages(version, pages, max_chars=256)
+    second = chunk_pages(version, pages, max_chars=256)
+    assert first == second
+    assert {item.page for item in first} == {1, 2, 3}
+    for page in pages:
+        spans = [chunk for chunk in first if chunk.page == page.number]
+        assert spans
+        assert all(0 <= part.start < part.end <= len(page.text) for part in spans)
+        assert all(page.text[part.start : part.end] == part.original for part in spans)
+        assert all(part.canonical == normalize_persian(part.original) for part in spans)
+        assert page.text[-15:] in "".join(part.original for part in spans)
+
+
 def test_no_fabricated_citation_or_empty_chunk():
     with pytest.raises(ProcessingRejected, match="no_extractable_text"):
         chunk_pages(uuid4(), [ExtractedPage(None, "   \n\n", "utf8_text")])

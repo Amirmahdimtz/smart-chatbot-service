@@ -171,6 +171,10 @@ def chunk_pages(
             group_end = block_end
         if group_start is not None:
             append(page, group_start, group_end)
+        # Raw offsets are page-relative. Never reuse the previous page's
+        # group boundary when the next extracted page starts at offset zero.
+        group_start = None
+        group_end = 0
 
     if not chunks:
         raise ProcessingRejected("no_extractable_text")
