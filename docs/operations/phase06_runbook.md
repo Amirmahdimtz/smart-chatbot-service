@@ -31,6 +31,12 @@ Do not invoke downgrade on a non-disposable database. Migration 0003 adds nullab
 - Resuming a failed document requires an approved reprocessing workflow; do not manually reset terminal DB states or delete immutable quarantine objects.
 - No publication, Qdrant indexing, embedding or retrieval is performed by this worker; approval and release remain other phases.
 
+## Corrected synthetic processing behavior
+
+- Configure extraction limits via `SCB_PROCESSING_MAX_DOCUMENT_BYTES`, `SCB_PROCESSING_MAX_PDF_PAGES`, `SCB_PROCESSING_MAX_OCR_PAGES`, `SCB_PROCESSING_MAX_EXTRACTION_SECONDS`, `SCB_PROCESSING_MAX_MEMORY_MB`, `SCB_PROCESSING_MAX_CPU_SECONDS` and `SCB_PROCESSING_MAX_PAGE_TEXT_CHARS`, subject to validated bounds. These are forwarded from the real worker to the child. Restart the worker after changing settings; do not assume dynamic hot reload.
+- A digital-text PDF page with raster images now consumes an OCR-page slot and records `hybrid_pdf_ocr` when OCR text is added. Expect potential overlapping/doubled digital OCR text in the raw transcript; compare complex mixed pages to authorized Gold Fixtures before relying on citation quality. No visual coordinate claim is made.
+- Phase05 `disable_source` blocks *new* uploads; already accepted queued jobs remain eligible for scanning and may reach `awaiting_approval`. There is no automatic publishing. To stop an accepted job, use its authorized cancellation workflow rather than assuming source disable cancels it.
+
 ## Testing and evidence
 
 Run source-matched compile/import/pytest/Ruff and CI real ingestion integration, capture branch/commit SHA and GitHub Actions run URLs. Real OCR synthetic Gold Fixture CER and page/source-span mapping must pass; Group B PostgreSQL+S3+ClamAV tests must verify persisted chunk rows. Compare PDFs/docx to raw page/text and ensure no guessed page for DOCX.
