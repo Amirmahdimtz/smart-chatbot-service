@@ -27,3 +27,23 @@ Phase08 has a previous exact-HEAD successful 6/6 CI after independent evidence b
 **Technical DoD:** INITIAL_OFFLINE_CONTRACTS — MODEL_DEPENDENT_B_GATES_MISSING.
 **Phase Status:** IN_PROGRESS → IN_PROGRESS.
 **Production Release:** NOT_READY.
+
+
+## Source-matched successful corrected code verification — 2026-10-27
+
+**Exact source SHA:** `448c89e501b5301d736ce545833a46c3f8e84da2`
+**GitHub Actions:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40510020985
+**Observed conclusion:** completed / **6 of 6 SUCCESS**: verify, postgres-integration, qdrant-integration, ingestion-integration, docker-build, secret-scan.
+
+**Tests A Executed + Actual Results:** `verify` Python general suite **118 PASSED / 31 SKIPPED / 2 warnings**, compile/import successful, Ruff Check+Format PASS, strict pip-audit `No known vulnerabilities found`, SBOM generated, Docker build and Gitleaks success. SKIPPED are not PASSED. This supersedes the earlier failed Ruff CI attempt for source-code engineering assessment.
+
+**Tests B Executed + Actual Results:** Phase09 actual LLM model serving tests **NONE RUN**. However real isolated inherited regression jobs `postgres-integration`, `qdrant-integration`, `ingestion-integration` all SUCCESS; these are not evidence of a real Phase09 generation model or semantic grounding. No claim of Phase09 B01–B06 completion.
+
+**Tests A/B Required but Missing:** actual self-hosted LLM and D-02 documented comparison/selection, model-serving behavior/latency/streaming/cancel/timeout, Phase07/08 final published and authorized evidence lifecycle, real Persian Gold grounding/Citation Precision and abstention plus injection/adversarial assessment D-12, independent accountable technical review.
+
+**Tests C Deferred to Phase18 / Verification Register IDs:** `P18-P09-C01`–`P18-P09-C06`, all `DEFERRED_TO_PHASE_18`, NOT_RUN, NOT_PASSED.
+**Technical DoD:** `INITIAL_ENGINEERING_A_VERIFIED — REQUIRED_MODEL_B_MISSING`.
+**Phase Status Before/After:** `NOT_STARTED → IN_PROGRESS`.
+**Production Release Status:** `NOT_READY`.
+
+The source-tested SHA precedes documentation-only evidence commits. GitHub CI must be inspected separately for any later exact branch head before attributing a complete latest-HEAD run.
