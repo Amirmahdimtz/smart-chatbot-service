@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from uuid import UUID, uuid5
 
+from src.core.services.persian_text.persian_processing import normalize_persian
 from src.core.services.retrieval.retrieval_contract import normalize_query
 
 PROMPT_TEMPLATE_VERSION = "grounded-qa-p09-v1"
@@ -56,6 +57,7 @@ class CitationAnchor:
     source_start: int
     source_end: int
     canonical_checksum_sha256: str
+    original_checksum_sha256: str
 
 
 @dataclass(frozen=True)
@@ -89,6 +91,8 @@ def _valid_source(source: CitationSource) -> bool:
         and isinstance(source.source_start, int)
         and isinstance(source.source_end, int)
         and 0 <= source.source_start < source.source_end
+        and source.source_end - source.source_start == len(source.original)
+        and normalize_persian(source.original) == source.canonical
         and (source.page is None or (isinstance(source.page, int) and source.page >= 1))
         and hashlib.sha256(source.canonical.encode("utf-8")).hexdigest() == source.checksum_sha256
     )
@@ -133,10 +137,12 @@ def build_grounded_prompt(
         used += len(source.original)
         if used > max_context_chars:
             raise AnswerContractError("context_budget_exceeded")
+        original_checksum = hashlib.sha256(source.original.encode("utf-8")).hexdigest()
         cid = uuid5(
             source.version_id,
             f"{PROMPT_TEMPLATE_VERSION}:{source.document_id}:{source.chunk_id}:"
-            f"{source.page}:{source.source_start}:{source.source_end}:{source.checksum_sha256}",
+            f"{source.page}:{source.source_start}:{source.source_end}:"
+            f"{source.checksum_sha256}:{original_checksum}",
         )
         anchor = CitationAnchor(
             id=cid,
@@ -147,6 +153,7 @@ def build_grounded_prompt(
             source_start=source.source_start,
             source_end=source.source_end,
             canonical_checksum_sha256=source.checksum_sha256,
+            original_checksum_sha256=original_checksum,
         )
         anchors.append(anchor)
         entries.append(
