@@ -294,3 +294,21 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Technical DoD Status:** INITIAL_ENGINEERING_AB_VERIFIED — FULL_SCOPE_NOT_SATISFIED.
 **Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
 **Production Release Status:** NOT_READY; predecessor Phase05/06/07 statuses unchanged and all Draft PRs unmerged.
+
+
+## Phase08 bounded evidence handoff / Phase09 engineering start — 2026-10-27
+
+Phase08 latest code SHA `65128df11e7c51f7b74937113c2c4784d714e099` CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40508470092 **6/6 successful**, Group A **111 PASSED / 31 SKIPPED**. Implemented an additional source-correct bounded EvidenceWindow and no-evidence/over-budget abstention hints. No actual Embedding, lexical model, real Reranker, model benchmarking, D-03/D-04/D-12 decision or approved Phase07 atomic Publication was implemented/claimed. Phase08 remains `IN_PROGRESS` / `NOT_READY`, pending necessary A/B evidence and independent review. Its P18-P08-C01..C06 remain deferred to Phase18.
+
+**Phase09 authorization:** owner explicitly requested starting Phase09 once independently implementable Phase08 safeguards reached external-model dependency. Phase09 Draft branch is stacked on Phase08; Phase05/06/07/08 remain unmerged/technically open.
+
+**Phase09 implemented initial work:** versioned safe prompt envelope with bounded source-context JSON explicitly marked untrusted; real UUID/document-version/page/raw-span derived citation anchors, canonical checksum verification; no-evidence abstention; strict structured answer JSON/citation validation with fail-closed fake citations and parser output. Accepting a structurally valid citation is NOT semantic verification and stays `requires_grounding_review`, `grounding_verified=False`. No actual LLM, provider, public route or content release.
+
+**Tests A Executed + Actual Results:** Phase09 exact-head CI pending.
+**Tests B Executed + Actual Results:** No actual Phase09 LLM/provider Group B executed; prior real Qdrant/PG is not inference evidence.
+**Tests A/B Required but Missing:** selected D-02 actual self-hosted model + Persian Gold benchmark, real serving/runtime/timeout/streaming and safe cancellation, real Phase07/08 authorized source pipeline, contradiction/injection/false-grounding evaluation, fresh auth before any response, D-12 thresholds and accountable technical signoff.
+**Tests C Deferred to Phase18:** P18-P09-C01..C06, DEFERRED_TO_PHASE_18 / NOT_RUN / NOT_PASSED.
+**Phase 18 Verification Register IDs:** P18-P09-C01, C02, C03, C04, C05, C06.
+**Technical DoD:** NOT_SATISFIED; INITIAL_ENGINEERING_IN_PROGRESS.
+**Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+**Production Release Status:** NOT_READY. Neither corporate server tests nor production approval are requested.
