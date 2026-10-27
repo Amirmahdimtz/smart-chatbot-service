@@ -1,0 +1,60 @@
+"""Bounded subprocess provider for document extraction; no cloud calls."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import sys
+
+from src.core.services.persian_text.persian_processing import ExtractedPage, ProcessingRejected
+from src.infrastructure.di.inject import inject
+
+_SUPPORTED = {
+    "text/plain",
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+
+
+@inject
+class DocumentExtractor:
+    async def extract_async(self, data: bytes, mime: str) -> list[ExtractedPage]:
+        if mime not in _SUPPORTED or not data or len(data) > 5_242_880:
+            raise ProcessingRejected("unsupported_or_oversized_document")
+        try:
+            process = await asyncio.create_subprocess_exec(
+                sys.executable,
+                "-m",
+                "src.infrastructure.providers.document.extraction_worker",
+                mime,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            try:
+                stdout, _ = await asyncio.wait_for(process.communicate(data), timeout=38)
+            except (TimeoutError, asyncio.CancelledError):
+                process.kill()
+                await process.wait()
+                raise
+            if process.returncode != 0 or len(stdout) > 8_000_000:
+                raise ProcessingRejected("extraction_failed")
+            decoded = json.loads(stdout)
+            if not isinstance(decoded, list) or len(decoded) > 300:
+                raise ProcessingRejected("invalid_extraction")
+            return [
+                ExtractedPage(
+                    number=item["number"],
+                    text=item["text"],
+                    method=item["method"],
+                )
+                for item in decoded
+            ]
+        except ProcessingRejected:
+            raise
+        except TimeoutError:
+            raise ProcessingRejected("extraction_timeout") from None
+        except asyncio.CancelledError:
+            raise
+        except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+            raise ProcessingRejected("extraction_failed") from None
