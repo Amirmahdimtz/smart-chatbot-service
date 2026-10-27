@@ -25,20 +25,24 @@ def upgrade() -> None:
     op.add_column("knowledge_chunk", sa.Column("extractor_method", sa.String(32)))
     op.add_column("knowledge_chunk", sa.Column("processor_version", sa.String(64)))
     op.create_check_constraint(
-        "ck_chunk_source_span", "knowledge_chunk",
-        "(source_start IS NULL AND source_end IS NULL) OR "
-        "(source_start >= 0 AND source_end > source_start)",
+        "ck_chunk_source_span",
+        "knowledge_chunk",
+        "(source_start IS NULL AND source_end IS NULL) OR (source_start >= 0 AND source_end > source_start)",
     )
-    op.create_check_constraint(
-        "ck_chunk_page_number", "knowledge_chunk", "page_number IS NULL OR page_number > 0"
-    )
+    op.create_check_constraint("ck_chunk_page_number", "knowledge_chunk", "page_number IS NULL OR page_number > 0")
 
 
 def downgrade() -> None:
     op.drop_constraint("ck_chunk_page_number", "knowledge_chunk", type_="check")
     op.drop_constraint("ck_chunk_source_span", "knowledge_chunk", type_="check")
     for name in (
-        "processor_version", "extractor_method", "section_title", "source_end",
-        "source_start", "page_number", "canonical_text", "original_text",
+        "processor_version",
+        "extractor_method",
+        "section_title",
+        "source_end",
+        "source_start",
+        "page_number",
+        "canonical_text",
+        "original_text",
     ):
         op.drop_column("knowledge_chunk", name)
