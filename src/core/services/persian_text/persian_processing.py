@@ -116,8 +116,19 @@ def chunk_pages(
         )
         chunks.append(
             ProcessedChunk(
-                stable, ordinal, page.number, start, end, raw, canonical, section,
-                page.method, checksum, PROCESSOR_VERSION, NORMALIZER_VERSION, page.engine_version,
+                id=stable,
+                ordinal=ordinal,
+                page=page.number,
+                start=start,
+                end=end,
+                original=raw,
+                canonical=canonical,
+                section=section,
+                method=page.method,
+                checksum=checksum,
+                processor_version=PROCESSOR_VERSION,
+                normalizer_version=NORMALIZER_VERSION,
+                engine_version=page.engine_version,
             )
         )
 
