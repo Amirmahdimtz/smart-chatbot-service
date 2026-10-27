@@ -169,7 +169,6 @@ def test_real_scanned_persian_pdf_ocr():
     assert chunk_pages(uuid4(), pages)[0].method == "tesseract_ocr"
 
 
-
 def test_real_blank_scanned_pdf_is_rejected_before_approval():
     image = Image.new("RGB", (800, 200), "white")
     pdf = io.BytesIO()
