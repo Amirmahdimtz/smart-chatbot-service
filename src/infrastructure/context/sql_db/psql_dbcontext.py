@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import ssl
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
@@ -95,7 +98,13 @@ class PsqlDbContext:
             async with engine.connect() as connection:
                 await connection.execute(text("SELECT 1"))
                 revision = await connection.scalar(text("SELECT version_num FROM alembic_version"))
-                if revision != "0001_foundation":
+                # Require exactly the version currently shipped in this source tree.
+                # Do not hardcode a phase's revision or silently migrate on startup.
+                cfg = Config()
+                migrations = Path(__file__).resolve().parents[2] / "alembic"
+                cfg.set_main_option("script_location", str(migrations))
+                expected = ScriptDirectory.from_config(cfg).get_current_head()
+                if revision != expected:
                     raise DatabaseUnavailable()
         except Exception:
             if engine is not None:

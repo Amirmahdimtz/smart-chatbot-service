@@ -1,5 +1,7 @@
 # Phase 02 execution evidence (2026-10-21)
 
+> **Policy alignment (2026-10-27; Implementation Plan v1.1.1):** This document preserves dated historical review results. Real organization IdP/SSO/JWKS, Vault, public/internal physical isolation and firewall/TLS ingress, telemetry, load, HA/DR, backup/PITR and final Security/UAT are **Group C — DEFERRED_TO_PHASE_18**, not prerequisites for Phase02 **technical** `CLOSED` in phases 01–17. The historical phrases "outstanding acceptance" and "remains AWAITING VERIFICATION" must NOT be read as requiring an On-Prem test now. Re-evaluate Phase02 **only** against its actual mandatory A/B evidence (including synthetic public/internal profiles, server-side AuthZ/negative tests, smoke, CI and appropriate technical review) and approvals genuinely needed for its own phase. Do not auto-close Phase02 based on this text, and do not claim C PASSED.
+
 - Baseline `main`: `c5e40aaaca4316620ddeba2b5c260396e3c9263f` (connector GET ref/tree).
 - GitHub repo: `Amirmahdimtz/smart-chatbot-service`, public, authenticated push/admin confirmed.
 - Prior Phase 01: `IMPLEMENTED_AWAITING_VERIFICATION` and all formal acceptance gates still pending; continuation explicitly authorized for **development only** per ADR-0004.

@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from src.infrastructure.context.sql_db.psql_dbcontext import Base, connection_options
-from src.infrastructure.models import entities  # noqa: F401 - explicit metadata registration
+from src.infrastructure.models import entities, ingestion  # noqa: F401 - explicit metadata registration
 
 config = context.config
 target_metadata = Base.metadata

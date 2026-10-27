@@ -1,5 +1,7 @@
 # Smart Chatbot Service — Progress Register
 
+> **Current policy interpretation — 2026-10-27 / v1.1.1:** The status table is a *snapshot*, not a list of mandatory organization-server test gates. For phases 01–17, only real required A/B tests, core dependencies, documentation, critical findings and approvals **genuinely required for that phase's technical Scope** govern `CLOSED — TECHNICAL ONLY`. Final On-Prem organization tests and Release/Operations/Security approval are Group C **solely in Phase18**. Historical paragraphs saying On-Prem testing blocked Phase02/03 are retained as historical evidence, not the current rule; see ADR-0006 and ADR-0009. This note changes **no phase status** without documented A/B re-review and a separate acceptance decision. Status of existing P18 verification IDs remains `DEFERRED_TO_PHASE_18`, never `PASSED`.
+
 **Updated:** 2026-10-21 · **Phase:** PHASE_01 · **Status Before:** NOT_STARTED · **Status After:** IMPLEMENTED_AWAITING_VERIFICATION
 
 **Marker:** PHASE_01_IMPLEMENTED_AWAITING_VERIFICATION
@@ -19,10 +21,11 @@
 | Phase | Status | Hard prerequisite / evidence gate |
 |---|---|---|
 | 01 | IMPLEMENTED_AWAITING_VERIFICATION | Updated validator/tests PASS on SHA `dd8e4dcf149fe59102a72030dc4b562642a6bb0a` per owner-reported Windows transcript; formal G-01–G-08 approvals, source inventory, policy and repository governance remain outstanding |
-| 02 | IMPLEMENTED_AWAITING_VERIFICATION | Code included in owner-verified `main` SHA `${sha}`: **36/36 pytest PASS on Windows and GitHub CI** (3/3 jobs); Windows Ruff and `pip-audit --strict --timeout 60` PASS. Real IdP/Vault, independent Public/Internal test credentials and network isolation, ingress/TLS, HA/restore and owner sign-off remain pending — [Phase 02 evidence](phase_02_evidence.md) |
+| 02 | IMPLEMENTED_AWAITING_VERIFICATION — awaiting phase-specific A/B re-review | Historical source-specific evidence: 36 pytest PASS on owner Windows checkout and CI (3/3 jobs), with Ruff and strict pip-audit PASS; see [Phase 02 evidence](phase_02_evidence.md). Determine whether all mandatory **isolated synthetic A/B public/internal/authz/smoke** requirements and genuinely applicable technical approvals are evidenced before a new closure decision. Organization IdP/Vault, actual Public/Internal firewall/TLS/network, HA/restore and operational Security/Release sign-offs are Group C **DEFERRED_TO_PHASE_18**, not Phase02 technical closure blockers. No implicit status change. |
 | 03 | **CLOSED — TECHNICAL ONLY** | Reviewed source `33c215945676c9d84bca7b6511f059a7b3a6c171`, [CI run 40087999023](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40087999023): 4/4 success, 39 passed/1 skipped general tests; 4 passed isolated real PostgreSQL integration; migrations and audit PASS. [Technical acceptance](phase_03_technical_acceptance.md); Group C `P18-P03-C01`–`C06` [deferred to Phase 18](phase_18_verification_register.md). D-07/D-08 needed for real data; **NOT PRODUCTION_READY**. |
 | 04 | **CLOSED — TECHNICAL ONLY** | [Phase 04 technical acceptance](phase_04_technical_acceptance.md), CI [40091297919](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40091297919): 5/5 jobs SUCCESS, 43 passed/5 skipped general, 7 real Qdrant, 4 real PostgreSQL; P18-P04-C01–C10 deferred. NOT_PRODUCTION_READY |
-| 05–14 | NOT_STARTED | Follow implementation plan dependencies |
+| 05 | **IMPLEMENTED_AWAITING_VERIFICATION — engineering A/B verified; explicit technical review approval pending** | On exact code HEAD `66c282b398842927e646f04efe292004f0afe1da`, [CI 40106739208](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40106739208) **6/6 SUCCESS**: Group A **78 passed/25 skipped** and isolated real Group B **10 ingestion + 8 recovery + 4 PostgreSQL + 9 Qdrant PASS**. `ADR-0008` explicitly requires independently accepted technical DoD; no such attributable review was found on PR #3. Synthetic CI-only SeaweedFS image risk is a separate **A/B risk disposition**, not organization Production Image approval. Real On-Prem tests are Group C **DEFERRED_TO_PHASE_18** and not a Phase05 blocker. No automatic `CLOSED`, PR still Draft and unmerged, production `NOT_READY`. |
+| 06–14 | NOT_STARTED | Follow implementation plan dependencies |
 | 15 | BLOCKED_EXTERNAL | Independent Agent API, auth, sandbox and E2E not yet supplied |
 | 16–17 | NOT_STARTED | Prior phases; live Agent for side-effecting operations |
 | 18 | NOT_STARTED | Full deployment/release verification |
@@ -122,3 +125,77 @@ Owner's explicit command starts Phase 04 under ADR-0007 from verified main SHA `
 - **Technical DoD Status:** PASS for corrected Phase04 technical scope. **Status Before re-audit:** `CLOSED` (historically overaccepted) → technical re-review → **Status After:** `CLOSED` (corrected technical acceptance).
 - **Production Release Status:** `NOT_READY`. D-03/D-04/D-07/D-08 open; no real organizational data or public/internal network tests.
 - **Phase 05:** `NOT_STARTED`; ADR-0008 grants conditional entry review for synthetic-only work **only after merge and main CI success**, with separate explicit project-owner start instruction required. Phase 01/02 statuses unchanged.
+
+## Phase 05 initiated — development only (2026-10-24)
+
+- Owner explicitly authorized Phase 05 under ADR-0008 `CONDITIONAL_GO_FOR_DEVELOPMENT_ONLY`. Baseline `main` `0c817b1886b1668576e2037394f4b2d5cbf4997b`; branch `feat/phase05-ingestion`, [draft PR #3](https://github.com/Amirmahdimtz/smart-chatbot-service/pull/3). Marker: **`PHASE_05_IN_PROGRESS`**.
+- Reused Phase03 source/document/version and Phase04 isolation contracts; additive `0002_ingestion` Migration, S3 quarantine, real ClamAV INSTREAM, durable PostgreSQL job/lease/heartbeat/retry/audit, independent worker process and synthetic-only, deny-by-default scoped Source/Upload/Status/Cancel API. No public release, HR data, OCR, Qdrant indexing or document publication.
+- **Tests A — historical source-specific evidence:** CI [40095593728](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40095593728) at `d769ff7c19b441e25ad678d3c7b45548cfbbdbb4`: full pytest **69 passed, 10 skipped**, compile, validators, Ruff, strict `pip-audit` (no known vulnerabilities), SBOM, Docker, secret scan PASS.
+- **Tests B — historical source-specific evidence:** same CI `ingestion-integration` **3/3 PASS** with disposable real PostgreSQL, actual ClamAV/EICAR and S3-compatible service, independent Worker process; real Postgres/Qdrant regression PASS. CI [40095766199](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40095766199) has B success on subsequent code including crash-recovery cases, but overall failed due Ruff import-order lint. **These runs do not establish PASS for later SHAs; always inspect latest head's CI.**
+- **Tests A/B Required but Missing:** final same-SHA full all-job green after crash-recovery changes, negative API malformed multipart and dependency outage/timeout failure-injection evidence, independent technical review, source S3 mirror trust assessment. Do not mark missing/unexecuted tests passed.
+- **Tests C deferred:** `P18-P05-C01` through `P18-P05-C08`, each `DEFERRED_TO_PHASE_18` with owner roles/evidence; never run before Phase 18.
+- **Phase status Before / After:** `NOT_STARTED → IN_PROGRESS`; Technical DoD pending (no signed independent acceptance). **Production Release Status: NOT_READY**; Agent Phase15 `BLOCKED_EXTERNAL`; D-07/D-08 `BLOCKED_DECISION`; Phase06 remains `NOT_STARTED`.
+
+## Phase 05 evidence follow-up (2026-10-24)
+
+CI 40098047270 on bf6137dc64761ba2120c79128d630c12ed8e9b49: six of six jobs passed. General A tests 74 passed/14 skipped; real B ingestion seven passed, PostgreSQL four passed, Qdrant nine passed; Ruff/compile/validators/strict pip-audit/SBOM/secret scan and Docker succeeded. Group A/B still require actual isolated dependency container stop/restart, community test S3 image provenance review and independent technical/security sign-off. Group C P18-P05-C01 through P18-P05-C08 remain DEFERRED_TO_PHASE_18. Phase05 before/after: IN_PROGRESS -> IN_PROGRESS, Technical DoD PENDING, Production NOT_READY. Details: phase_05_evidence.md. No prior phase status changed.
+
+
+## Phase 05 technical evidence after Docker dependency fault injection
+
+CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40098823479 on 6fc7e39f39e2f5bd9ca8399ae7a03c809ae48ac0: 6/6 jobs PASS. Tests A: 74 passed/17 skipped, compile/lint/strict audit/SBOM/secret scan/Docker PASS. Tests B: 7 live ingestion PASS plus 3 actual isolated service pause/unpause/recovery PASS, PostgreSQL regressions 4, Qdrant regressions 9. Required-but-missing: independent security/architecture acceptance, community CI S3 image provenance and any reviewer-mandated full process stop/recreate scenarios. Tests C remain all deferred IDs P18-P05-C01–C08. Technical DoD: PENDING; phase status before/after: IN_PROGRESS/IN_PROGRESS; Production Release: NOT_READY. All earlier phase statuses are unchanged and Phase06 is NOT_STARTED.
+
+
+## Phase 05 latest functional baseline (2026-10-24)
+
+GitHub CI 40099162282 on 5c9096ace5983a8876bb3f4a37ef1c4ef325d098: six of six CI jobs PASSED. Group A 75 passed / 18 skipped (one deprecation warning); Group B eight real ingestion and three actual reversible service-outage tests passed; PostgreSQL four and Qdrant nine regressions passed. Synthetic PDF positive multipart/storage/ClamAV acceptance path is now covered, in addition to previous malware, crash and negative cases. Source images for S3/ClamAV are SHA digest-pinned. Required A/B/approval outstanding: signed independent technical/security review, community image provenance and any separately required full process restart fault scenario. Group C IDs P18-P05-C01–C08 remain deferred. Phase05 stays IN_PROGRESS / Technical DoD PENDING / Production NOT_READY. Phase06 NOT_STARTED and past phase decisions unchanged.
+
+
+## Phase 05 latest gate — 2026-10-24
+
+On `d266c0c0454261769a6c74f3427244836f1ed578`, [GitHub CI 40100496685](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40100496685) returned **all 6/6 SUCCESS**. **Tests A Executed + Actual Results:** 75 passed, 21 skipped; compile, architecture validators, Ruff lint/format, strict dependency audit, SBOM, Docker build, secret scan PASS. **Tests B Executed + Actual Results:** 8 real S3/ClamAV/PostgreSQL Ingestion E2E, 6 real dependency outage/recovery including 3 cold process restarts, 4 PostgreSQL and 9 Qdrant integration checks PASS. **Tests A/B Required but Missing:** accountable independent Architecture/Security sign-off, approval or replacement of third-party CI S3 image; actual container remove/recreate NOT_RUN pending reviewer DoD classification. **Tests C Deferred to Phase 18:** organization-only controls with IDs `P18-P05-C01`–`P18-P05-C08` remain `DEFERRED_TO_PHASE_18`. **Technical DoD Status:** `PENDING_INDEPENDENT_REVIEW`; **Phase Status Before/After:** `IN_PROGRESS → IN_PROGRESS`; **Production Release Status:** `NOT_READY`. Group C is not a blocker for Phases 01–17, but the remaining technical review gates are.
+
+[Phase05 Evidence](phase_05_evidence.md), [Technical acceptance](phase_05_technical_acceptance.md), [Supply-chain risk review](phase_05_supply_chain_review.md). PR #3 remains Draft; no new phase was started.
+
+## Phase 05 latest engineering verification — 2026-10-24
+
+
+## Latest source-matched full A/B evidence — 2026-10-24
+
+**Implementation SHA:** 15f4326cd5dba898a185dd95f067969ca90aa01c; **GitHub CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40103038011; all **6/6 jobs SUCCESS** on this exact SHA.
+
+**Tests A Executed + Actual Results:** General pytest 75 passed / 24 skipped / 1 third-party deprecation warning; compile, normal/optimized architecture validators, Ruff lint/format, strict Python pip-audit (no known known vulnerabilities for audited Python dependencies), CycloneDX SBOM, Docker build and secret scan SUCCESS. All skipped service-specific tests were executed in separate Group B jobs and are not counted as A passes.
+
+**Tests B Executed + Actual Results:** 9 real S3+ClamAV+PostgreSQL ingestion PASS, including synthetic PDF, actual malware EICAR, auth/idempotency/file negatives, real worker crash/recovery, and denied incorrect/anonymous S3 credentials. 8 real disposable dependency outages PASS: 3 Docker pause/unpause, 3 genuine process cold restarts, 2 whole-container remove/recreate (S3 retains immutable quarantine bytes on named volume, ClamAV requires a fresh real scan). PostgreSQL regression 4 PASS; Qdrant regression 9 PASS. Migration repeat-upgrade/schema drift/test-only reverse/re-upgrade PASS.
+
+**S3 CI image:** Upstream SeaweedFS 4.48, registry-pinned exact image digest sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d. Before using the service, actual CI cosign verification PASSED for GitHub Actions OIDC issuer, upstream seaweedfs/seaweedfs release workflow at refs/tags/4.48, trusted certificate authority and transparency log. Prior Coollabs third-party MinIO CI image was replaced. Signature provenance does NOT constitute a complete OCI image vulnerability/license/security approval.
+
+**Tests A/B Required but Missing:** Independent, attributable Architecture + Security source review/sign-off and accountable synthetic CI-only image residual-risk disposition remain NOT_SIGNED. No known essential scoped code-path A/B execution gap remains after current checks; an independent reviewer may demand additional A/B checks if a new issue is identified. Full enterprise PostgreSQL node replacement/backup/PITR/HA/DR is Group C in Phase18, distinct from successful Group B in-flight leased-job recovery during true PostgreSQL process restart.
+
+**Tests C Deferred to Phase 18:** P18-P05-C01 through P18-P05-C08 each remain DEFERRED_TO_PHASE_18, NOT_RUN and not PASSED. No corporate server was accessed.
+**Phase 18 Verification Register IDs:** P18-P05-C01, P18-P05-C02, P18-P05-C03, P18-P05-C04, P18-P05-C05, P18-P05-C06, P18-P05-C07, P18-P05-C08.
+**Technical DoD Status:** PENDING_INDEPENDENT_REVIEW. **Phase Status Before/After:** IN_PROGRESS -> IN_PROGRESS. **Production Release Status:** NOT_READY. D-07/D-08 organizational-data decisions remain blocked.
+
+Historic intermediate CI failures (formatter, unpublished image tag, unsigned-image test setup, temporary malformed workflow) were corrected and are not represented as passed.
+
+
+## 2026-10-24 final phase05 engineering hardening A/B evidence
+
+**Verified code SHA:** `18b679283305b4c3f634be5ce55362557b8bf5dc`; **exact-source CI:** [40106419648](https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40106419648), all **6/6 jobs SUCCESS**. Owner authorized the AI implementer to continue the technical completion and requested this review. This records owner direction only; it does **not** constitute a separately sourced independent Architecture/Security review or a signed approval by those accountable roles.
+
+**Tests A Executed + Actual Results:** 78 passed, 25 skipped, 1 third-party warning. Compile, optimized/normal architecture validations, Ruff import/style checks, strict Python dependency pip-audit, SBOM, Docker image build, Gitleaks SUCCESS. The 25 skipped tests are not labeled PASSED; B executed genuine integration in its own jobs.
+
+**Tests B Executed + Actual Results:** 10 real authenticated S3/ClamAV/PostgreSQL ingestion tests PASS including **new** Source synthetic classification/policy metadata, source-specific 1KiB upload guard and owner-only idempotent Source disable with negative foreign-owner and post-disable upload tests; existing actual digital PDF/EICAR/scanner/worker/lease and denial paths PASS. 8 genuine dependency outage/recovery tests PASS including three pause/unpause, three process cold restarts and two complete S3/ClamAV container remove/recreate. PostgreSQL regression 4 PASS; Qdrant regression 9 PASS. Additive `0002_ingestion` migration upgrades, repeat/drift and isolated test-only downgrade/reupgrade PASS. Actual upstream SeaweedFS immutable digest signature verified via CI Cosign before server startup.
+
+**Gap remediation:**
+1. Source contract now persists immutable, narrowly synthetic `classification = synthetic_unclassified`, `policy_ref = synthetic-only`, owner/domain/source_type/status and optional owner-configured max_file_bytes; none grants organization Policy/ACL privileges. D-07/D-08 **remain undecided** for real data.
+2. Source `POST /sources/{id}/disable` is owner-only, audited and idempotent; disallow new uploads once disabled. It does not automatically purge/terminate already accepted jobs or issue publication rights.
+3. Digital PDF preflight is in a separate interpreter process, with subprocess kill on 4-second deadline and POSIX 256MiB address-space/CPU resource ceilings; no uncancellable in-process PDF parsing Thread. The subprocess does not replace antivirus, and Windows lacks POSIX resource ceiling but enforces subprocess deadline. Extra A negative test confirms timeout fails closed.
+4. `UploadFile` parsing is now confined to Application adapter and the Core service takes normalized bytes/metadata, honoring layering. Postgres revision gating dynamically matches Alembic ScriptDirectory's unique head while keeping migration execution explicitly out of startup.
+5. `0002_ingestion` was edited **before first merge** and tested only on fresh disposable CI data; any private test DB already provisioned from the former unmerged definition must be discarded/recreated, never silently migrated in place.
+
+**Tests A/B Required but Missing:** No known unrun mandatory scoped A/B test following these changes. **Independent accountable Architecture + Security source review, and written CI-only SeaweedFS OCI vulnerability/license/runtime risk disposition are still NOT_SIGNED**; verifier may request additional targeted evidence. A green CI and AI self-review are not an independent signature.
+
+**Tests C Deferred to Phase18:** `P18-P05-C01`–`P18-P05-C08`, each `DEFERRED_TO_PHASE_18`, NOT_RUN/NOT_PASSED. **Phase18 Verification Register IDs:** P18-P05-C01, C02, C03, C04, C05, C06, C07, C08 (all prefixed P18-P05-).
+
+**Technical DoD Status:** `PENDING_INDEPENDENT_REVIEW`. **Phase Status Before/After:** `IN_PROGRESS → IMPLEMENTED_AWAITING_VERIFICATION` (engineering/tests finished, not CLOSED). **Production Release Status:** `NOT_READY`; PR #3 still Draft/unmerged; no corporate data or On-Prem test conducted.
