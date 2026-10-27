@@ -211,6 +211,8 @@ def validate_model_answer(
 
     try:
         data = json.loads(raw_json, object_pairs_hook=unique_pairs)
+    except AnswerContractError:
+        raise
     except (ValueError, TypeError, RecursionError):
         raise AnswerContractError("malformed_model_response") from None
     if not isinstance(data, dict) or set(data) != {"answer", "citation_ids", "abstain"}:
