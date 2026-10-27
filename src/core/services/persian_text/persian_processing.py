@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from uuid import UUID, uuid5
 
 PROCESSOR_VERSION = "fa-structure-v1"
+NORMALIZER_VERSION = "fa-nfc-normalizer-v1"
 _TRANSLATION = str.maketrans(
     {
         "ي": "ی",
@@ -40,6 +41,7 @@ class ExtractedPage:
     number: int | None
     text: str
     method: str  # digital_pdf, tesseract_ocr, docx or utf8_text
+    engine_version: str = ""  # Real extractor emits parser + OCR binary versions
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,8 @@ class ProcessedChunk:
     method: str
     checksum: str
     processor_version: str = PROCESSOR_VERSION
+    normalizer_version: str = NORMALIZER_VERSION
+    engine_version: str = ""
 
 
 def normalize_persian(text: str) -> str:
@@ -111,7 +115,10 @@ def chunk_pages(
             f"{PROCESSOR_VERSION}:{page.number}:{start}:{end}:{checksum}",
         )
         chunks.append(
-            ProcessedChunk(stable, ordinal, page.number, start, end, raw, canonical, section, page.method, checksum)
+            ProcessedChunk(
+                stable, ordinal, page.number, start, end, raw, canonical, section,
+                page.method, checksum, PROCESSOR_VERSION, NORMALIZER_VERSION, page.engine_version,
+            )
         )
 
     for page in pages:
