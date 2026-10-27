@@ -51,7 +51,7 @@ def test_real_postgres_rejects_invalid_chunk_batch_as_terminal_audited_failure(c
             )
             assert created
             assert await repo.mark_queued_async(job.id, actor, "internal")
-            claimed = await repo.claim_async("bound-check-" + uuid4().hex, "internal", 45)
+            claimed = await repo.claim_async("bnd", "internal", 45)
             assert claimed is not None and claimed[0] == job.id
             # Invalid batches are rejected before materializing any chunk row.
             bad_chunks = [object()] * chunk_count
