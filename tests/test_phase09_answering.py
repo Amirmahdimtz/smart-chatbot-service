@@ -35,7 +35,9 @@ def _source(text: str = "ماده ۱۲ معتبر است.") -> CitationSource:
 
 
 def _prompt(source=None):
-    return build_grounded_prompt(query="  ماده ١٢ چیست؟ ", domain="research", audience_role="reader", sources=[source or _source()])
+    return build_grounded_prompt(
+        query="  ماده ١٢ چیست؟ ", domain="research", audience_role="reader", sources=[source or _source()]
+    )
 
 
 def _output(prompt, *, answer="طبق سند، ماده ۱۲ معتبر است.", citations=None, abstain=False):
@@ -106,9 +108,7 @@ def test_exhaustive_fake_citation_and_structured_response_rejection():
 
 def test_refusal_from_model_is_structured_and_no_citations_are_allowed():
     prompt = _prompt()
-    abstention = validate_model_answer(
-        envelope=prompt, raw_json=_output(prompt, answer="", citations=[], abstain=True)
-    )
+    abstention = validate_model_answer(envelope=prompt, raw_json=_output(prompt, answer="", citations=[], abstain=True))
     assert abstention.status == "abstained"
     assert abstention.citations == ()
     assert abstention.answer == ""
@@ -122,7 +122,13 @@ def test_reject_bad_checksum_span_duplicate_and_over_budget():
     with pytest.raises(AnswerContractError):
         build_grounded_prompt(query="سلام", domain="research", audience_role="reader", sources=[a, a])
     with pytest.raises(AnswerContractError, match="context_budget_exceeded"):
-        build_grounded_prompt(query="سلام", domain="research", audience_role="reader", sources=[_source("الف" * 800)], max_context_chars=256)
+        build_grounded_prompt(
+            query="سلام",
+            domain="research",
+            audience_role="reader",
+            sources=[_source("الف" * 800)],
+            max_context_chars=256,
+        )
     with pytest.raises(AnswerContractError, match="invalid_or_duplicate_citation_source"):
         _prompt(replace(a, source_end=a.source_start))
     with pytest.raises(AnswerContractError, match="invalid_or_duplicate_citation_source"):
