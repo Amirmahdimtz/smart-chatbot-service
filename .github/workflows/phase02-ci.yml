@@ -113,6 +113,8 @@ jobs:
           done
           exit 1
       - run: python -m pytest -q tests/test_phase04_qdrant.py
+      - name: Phase07 real Qdrant hidden-stage and replay integration
+        run: python -m pytest -q tests/test_phase07_qdrant.py
       - name: Clean disposable Qdrant
         if: always()
         run: docker rm -f scb-phase04-ci || true
