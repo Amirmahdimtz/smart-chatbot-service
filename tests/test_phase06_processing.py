@@ -70,7 +70,7 @@ def test_multipage_chunks_never_reuse_previous_page_offsets():
         spans = [chunk for chunk in first if chunk.page == page.number]
         assert spans
         assert all(0 <= part.start < part.end <= len(page.text) for part in spans)
-        assert all(page.text[part.start:part.end] == part.original for part in spans)
+        assert all(page.text[part.start : part.end] == part.original for part in spans)
         assert all(part.canonical == normalize_persian(part.original) for part in spans)
         assert page.text[-15:] in "".join(part.original for part in spans)
 
