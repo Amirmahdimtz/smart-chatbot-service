@@ -132,6 +132,23 @@ def test_malformed_word_and_pdf_fail_closed():
     not shutil.which("pdftoppm") or not shutil.which("tesseract"),
     reason="Real Poppler and Tesseract OCR binaries not provisioned",
 )
+def _character_error_rate(actual: str, expected: str) -> float:
+    """Levenshtein distance divided by ground-truth codepoint count."""
+    previous = list(range(len(expected) + 1))
+    for i, character in enumerate(actual, 1):
+        row = [i]
+        for j, reference in enumerate(expected, 1):
+            row.append(
+                min(
+                    previous[j] + 1,
+                    row[j - 1] + 1,
+                    previous[j - 1] + (character != reference),
+                )
+            )
+        previous = row
+    return previous[-1] / len(expected)
+
+
 def test_real_scanned_persian_pdf_ocr():
     # PIL raster-only PDF: no hidden text layer and no simulated OCR response.
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 75)
@@ -144,6 +161,9 @@ def test_real_scanned_persian_pdf_ocr():
     pages = asyncio.run(DocumentExtractor().extract_async(data, "application/pdf"))
     assert pages[0].method == "tesseract_ocr"
     assert pages[0].number == 1
-    assert "سلام" in pages[0].text
-    assert "دنیا" in pages[0].text
+    expected = "سلام دنیا"
+    observed = normalize_persian(pages[0].text)
+    cer = _character_error_rate(observed, expected)
+    print(f"Phase06 scanned-PDF Persian OCR synthetic CER={cer:.3f}")
+    assert cer <= 0.20, (observed, expected, cer)
     assert chunk_pages(uuid4(), pages)[0].method == "tesseract_ocr"
