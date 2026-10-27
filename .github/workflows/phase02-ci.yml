@@ -115,6 +115,8 @@ jobs:
       - run: python -m pytest -q tests/test_phase04_qdrant.py
       - name: Phase07 real Qdrant hidden-stage and replay integration
         run: python -m pytest -q tests/test_phase07_qdrant.py
+      - name: Phase08 real Qdrant scoped dense candidates with deny-all authority
+        run: python -m pytest -q tests/test_phase08_qdrant.py
       - name: Clean disposable Qdrant
         if: always()
         run: docker rm -f scb-phase04-ci || true
@@ -223,6 +225,8 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
       - run: python -m pytest -q tests/test_phase05_integration.py
+      - name: Phase08 real PostgreSQL owner/domain/revocation authorization
+        run: python -m pytest -q tests/test_phase08_postgres.py
       - name: Phase06 real scanned-PDF Persian OCR Gold Fixture CER
         run: |
           tesseract --version | head -n 1
