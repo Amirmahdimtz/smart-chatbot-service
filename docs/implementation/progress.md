@@ -227,3 +227,18 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Tests C Deferred to Phase18 / Register IDs:** P18-P06-C01, C02, C03, C04, C05, C06, each DEFERRED_TO_PHASE_18 / NOT_RUN; no corporate On-Prem tests required now.
 
 **Production Release Status:** NOT_READY; Phase18 release/Group C gates and applicable owner approvals remain outstanding. Phase06 PR#4 is stacked Draft onto PR#3; no automatic merge.
+
+
+### Phase 06 corrective verification — 2026-10-27
+
+**Authorization:** GO_FOR_PHASE06_DEVELOPMENT_ONLY. Only Phase06-dependent Draft branch changed. Phase05 PR#3 and main remain unmerged/unchanged.
+
+**Verified code SHA:** `730a04d807f2ced5a5ac61696cb97704a1886101`. **Actual GitHub CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40475859190 **6/6 jobs SUCCESS**. A = 93 PASS / 28 SKIP; B = 13 real ingestion, 2 real synthetic fa/ar OCR, 8 real outage/recovery, 4 real PostgreSQL, 9 real Qdrant PASS. Earlier CI 40475287944 had 2 real outage failures; a bounded write-readiness retest addresses this without ignoring or marking the former failures PASS. Evidence: phase_06_evidence.md.
+
+**Changes:** Worker forwards `ProcessingSettings` into extraction subprocess; hybrid digital+raster PDF invokes local OCR within page/resource budget and preserves real raw text offsets; pre-accepted jobs from a disabled source remain processable per documented Phase05 policy, while future uploads are denied. New A/B tests cover these behaviors, and Phase06 Design/Test Matrix/Runbook are updated.
+
+**Tests A/B Required but Missing:** independent attributable Phase06 technical/security/quality acceptance, domain-representative Arabic/Persian OCR/layout corpus and risk decisions D-10/D-12; inherited Phase05 independent ADR-0008 acceptance and synthetic CI-only image-risk decision are still pending. Group C `P18-P06-C01..C06` remains deferred/not executed.
+
+**Technical DoD:** `ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING`.
+**Phase Status Before/After:** `IMPLEMENTED_AWAITING_VERIFICATION → IMPLEMENTED_AWAITING_VERIFICATION` (no CLOSED marker).
+**Production Release Status:** `NOT_READY`. No Phase18 tests claimed.
