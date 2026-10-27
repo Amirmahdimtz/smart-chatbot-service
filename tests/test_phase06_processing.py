@@ -167,3 +167,41 @@ def test_real_scanned_persian_pdf_ocr():
     print(f"Phase06 scanned-PDF Persian OCR synthetic CER={cer:.3f}")
     assert cer <= 0.20, (observed, expected, cer)
     assert chunk_pages(uuid4(), pages)[0].method == "tesseract_ocr"
+
+
+
+def test_real_blank_scanned_pdf_is_rejected_before_approval():
+    image = Image.new("RGB", (800, 200), "white")
+    pdf = io.BytesIO()
+    image.save(pdf, format="PDF", resolution=180)
+    data = pdf.getvalue()
+    validate_content(data, "application/pdf")
+    with pytest.raises(ProcessingRejected, match="extraction_failed"):
+        asyncio.run(DocumentExtractor().extract_async(data, "application/pdf"))
+
+
+def test_extractor_timeout_terminates_child(monkeypatch):
+    from src.infrastructure.providers.document import document_extractor
+
+    class HangingChild:
+        def __init__(self):
+            self.killed = False
+
+        async def communicate(self, contents):
+            raise TimeoutError("simulated hung subprocess")
+
+        def kill(self):
+            self.killed = True
+
+        async def wait(self):
+            return 1
+
+    child = HangingChild()
+
+    async def create_child(*args, **kwargs):
+        return child
+
+    monkeypatch.setattr(document_extractor.asyncio, "create_subprocess_exec", create_child)
+    with pytest.raises(ProcessingRejected, match="extraction_timeout"):
+        asyncio.run(DocumentExtractor().extract_async(b"safe", "text/plain"))
+    assert child.killed
