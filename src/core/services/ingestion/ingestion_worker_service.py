@@ -92,7 +92,7 @@ class IngestionWorkerService:
                 else:
                     # The existing quarantine and malware gate always precedes parsing.
                     await self._scanner.scan_async(contents)
-                    pages = await self._extractor.extract_async(contents, mime)
+                    pages = await self._extractor.extract_async(contents, mime, limits=self._processing)
                     chunks = chunk_pages(
                         version_id,
                         pages,
