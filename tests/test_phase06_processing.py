@@ -121,6 +121,19 @@ def test_real_docx_paragraphs_and_table_extraction():
     assert all(item.page is None for item in chunk_pages(uuid4(), pages))
 
 
+def test_encrypted_pdf_is_never_extracted_or_approved():
+    writer = PdfWriter()
+    writer.add_blank_page(width=612, height=792)
+    writer.encrypt("synthetic-secret")
+    output = io.BytesIO()
+    writer.write(output)
+    data = output.getvalue()
+    with pytest.raises(UploadRejected):
+        validate_content(data, "application/pdf")
+    with pytest.raises(ProcessingRejected, match="extraction_failed"):
+        asyncio.run(DocumentExtractor().extract_async(data, "application/pdf"))
+
+
 def test_malformed_word_and_pdf_fail_closed():
     with pytest.raises(UploadRejected):
         validate_content(b"PK\x03\x04broken", DOCX_MIME)
