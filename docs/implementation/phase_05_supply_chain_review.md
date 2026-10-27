@@ -1,5 +1,7 @@
 # Phase 05 — Supply chain evidence and residual CI image risk
 
+> **Gate classification — 2026-10-27 / Implementation Plan v1.1.1:** This file assesses the signed, pinned **synthetic CI-only** S3 test image (Group A/B), not an image approved for organization Production. Runtime/license/vulnerability risk not yet assessed or accepted must be reported as unresolved **CI-only residual risk**, not mislabeled as a missing corporate On-Prem/Release test. `ADR-0008` separately requires independently accepted **technical** Phase05 DoD; this note neither waives that explicit phase-specific gate nor simulates Security reviewer approval. Final organizational image/security/operations acceptance and real On-Prem object storage are **Group C — Phase18**.
+
 **Reviewed date:** 2026-10-24. **Exact tested source:** 15f4326cd5dba898a185dd95f067969ca90aa01c. **CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40103038011, all 6 jobs SUCCESS.
 
 ## Artifact change
