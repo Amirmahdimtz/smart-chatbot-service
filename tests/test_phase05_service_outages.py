@@ -241,7 +241,13 @@ def test_clamav_cold_restart_restores_genuine_malware_verdict():
             try:
                 payload = ("clamav-restart-" + uuid4().hex).encode()
                 owner, job, version, checksum = await _stage(repo, payload)
-                await store.put_async(version.object_key, payload, checksum)
+                # A previously recreated CI-only S3 gateway may pass HEAD
+                # before accepting PUT. Require a real successful immutable write.
+                await _wait_restored(
+                    lambda: store.put_async(version.object_key, payload, checksum),
+                    (StorageUnavailable,),
+                    attempts=25,
+                )
                 assert await repo.mark_queued_async(job.id, owner, "internal")
                 _docker("restart", "--time", "1", "scb-phase05-clamav")
                 await _wait_restored(lambda: scanner.scan_async(payload), (ScanUnavailable,))
@@ -276,7 +282,13 @@ def test_postgresql_cold_restart_reclaims_persisted_inflight_lease():
             try:
                 payload = ("pg-restart-" + uuid4().hex).encode()
                 owner, job, version, checksum = await _stage(repo, payload)
-                await store.put_async(version.object_key, payload, checksum)
+                # A previously recreated CI-only S3 gateway may pass HEAD
+                # before accepting PUT. Require a real successful immutable write.
+                await _wait_restored(
+                    lambda: store.put_async(version.object_key, payload, checksum),
+                    (StorageUnavailable,),
+                    attempts=25,
+                )
                 assert await repo.mark_queued_async(job.id, owner, "internal")
                 # Earlier integration tests may leave older synthetic retry jobs;
                 # make THIS test's disposable job the oldest eligible candidate.
