@@ -214,3 +214,16 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Tests C Deferred to Phase18:** P18-P06-C01 through C06, all DEFERRED_TO_PHASE_18 and NOT_RUN. No server test requested.
 **Technical DoD:** PENDING_SAME_SHA_AB_AND_REVIEW.
 **Production Release:** NOT_READY; D-07/D-08 policy approval not granted.
+
+
+### Phase 06 engineering handoff update — 2026-10-27
+
+**Latest verified implementation SHA:** 289f216ca4f6e77d30211064e6bb0202ad2fd182; **CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40470440670, **6/6 jobs SUCCESS**. Detailed reproducible commands, runners, parser/OCR versions, CER and tests: phase_06_evidence.md. Group A 90 PASSED/27 SKIPPED; actual Group B 12 real ingestion, 2 real fa/ar OCR Gold Fixtures (each synthetic CER 0.000), 8 dependency outage/recovery, 4 PostgreSQL and 9 Qdrant PASSED. Skips are not PASSED.
+
+**Phase Status Before / After:** NOT_STARTED → IMPLEMENTED_AWAITING_VERIFICATION (after independently reproducible scoped engineering verification; applicable accountable technical/quality acceptance still pending). **Marker:** PHASE_06_IMPLEMENTED_AWAITING_VERIFICATION. The earlier PHASE_06_IN_PROGRESS entry is a chronological record, not the current development handoff state.
+
+**Technical DoD Status:** ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING. Phase05 remains IMPLEMENTED_AWAITING_VERIFICATION under ADR-0008; unmerged Phase05 Draft PR#3 is unchanged. Actual independent specialist review, synthetic OCI/image/package risk disposition and representative OCR/layout quality acceptance not yet signed. D-07/D-08 do not authorize organizational data. Do not mark Phase06 CLOSED or release solely on CI success.
+
+**Tests C Deferred to Phase18 / Register IDs:** P18-P06-C01, C02, C03, C04, C05, C06, each DEFERRED_TO_PHASE_18 / NOT_RUN; no corporate On-Prem tests required now.
+
+**Production Release Status:** NOT_READY; Phase18 release/Group C gates and applicable owner approvals remain outstanding. Phase06 PR#4 is stacked Draft onto PR#3; no automatic merge.
