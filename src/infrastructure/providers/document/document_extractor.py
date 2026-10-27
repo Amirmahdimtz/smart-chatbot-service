@@ -47,6 +47,7 @@ class DocumentExtractor:
                     number=item["number"],
                     text=item["text"],
                     method=item["method"],
+                    engine_version=item["engine_version"],
                 )
                 for item in decoded
             ]
