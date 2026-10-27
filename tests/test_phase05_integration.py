@@ -13,7 +13,7 @@ import sys
 import time
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 import jwt
@@ -776,6 +776,7 @@ def test_killed_independent_worker_reclaims_expired_real_db_lease():
 def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     """Digital PDF is staged and scanned by real services without publishing."""
     from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
     http, token, _ = client
     owner = "synthetic-" + uuid4().hex
@@ -785,7 +786,20 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     source_id = source_response.json()["id"]
     pdf = BytesIO()
     writer = PdfWriter()
-    writer.add_blank_page(width=180, height=180)
+    page = writer.add_blank_page(width=180, height=180)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): writer._add_object(font)})}
+    )
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 12 100 Td (Synthetic digital PDF evidence) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
     writer.write(pdf)
     payload = pdf.getvalue()
     uploaded = http.post(
@@ -821,6 +835,40 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     assert version.status_code == 200
     assert version.json()["state"] == "awaiting_approval"
     assert version.json()["content_type"] == "application/pdf"
+
+    # Phase06 extends Phase05's atomic processing path: no awaiting_approval
+    # without durable, true source-mapped PDF text chunks in PostgreSQL.
+    from sqlalchemy import select
+
+    from src.infrastructure.models.entities import KnowledgeChunk
+
+    async def assert_real_pdf_chunks():
+        db = bootstrap_di().resolve(PsqlDbContext)
+        await db.start_async()
+        try:
+            async with db.transaction_async() as session:
+                chunks = (
+                    await session.scalars(
+                        select(KnowledgeChunk)
+                        .where(
+                            KnowledgeChunk.version_id == UUID(version_id),
+                            KnowledgeChunk.deployment_scope == "internal",
+                        )
+                        .order_by(KnowledgeChunk.ordinal)
+                    )
+                ).all()
+                assert chunks
+                assert all(item.page_number == 1 and item.extractor_method == "digital_pdf" for item in chunks)
+                assert "Synthetic digital PDF evidence" in chunks[0].canonical_text
+                assert chunks[0].original_text[
+                    : len(chunks[0].original_text)
+                ] == chunks[0].canonical_text  # Unchanged ASCII fixture
+                assert all(item.source_end > item.source_start for item in chunks)
+                assert all(item.processor_version == "fa-structure-v1" for item in chunks)
+        finally:
+            await db.close_async()
+
+    asyncio.run(assert_real_pdf_chunks())
 
 
 def test_real_source_metadata_limit_and_disable_lifecycle(client):
