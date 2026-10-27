@@ -112,6 +112,10 @@ def chunk_pages(
         canonical = normalize_persian(raw)
         if not canonical:
             return
+        # The persistence contract allows at most 4096 chunks per document.
+        # Reject at source rather than silently failing the leased DB commit.
+        if len(chunks) >= 4096:
+            raise ProcessingRejected("too_many_chunks")
         ordinal = len(chunks)
         checksum = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         stable = uuid5(
