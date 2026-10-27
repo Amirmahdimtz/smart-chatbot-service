@@ -26,3 +26,7 @@ The current PostgreSQL version state is an authoritative **read-side check** but
 ## Next required work before DoD
 
 Close Phase07 publication/gating and D-03, D-04; add real selected embedding encoder, real reranker with warm lifecycle/timeout, actual lexical candidate provider, explainable sufficiency/abstention, Gold Dataset and threshold decisions D-12, integrated PG+Qdrant+Reranker real E2E, cross-domain denial and timing/expiry tests, attributable technical acceptance. No Group C server requests before Phase18.
+
+## Additional bounded A/B step before Phase09 handoff
+
+A structural `EvidenceWindow` now bounds authorized chunks/characters, deduplicates same-provenance chunk IDs, rejects altered canonical SHA-256 or contradictory version/checksum, retains whole source excerpts (never invents clipped source spans), and emits `no_authorized_evidence` or `evidence_over_budget` hints. These are **deterministic syntactic safeguards only**. They do not prove semantic sufficiency, contradiction detection, date freshness, LLM grounding, or real Reranker quality. Phase08 cannot close until the real Phase07 index, actual model Reranker and D-12 Gold evaluation exist. The Phase09 development branch may implement independent context/prompt/citation contracts without claiming Phase08 DoD.
