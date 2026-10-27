@@ -153,6 +153,11 @@ class KnowledgeChunk(Base):
         ),
         CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_chunk_scope"),
         CheckConstraint("ordinal >= 0", name="ck_chunk_ordinal"),
+        CheckConstraint(
+            "(source_start IS NULL AND source_end IS NULL) OR (source_start >= 0 AND source_end > source_start)",
+            name="ck_chunk_source_span",
+        ),
+        CheckConstraint("page_number IS NULL OR page_number > 0", name="ck_chunk_page_number"),
         UniqueConstraint("version_id", "ordinal", name="uq_chunk_ordinal"),
     )
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -161,4 +166,14 @@ class KnowledgeChunk(Base):
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
     checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     canonical_text_ref: Mapped[str | None] = mapped_column(String(1024))
+    original_text: Mapped[str | None] = mapped_column(Text)
+    canonical_text: Mapped[str | None] = mapped_column(Text)
+    page_number: Mapped[int | None] = mapped_column(Integer)
+    source_start: Mapped[int | None] = mapped_column(Integer)
+    source_end: Mapped[int | None] = mapped_column(Integer)
+    section_title: Mapped[str | None] = mapped_column(String(200))
+    extractor_method: Mapped[str | None] = mapped_column(String(32))
+    processor_version: Mapped[str | None] = mapped_column(String(64))
+    normalizer_version: Mapped[str | None] = mapped_column(String(64))
+    engine_version: Mapped[str | None] = mapped_column(String(180))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

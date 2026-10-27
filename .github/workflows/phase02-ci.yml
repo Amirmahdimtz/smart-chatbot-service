@@ -14,6 +14,10 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+      - name: Install isolated OCR dependencies for synthetic fixtures
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-fas tesseract-ocr-ara tesseract-ocr-eng fonts-dejavu-core
       - run: python -m pip install --requirement requirements-dev.txt
       - run: python -m compileall -q src scripts tests
       - run: python scripts/validate_phase01.py
@@ -146,6 +150,10 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+      - name: Install isolated OCR dependencies for synthetic fixtures
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-fas tesseract-ocr-ara tesseract-ocr-eng fonts-dejavu-core
       - run: python -m pip install --requirement requirements-dev.txt
       - name: Install pinned Sigstore cosign verifier
         uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22
@@ -213,6 +221,11 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
       - run: python -m pytest -q tests/test_phase05_integration.py
+      - name: Phase06 real scanned-PDF Persian OCR Gold Fixture CER
+        run: |
+          tesseract --version | head -n 1
+          pdftoppm -v 2>&1 | head -n 1
+          python -m pytest -q -s tests/test_phase06_processing.py::test_real_scanned_persian_pdf_ocr
       - name: Real dependency outage/recovery injection on disposable CI containers only
         run: python -m pytest -q tests/test_phase05_service_outages.py
       - name: Remove synthetic containers

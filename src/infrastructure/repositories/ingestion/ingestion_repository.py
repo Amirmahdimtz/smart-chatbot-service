@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infrastructure.context.sql_db.psql_dbcontext import PsqlDbContext
 from src.infrastructure.di.inject import inject
-from src.infrastructure.models.entities import DocumentVersion, KnowledgeDocument, KnowledgeSource
+from src.infrastructure.models.entities import DocumentVersion, KnowledgeChunk, KnowledgeDocument, KnowledgeSource
 from src.infrastructure.models.ingestion import IngestionAuditEvent, IngestionJob
 from src.infrastructure.repositories.base.base_repository import BaseRepository
 
@@ -294,7 +294,15 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             version.state = "processing"
             self._audit(session, job, job.source_id, scope, worker_id, "claimed")
             await session.flush()
-            return job.id, token, version.object_key, job.checksum_sha256, version.byte_size
+            return (
+                job.id,
+                token,
+                version.object_key,
+                job.checksum_sha256,
+                version.byte_size,
+                version.id,
+                version.content_type,
+            )
 
     async def heartbeat_async(self, job_id: UUID, token: str, lease_seconds: int) -> bool:
         async with self._db.transaction_async() as session:
@@ -315,7 +323,13 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             return result.rowcount == 1
 
     async def finish_async(
-        self, job_id: UUID, token: str, success: bool, error_code: str | None = None, retriable: bool = False
+        self,
+        job_id: UUID,
+        token: str,
+        success: bool,
+        error_code: str | None = None,
+        retriable: bool = False,
+        chunks: list | None = None,
     ) -> bool:
         async with self._db.transaction_async() as session:
             job = await session.scalar(select(IngestionJob).where(IngestionJob.id == job_id).with_for_update())
@@ -330,6 +344,38 @@ class IngestionRepository(BaseRepository[IngestionJob]):
                 return False
             version = await session.get(DocumentVersion, job.version_id)
             if success:
+                # All source-mapped chunks and the final job/version states commit
+                # under the same valid lease token and PostgreSQL transaction.
+                if not chunks or len(chunks) > 4096:
+                    return False
+                await session.execute(
+                    delete(KnowledgeChunk).where(
+                        KnowledgeChunk.version_id == version.id,
+                        KnowledgeChunk.deployment_scope == job.deployment_scope,
+                    )
+                )
+                session.add_all(
+                    [
+                        KnowledgeChunk(
+                            id=item.id,
+                            version_id=version.id,
+                            deployment_scope=job.deployment_scope,
+                            ordinal=item.ordinal,
+                            checksum_sha256=item.checksum,
+                            original_text=item.original,
+                            canonical_text=item.canonical,
+                            page_number=item.page,
+                            source_start=item.start,
+                            source_end=item.end,
+                            section_title=item.section,
+                            extractor_method=item.method,
+                            processor_version=item.processor_version,
+                            normalizer_version=item.normalizer_version,
+                            engine_version=item.engine_version,
+                        )
+                        for item in chunks
+                    ]
+                )
                 job.status, job.error_code, version.state = "completed", None, "awaiting_approval"
             elif retriable and job.attempts < job.max_attempts:
                 job.status, job.error_code = "retry_wait", error_code

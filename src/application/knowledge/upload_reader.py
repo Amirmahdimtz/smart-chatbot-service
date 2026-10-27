@@ -12,12 +12,17 @@ from src.core.services.ingestion.upload_validation import UploadRejected, valida
 
 async def validate_upload_async(file: UploadFile, limit: int) -> tuple[str, bytes, str]:
     name = validate_filename(file.filename)
-    if file.content_type not in {"text/plain", "application/pdf"}:
+    if file.content_type not in {
+        "text/plain",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }:
         raise UploadRejected("unsupported_format")
     extension = name.rpartition(".")[2].casefold()
     if (extension, file.content_type) not in {
         ("txt", "text/plain"),
         ("pdf", "application/pdf"),
+        ("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
     }:
         raise UploadRejected("content_type_mismatch")
     content = bytearray()

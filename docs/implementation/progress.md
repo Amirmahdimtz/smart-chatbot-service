@@ -199,3 +199,46 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Tests C Deferred to Phase18:** `P18-P05-C01`–`P18-P05-C08`, each `DEFERRED_TO_PHASE_18`, NOT_RUN/NOT_PASSED. **Phase18 Verification Register IDs:** P18-P05-C01, C02, C03, C04, C05, C06, C07, C08 (all prefixed P18-P05-).
 
 **Technical DoD Status:** `PENDING_INDEPENDENT_REVIEW`. **Phase Status Before/After:** `IN_PROGRESS → IMPLEMENTED_AWAITING_VERIFICATION` (engineering/tests finished, not CLOSED). **Production Release Status:** `NOT_READY`; PR #3 still Draft/unmerged; no corporate data or On-Prem test conducted.
+
+
+## Phase 06 — Dependent Persian Processing / OCR / Chunking (2026-10-27)
+
+**Authorization:** GO_FOR_PHASE06_DEVELOPMENT_ONLY, Project Owner. This does not imply independent acceptance or Production.
+**Status Before:** NOT_STARTED.
+**Status After at engineering start:** IN_PROGRESS; **Marker:** PHASE_06_IN_PROGRESS.
+**Repository:** main 0c817b1886b1668576e2037394f4b2d5cbf4997b; source baseline Phase05 PR #3 head 26dc557fb432d8830cdb522009f795d96aabdc54. Stacked Phase06 PR #4 (Draft) targets feat/phase05-ingestion, does NOT merge PR #3.
+**Phase05 dependency:** IMPLEMENTED_AWAITING_VERIFICATION, exact-head CI 40464098716 6/6 SUCCESS; ADR-0008 independent technical acceptance not signed, synthetic-only OCI runtime/license risk disposition pending. No prior phase state modified.
+**Implemented development scope:** Real bounded PDF text/OCR, DOCX/FAQ/table transcript and TXT extraction via child, reversible/Persian normalization preserving original, structure-aware deterministic UUIDv5 chunks, true extracted-source page/offset traces, engine/normalizer/chunker versions, incremental 0003 knowledge_chunk migration and lease-fenced atomic chunk persistence in existing scanned worker. Zero automatic publishing/Qdrant indexing. Data synthetic-only.
+**Early observed Group A/B evidence:** Exact code SHA 4f9bf086ea3758a3caaa231c35a30d1deb139b33, GitHub Actions 40468179266 6/6 SUCCESS: Group A 86 passed / 25 skipped, strict Ruff/dependency-audit/SBOM/secret/Docker success; Group B real ingestion 10 and outage 8, PostgreSQL 4, Qdrant 9 passes. Later code/metadata/fixture additions require their own exact-SHA CI confirmation; these earlier results do not validate later commits.
+**Tests A/B Required but Missing at status entry:** Latest-head full A/B result and independent technical/quality review; see phase_06_test_matrix.md and phase_06_evidence.md for updated evidence and any failures.
+**Tests C Deferred to Phase18:** P18-P06-C01 through C06, all DEFERRED_TO_PHASE_18 and NOT_RUN. No server test requested.
+**Technical DoD:** PENDING_SAME_SHA_AB_AND_REVIEW.
+**Production Release:** NOT_READY; D-07/D-08 policy approval not granted.
+
+
+### Phase 06 engineering handoff update — 2026-10-27
+
+**Latest verified implementation SHA:** 289f216ca4f6e77d30211064e6bb0202ad2fd182; **CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40470440670, **6/6 jobs SUCCESS**. Detailed reproducible commands, runners, parser/OCR versions, CER and tests: phase_06_evidence.md. Group A 90 PASSED/27 SKIPPED; actual Group B 12 real ingestion, 2 real fa/ar OCR Gold Fixtures (each synthetic CER 0.000), 8 dependency outage/recovery, 4 PostgreSQL and 9 Qdrant PASSED. Skips are not PASSED.
+
+**Phase Status Before / After:** NOT_STARTED → IMPLEMENTED_AWAITING_VERIFICATION (after independently reproducible scoped engineering verification; applicable accountable technical/quality acceptance still pending). **Marker:** PHASE_06_IMPLEMENTED_AWAITING_VERIFICATION. The earlier PHASE_06_IN_PROGRESS entry is a chronological record, not the current development handoff state.
+
+**Technical DoD Status:** ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING. Phase05 remains IMPLEMENTED_AWAITING_VERIFICATION under ADR-0008; unmerged Phase05 Draft PR#3 is unchanged. Actual independent specialist review, synthetic OCI/image/package risk disposition and representative OCR/layout quality acceptance not yet signed. D-07/D-08 do not authorize organizational data. Do not mark Phase06 CLOSED or release solely on CI success.
+
+**Tests C Deferred to Phase18 / Register IDs:** P18-P06-C01, C02, C03, C04, C05, C06, each DEFERRED_TO_PHASE_18 / NOT_RUN; no corporate On-Prem tests required now.
+
+**Production Release Status:** NOT_READY; Phase18 release/Group C gates and applicable owner approvals remain outstanding. Phase06 PR#4 is stacked Draft onto PR#3; no automatic merge.
+
+
+### Phase 06 corrective verification — 2026-10-27
+
+**Authorization:** GO_FOR_PHASE06_DEVELOPMENT_ONLY. Only Phase06-dependent Draft branch changed. Phase05 PR#3 and main remain unmerged/unchanged.
+
+**Verified code SHA:** `730a04d807f2ced5a5ac61696cb97704a1886101`. **Actual GitHub CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40475859190 **6/6 jobs SUCCESS**. A = 93 PASS / 28 SKIP; B = 13 real ingestion, 2 real synthetic fa/ar OCR, 8 real outage/recovery, 4 real PostgreSQL, 9 real Qdrant PASS. Earlier CI 40475287944 had 2 real outage failures; a bounded write-readiness retest addresses this without ignoring or marking the former failures PASS. Evidence: phase_06_evidence.md.
+
+**Changes:** Worker forwards `ProcessingSettings` into extraction subprocess; hybrid digital+raster PDF invokes local OCR within page/resource budget and preserves real raw text offsets; pre-accepted jobs from a disabled source remain processable per documented Phase05 policy, while future uploads are denied. New A/B tests cover these behaviors, and Phase06 Design/Test Matrix/Runbook are updated.
+
+**Tests A/B Required but Missing:** independent attributable Phase06 technical/security/quality acceptance, domain-representative Arabic/Persian OCR/layout corpus and risk decisions D-10/D-12; inherited Phase05 independent ADR-0008 acceptance and synthetic CI-only image-risk decision are still pending. Group C `P18-P06-C01..C06` remains deferred/not executed.
+
+**Technical DoD:** `ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING`.
+**Phase Status Before/After:** `IMPLEMENTED_AWAITING_VERIFICATION → IMPLEMENTED_AWAITING_VERIFICATION` (no CLOSED marker).
+**Production Release Status:** `NOT_READY`. No Phase18 tests claimed.

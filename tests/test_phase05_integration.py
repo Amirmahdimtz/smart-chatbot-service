@@ -13,7 +13,7 @@ import sys
 import time
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 import jwt
@@ -776,6 +776,7 @@ def test_killed_independent_worker_reclaims_expired_real_db_lease():
 def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     """Digital PDF is staged and scanned by real services without publishing."""
     from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
     http, token, _ = client
     owner = "synthetic-" + uuid4().hex
@@ -785,7 +786,20 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     source_id = source_response.json()["id"]
     pdf = BytesIO()
     writer = PdfWriter()
-    writer.add_blank_page(width=180, height=180)
+    page = writer.add_blank_page(width=180, height=180)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): writer._add_object(font)})}
+    )
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 12 100 Td (Synthetic digital PDF evidence) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
     writer.write(pdf)
     payload = pdf.getvalue()
     uploaded = http.post(
@@ -821,6 +835,156 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     assert version.status_code == 200
     assert version.json()["state"] == "awaiting_approval"
     assert version.json()["content_type"] == "application/pdf"
+
+    # Phase06 extends Phase05's atomic processing path: no awaiting_approval
+    # without durable, true source-mapped PDF text chunks in PostgreSQL.
+    from sqlalchemy import select
+
+    from src.infrastructure.models.entities import KnowledgeChunk
+
+    async def assert_real_pdf_chunks():
+        db = bootstrap_di().resolve(PsqlDbContext)
+        await db.start_async()
+        try:
+            async with db.transaction_async() as session:
+                chunks = (
+                    await session.scalars(
+                        select(KnowledgeChunk)
+                        .where(
+                            KnowledgeChunk.version_id == UUID(version_id),
+                            KnowledgeChunk.deployment_scope == "internal",
+                        )
+                        .order_by(KnowledgeChunk.ordinal)
+                    )
+                ).all()
+                assert chunks
+                assert all(item.page_number == 1 and item.extractor_method == "digital_pdf" for item in chunks)
+                assert "Synthetic digital PDF evidence" in chunks[0].canonical_text
+                from src.core.services.persian_text.persian_processing import normalize_persian
+
+                assert normalize_persian(chunks[0].original_text) == chunks[0].canonical_text
+                assert all(item.source_end > item.source_start for item in chunks)
+                assert all(item.processor_version == "fa-structure-v1" for item in chunks)
+                assert all(item.normalizer_version == "fa-nfc-normalizer-v1" for item in chunks)
+                assert all(item.engine_version.startswith("pypdf/") for item in chunks)
+        finally:
+            await db.close_async()
+
+    asyncio.run(assert_real_pdf_chunks())
+
+
+@pytest.mark.parametrize("kind", ["docx", "scanned_pdf"])
+def test_real_phase06_source_storage_scanner_worker_and_chunk_spans(client, kind):
+    """Actual synthetic API/S3/ClamAV/PostgreSQL and OCR or DOCX parser E2E."""
+    import hashlib
+    import io
+
+    from sqlalchemy import select
+
+    from src.core.services.persian_text.persian_processing import chunk_pages, normalize_persian
+    from src.infrastructure.models.entities import KnowledgeChunk
+    from src.infrastructure.providers.document.document_extractor import DocumentExtractor
+
+    http, token, _ = client
+    owner = "synthetic-" + uuid4().hex
+    bearer = {"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"])}
+    response = http.post("/api/v1/knowledge/sources", headers=bearer, json={"domain": "research"})
+    assert response.status_code == 201
+    source_id = response.json()["id"]
+
+    if kind == "docx":
+        from docx import Document
+
+        document = Document()
+        document.add_heading("بخش پژوهش", level=1)
+        document.add_paragraph("سؤال: چه اقدامی لازم است؟")
+        document.add_paragraph("پاسخ: تایید کارشناس ضروری است.")
+        table = document.add_table(rows=2, cols=2)
+        table.cell(0, 0).text, table.cell(0, 1).text = "عنوان", "پاسخ"
+        table.cell(1, 0).text, table.cell(1, 1).text = "آیین‌نامه", "تاییدشده"
+        stream = io.BytesIO()
+        document.save(stream)
+        filename = "synthetic.docx"
+        mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        data = stream.getvalue()
+    else:
+        from PIL import Image, ImageDraw, ImageFont
+
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 75)
+        image = Image.new("RGB", (1300, 240), "white")
+        ImageDraw.Draw(image).text((1240, 48), "سلام دنیا", font=font, fill="black", anchor="ra", direction="rtl")
+        output = io.BytesIO()
+        image.save(output, format="PDF", resolution=180)
+        filename, mime, data = "synthetic-scanned.pdf", "application/pdf", output.getvalue()
+
+    uploaded = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": (filename, data, mime)},
+    )
+    assert uploaded.status_code == 202, uploaded.text
+    version_id = UUID(uploaded.json()["version_id"])
+    job_id = uploaded.json()["id"]
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    store = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def run_actual_worker_and_verify():
+        await db.start_async()
+        await store.start_async()
+        try:
+            assert await worker.run_once_async("phase06-live-" + kind)
+            async with db.transaction_async() as session:
+                persisted = (
+                    await session.scalars(
+                        select(KnowledgeChunk)
+                        .where(
+                            KnowledgeChunk.version_id == version_id,
+                            KnowledgeChunk.deployment_scope == "internal",
+                        )
+                        .order_by(KnowledgeChunk.ordinal)
+                    )
+                ).all()
+                assert persisted
+                original_pages = await DocumentExtractor().extract_async(data, mime)
+                expected = chunk_pages(version_id, original_pages)
+                assert [item.id for item in persisted] == [item.id for item in expected]
+                for saved, item in zip(persisted, expected, strict=True):
+                    assert saved.original_text == item.original
+                    assert saved.canonical_text == normalize_persian(saved.original_text)
+                    assert saved.source_start == item.start
+                    assert saved.source_end == item.end
+                    assert saved.page_number == item.page
+                    assert saved.checksum_sha256 == hashlib.sha256(saved.canonical_text.encode()).hexdigest()
+                    assert saved.normalizer_version == "fa-nfc-normalizer-v1"
+                    assert saved.processor_version == "fa-structure-v1"
+                    assert saved.engine_version == item.engine_version
+                    original_page = next(page for page in original_pages if page.number == saved.page_number)
+                    assert original_page.text[saved.source_start : saved.source_end] == saved.original_text
+                text = "\n".join(row.canonical_text for row in persisted)
+                if kind == "docx":
+                    assert "عنوان | پاسخ" in text
+                    assert "تاییدشده" in text
+                    assert all(item.page_number is None and item.extractor_method == "docx" for item in persisted)
+                    assert all(item.engine_version.startswith("python-docx/") for item in persisted)
+                else:
+                    assert "سلام دنیا" in text
+                    assert all(item.page_number == 1 and item.extractor_method == "tesseract_ocr" for item in persisted)
+                    assert all("tesseract" in item.engine_version for item in persisted)
+        finally:
+            await store.close_async()
+            await db.close_async()
+
+    asyncio.run(run_actual_worker_and_verify())
+    status = http.get(f"/api/v1/knowledge/jobs/{job_id}", headers=bearer)
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed"
+    version = http.get(f"/api/v1/knowledge/versions/{version_id}", headers=bearer)
+    assert version.status_code == 200
+    assert version.json()["state"] == "awaiting_approval"
+    assert "published" not in version.text
 
 
 def test_real_source_metadata_limit_and_disable_lifecycle(client):
@@ -863,3 +1027,55 @@ def test_real_source_metadata_limit_and_disable_lifecycle(client):
     )
     assert rejected.status_code == 403
     assert http.get(f"/api/v1/knowledge/sources/{source['id']}", headers=h).json()["status"] == "disabled"
+
+
+def test_previously_accepted_job_completes_after_source_disable(client):
+    """Phase05 disable denies new uploads, not already-accepted synthetic jobs."""
+    http, token, _ = client
+    owner = "synthetic-" + uuid4().hex
+    bearer = {"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"])}
+    created = http.post("/api/v1/knowledge/sources", headers=bearer, json={"domain": "research"})
+    assert created.status_code == 201
+    source_id = created.json()["id"]
+    uploaded = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": ("accepted.txt", b"Synthetic accepted document", "text/plain")},
+    )
+    assert uploaded.status_code == 202, uploaded.text
+    job_id, version_id = uploaded.json()["id"], uploaded.json()["version_id"]
+
+    stopped = http.post(f"/api/v1/knowledge/sources/{source_id}/disable", headers=bearer)
+    assert stopped.status_code == 200
+    assert stopped.json()["status"] == "disabled"
+    denied = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": ("new.txt", b"new synthetic document", "text/plain")},
+    )
+    assert denied.status_code == 403
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    storage = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def process_existing_job():
+        await db.start_async()
+        try:
+            await storage.start_async()
+            try:
+                assert await worker.run_once_async("source-disabled-existing-job")
+            finally:
+                await storage.close_async()
+        finally:
+            await db.close_async()
+
+    asyncio.run(process_existing_job())
+    job = http.get(f"/api/v1/knowledge/jobs/{job_id}", headers=bearer)
+    assert job.status_code == 200
+    assert job.json()["status"] == "completed"
+    version = http.get(f"/api/v1/knowledge/versions/{version_id}", headers=bearer)
+    assert version.status_code == 200
+    assert version.json()["state"] == "awaiting_approval"
+    assert http.get(f"/api/v1/knowledge/sources/{source_id}", headers=bearer).json()["status"] == "disabled"

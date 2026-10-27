@@ -18,3 +18,6 @@ qdrant:
 ingestion:
   enabled: false
   synthetic_only: true
+processing:
+  max_chunk_chars: 1200
+  chunk_overlap_chars: 0

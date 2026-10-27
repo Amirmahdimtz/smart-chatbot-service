@@ -1,6 +1,11 @@
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
+# Offline-capable PDF rasterization and Persian/Arabic OCR runtime.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       poppler-utils tesseract-ocr tesseract-ocr-fas tesseract-ocr-ara tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --disable-pip-version-check -r requirements.txt \
     && useradd --system --uid 10001 --home /nonexistent --shell /usr/sbin/nologin app

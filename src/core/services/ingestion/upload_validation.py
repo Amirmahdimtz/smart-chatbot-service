@@ -67,10 +67,63 @@ def _parse_pdf(data: bytes) -> None:
         raise UploadRejected("invalid_document")
 
 
+_DOCX_CHECK_PROGRAM = """
+import sys
+from io import BytesIO
+from zipfile import BadZipFile, ZipFile
+try:
+    import resource
+    resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
+    resource.setrlimit(resource.RLIMIT_CPU, (4, 5))
+except ImportError:
+    pass
+try:
+    with ZipFile(BytesIO(sys.stdin.buffer.read(5242881))) as archive:
+        items = archive.infolist()
+        ok = bool(items) and len(items) <= 1000 and any(
+            item.filename == "word/document.xml" for item in items
+        ) and sum(item.file_size for item in items) <= 24 * 1024 * 1024 and all(
+            item.file_size <= 8 * 1024 * 1024
+            and not (item.file_size > 0 and item.compress_size == 0)
+            and not (item.compress_size and item.file_size / item.compress_size > 250)
+            for item in items
+        )
+except (BadZipFile, ValueError, OSError):
+    ok = False
+raise SystemExit(0 if ok else 1)
+"""
+
+
+def _validate_docx(data: bytes) -> None:
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", _DOCX_CHECK_PROGRAM],
+            input=data,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=4,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        raise UploadRejected("invalid_document") from None
+    if result.returncode:
+        raise UploadRejected("invalid_document")
+
+
 def validate_content(data: bytes, content_type: str) -> None:
-    if not data or content_type not in {"text/plain", "application/pdf"}:
+    if not data or content_type not in {
+        "text/plain",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }:
         raise UploadRejected("unsupported_format")
-    if data.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")):
+    is_zip = data.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"))
+    if content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        if not is_zip:
+            raise UploadRejected("invalid_document")
+        _validate_docx(data)
+        return
+    if is_zip:
         raise UploadRejected("unsupported_archive")
     if content_type == "application/pdf":
         _parse_pdf(data)
