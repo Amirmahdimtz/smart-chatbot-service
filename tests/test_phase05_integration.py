@@ -865,6 +865,8 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
                 assert normalize_persian(chunks[0].original_text) == chunks[0].canonical_text
                 assert all(item.source_end > item.source_start for item in chunks)
                 assert all(item.processor_version == "fa-structure-v1" for item in chunks)
+                assert all(item.normalizer_version == "fa-nfc-normalizer-v1" for item in chunks)
+                assert all(item.engine_version.startswith("pypdf/") for item in chunks)
         finally:
             await db.close_async()
 
@@ -956,6 +958,9 @@ def test_real_phase06_source_storage_scanner_worker_and_chunk_spans(client, kind
                     assert saved.source_end == item.end
                     assert saved.page_number == item.page
                     assert saved.checksum_sha256 == hashlib.sha256(saved.canonical_text.encode()).hexdigest()
+                    assert saved.normalizer_version == "fa-nfc-normalizer-v1"
+                    assert saved.processor_version == "fa-structure-v1"
+                    assert saved.engine_version == item.engine_version
                     original_page = next(page for page in original_pages if page.number == saved.page_number)
                     assert original_page.text[saved.source_start : saved.source_end] == saved.original_text
                 text = "\n".join(row.canonical_text for row in persisted)
@@ -963,9 +968,11 @@ def test_real_phase06_source_storage_scanner_worker_and_chunk_spans(client, kind
                     assert "عنوان | پاسخ" in text
                     assert "تاییدشده" in text
                     assert all(item.page_number is None and item.extractor_method == "docx" for item in persisted)
+                    assert all(item.engine_version.startswith("python-docx/") for item in persisted)
                 else:
                     assert "سلام دنیا" in text
                     assert all(item.page_number == 1 and item.extractor_method == "tesseract_ocr" for item in persisted)
+                    assert all("tesseract" in item.engine_version for item in persisted)
         finally:
             await store.close_async()
             await db.close_async()
