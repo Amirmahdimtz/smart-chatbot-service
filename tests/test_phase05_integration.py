@@ -1027,3 +1027,55 @@ def test_real_source_metadata_limit_and_disable_lifecycle(client):
     )
     assert rejected.status_code == 403
     assert http.get(f"/api/v1/knowledge/sources/{source['id']}", headers=h).json()["status"] == "disabled"
+
+
+def test_previously_accepted_job_completes_after_source_disable(client):
+    """Phase05 disable denies new uploads, not already-accepted synthetic jobs."""
+    http, token, _ = client
+    owner = "synthetic-" + uuid4().hex
+    bearer = {"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"])}
+    created = http.post("/api/v1/knowledge/sources", headers=bearer, json={"domain": "research"})
+    assert created.status_code == 201
+    source_id = created.json()["id"]
+    uploaded = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": ("accepted.txt", b"Synthetic accepted document", "text/plain")},
+    )
+    assert uploaded.status_code == 202, uploaded.text
+    job_id, version_id = uploaded.json()["id"], uploaded.json()["version_id"]
+
+    stopped = http.post(f"/api/v1/knowledge/sources/{source_id}/disable", headers=bearer)
+    assert stopped.status_code == 200
+    assert stopped.json()["status"] == "disabled"
+    denied = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": ("new.txt", b"new synthetic document", "text/plain")},
+    )
+    assert denied.status_code == 403
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    storage = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def process_existing_job():
+        await db.start_async()
+        try:
+            await storage.start_async()
+            try:
+                assert await worker.run_once_async("source-disabled-existing-job")
+            finally:
+                await storage.close_async()
+        finally:
+            await db.close_async()
+
+    asyncio.run(process_existing_job())
+    job = http.get(f"/api/v1/knowledge/jobs/{job_id}", headers=bearer)
+    assert job.status_code == 200
+    assert job.json()["status"] == "completed"
+    version = http.get(f"/api/v1/knowledge/versions/{version_id}", headers=bearer)
+    assert version.status_code == 200
+    assert version.json()["state"] == "awaiting_approval"
+    assert http.get(f"/api/v1/knowledge/sources/{source_id}", headers=bearer).json()["status"] == "disabled"
