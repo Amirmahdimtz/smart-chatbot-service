@@ -95,11 +95,20 @@ class IngestionSettings(StrictModel):
 class ProcessingSettings(StrictModel):
     max_chunk_chars: int = Field(default=1200, ge=256, le=4000)
     chunk_overlap_chars: int = Field(default=0, ge=0, le=256)
+    max_document_bytes: int = Field(default=5242880, ge=1024, le=5242880)
+    max_pdf_pages: int = Field(default=300, ge=1, le=300)
+    max_ocr_pages: int = Field(default=8, ge=1, le=16)
+    max_extraction_seconds: int = Field(default=38, ge=2, le=120)
+    max_memory_mb: int = Field(default=768, ge=128, le=1024)
+    max_cpu_seconds: int = Field(default=32, ge=2, le=60)
+    max_page_text_chars: int = Field(default=4000000, ge=1024, le=4000000)
 
     @model_validator(mode="after")
     def validate_chunking(self):
         if self.chunk_overlap_chars > self.max_chunk_chars // 4:
             raise ValueError("Processing overlap exceeds chunk size")
+        if self.max_ocr_pages > self.max_pdf_pages:
+            raise ValueError("OCR page limit exceeds PDF page limit")
         return self
 
 
@@ -320,6 +329,13 @@ class ConfigReader:
             for name, field in (
                 ("SCB_PROCESSING_MAX_CHUNK_CHARS", "max_chunk_chars"),
                 ("SCB_PROCESSING_CHUNK_OVERLAP_CHARS", "chunk_overlap_chars"),
+                ("SCB_PROCESSING_MAX_DOCUMENT_BYTES", "max_document_bytes"),
+                ("SCB_PROCESSING_MAX_PDF_PAGES", "max_pdf_pages"),
+                ("SCB_PROCESSING_MAX_OCR_PAGES", "max_ocr_pages"),
+                ("SCB_PROCESSING_MAX_EXTRACTION_SECONDS", "max_extraction_seconds"),
+                ("SCB_PROCESSING_MAX_MEMORY_MB", "max_memory_mb"),
+                ("SCB_PROCESSING_MAX_CPU_SECONDS", "max_cpu_seconds"),
+                ("SCB_PROCESSING_MAX_PAGE_TEXT_CHARS", "max_page_text_chars"),
             ):
                 if name in os.environ:
                     processing[field] = int(os.environ[name])
