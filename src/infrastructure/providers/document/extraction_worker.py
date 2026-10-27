@@ -100,9 +100,7 @@ def _ocr_pdf_page(data: bytes, number: int) -> str:
 
 
 def _binary_version(binary: str, flag: str) -> str:
-    completed = subprocess.run(
-        [binary, flag], capture_output=True, timeout=2, check=False
-    )
+    completed = subprocess.run([binary, flag], capture_output=True, timeout=2, check=False)
     if completed.returncode != 0:
         raise ValueError("ocr_runtime_unavailable")
     output = (completed.stdout + completed.stderr).decode("utf-8", errors="replace").splitlines()
@@ -153,7 +151,14 @@ def extract(data: bytes, mime: str) -> list[dict]:
         text = data.decode("utf-8-sig")
         if any(ord(c) < 32 and c not in "\t\r\n" for c in text):
             raise ValueError("invalid_document")
-        return [{"number": None, "text": text, "method": "utf8_text", "engine_version": f"utf8-sig/python/{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"}]
+        return [
+            {
+                "number": None,
+                "text": text,
+                "method": "utf8_text",
+                "engine_version": f"utf8-sig/python/{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            }
+        ]
     raise ValueError("unsupported_format")
 
 
