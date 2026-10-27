@@ -207,6 +207,7 @@ def validate_model_answer(
         or not 1 <= max_answer_chars <= 10000
     ):
         raise AnswerContractError("invalid_model_response")
+
     # Detect duplicate JSON keys rather than trusting last-write-wins parsing.
     def unique_pairs(pairs):
         result = {}
