@@ -10,6 +10,7 @@ import json
 import os
 import subprocess
 import sys
+from importlib.metadata import version
 from io import BytesIO
 from zipfile import BadZipFile, ZipFile
 
@@ -73,7 +74,7 @@ def _docx(data: bytes) -> list[dict]:
         if text:
             sections.append(text)
     text = "\n\n".join(sections)
-    return [{"number": None, "text": text, "method": "docx"}]
+    return [{"number": None, "text": text, "method": "docx", "engine_version": "python-docx/" + version("python-docx")}]
 
 
 def _ocr_pdf_page(data: bytes, number: int) -> str:
@@ -98,12 +99,27 @@ def _ocr_pdf_page(data: bytes, number: int) -> str:
     return recognized.stdout.decode("utf-8", errors="strict")
 
 
+def _binary_version(binary: str, flag: str) -> str:
+    completed = subprocess.run(
+        [binary, flag], capture_output=True, timeout=2, check=False
+    )
+    if completed.returncode != 0:
+        raise ValueError("ocr_runtime_unavailable")
+    output = (completed.stdout + completed.stderr).decode("utf-8", errors="replace").splitlines()
+    if not output:
+        raise ValueError("ocr_runtime_unavailable")
+    # Read the installed binary's actual version, not an assumed package version.
+    return output[0].strip()[:50]
+
+
 def _pdf(data: bytes) -> list[dict]:
     reader = PdfReader(BytesIO(data), strict=True)
     if reader.is_encrypted or not 1 <= len(reader.pages) <= _MAX_PAGES:
         raise ValueError("invalid_document")
     result = []
     ocr_count = 0
+    parser_version = "pypdf/" + version("pypdf")
+    ocr_versions = None
     for number, page in enumerate(reader.pages, 1):
         contents = page.get_contents()
         if contents is not None and len(contents.get_data()) > 4_000_000:
@@ -113,13 +129,16 @@ def _pdf(data: bytes) -> list[dict]:
             ocr_count += 1
             if ocr_count > _MAX_OCR_PAGES:
                 raise ValueError("ocr_page_limit")
+            if ocr_versions is None:
+                ocr_versions = _binary_version("tesseract", "--version") + "; " + _binary_version("pdftoppm", "-v")
             raw = _ocr_pdf_page(data, number)
             method = "tesseract_ocr"
         else:
             method = "digital_pdf"
         if len(raw) > _MAX_TEXT_PER_PAGE:
             raise ValueError("oversized_extraction")
-        result.append({"number": number, "text": raw, "method": method})
+        engine = parser_version if method == "digital_pdf" else (parser_version + "; " + ocr_versions)
+        result.append({"number": number, "text": raw, "method": method, "engine_version": engine})
     return result
 
 
@@ -134,7 +153,7 @@ def extract(data: bytes, mime: str) -> list[dict]:
         text = data.decode("utf-8-sig")
         if any(ord(c) < 32 and c not in "\t\r\n" for c in text):
             raise ValueError("invalid_document")
-        return [{"number": None, "text": text, "method": "utf8_text"}]
+        return [{"number": None, "text": text, "method": "utf8_text", "engine_version": "utf8-sig/python-3.12"}]
     raise ValueError("unsupported_format")
 
 
