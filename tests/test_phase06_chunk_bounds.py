@@ -33,9 +33,9 @@ def test_offsets_are_page_relative_and_deterministic():
 
 def test_chunk_cap_exact_boundary_and_one_over():
     version = uuid4()
-    data = "الف" * (4096 * 256)
+    data = "x" * (4096 * 256)
     accepted = chunk_pages(version, [ExtractedPage(None, data, "utf8_text")], max_chars=256)
     assert len(accepted) == 4096
     assert all(part.ordinal == i for i, part in enumerate(accepted))
     with pytest.raises(ProcessingRejected, match="too_many_chunks"):
-        chunk_pages(version, [ExtractedPage(None, data + "الف", "utf8_text")], max_chars=256)
+        chunk_pages(version, [ExtractedPage(None, data + "x", "utf8_text")], max_chars=256)
