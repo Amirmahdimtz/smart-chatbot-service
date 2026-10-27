@@ -64,14 +64,10 @@ def test_real_postgres_rejects_invalid_chunk_batch_as_terminal_audited_failure(c
             assert not await repo.finish_async(job.id, claimed[1], True, chunks=bad_chunks)
             async with db.transaction_async() as session:
                 chunks = (
-                    await session.scalars(
-                        select(KnowledgeChunk).where(KnowledgeChunk.version_id == version.id)
-                    )
+                    await session.scalars(select(KnowledgeChunk).where(KnowledgeChunk.version_id == version.id))
                 ).all()
                 audits = (
-                    await session.scalars(
-                        select(IngestionAuditEvent).where(IngestionAuditEvent.job_id == job.id)
-                    )
+                    await session.scalars(select(IngestionAuditEvent).where(IngestionAuditEvent.job_id == job.id))
                 ).all()
                 assert chunks == []
                 assert any(event.event == "dead" and event.code == expected_error for event in audits)
