@@ -268,3 +268,18 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Technical DoD:** INITIAL_ENGINEERING_AB_VERIFIED — FULL_SCOPE_IN_PROGRESS.
 **Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
 **Production Release:** NOT_READY.
+
+
+## Phase08 — Initial authorization-first engineering (2026-10-27)
+
+**Authorization:** owner directly instructed to advance Phase08 while Phase07 remains IN_PROGRESS. A new dependent Draft PR is stacked on Phase07 PR#5; previous branches/states remain unchanged. **Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+
+**Implemented slice:** Phase06-based query normalization, strict deterministic configurable RRF contract (not a final D-04 hybrid choice), Qdrant synthetic internal dense candidate filtering with explicit published/domain/classification/document ID constraints, fail-closed candidate parsing, fresh PostgreSQL owner/domain/scope/published-version/active-source/true-text-checksum check. No public API, no real embedding or reranker and no approval/pubish transition exists. Test-only simulated DB `published` state is not real Phase07 publication evidence.
+
+**Tests A Executed + Actual Results:** PENDING exact Phase08 code CI.
+**Tests B Executed + Actual Results:** PENDING exact Phase08 disposable PostgreSQL and Qdrant CI.
+**Tests A/B Required but Missing:** selected real embedding/reranker D-03, lexical/sparse D-04, Phase07 durable authorized publication, mixed Persian Gold Dataset and D-12 thresholds, full real hybrid+rereank integration and contradiction/timeout/abstention tests.
+**Tests C Deferred to Phase18:** P18-P08-C01..P18-P08-C06, all DEFERRED_TO_PHASE_18 / NOT_RUN.
+**Phase 18 Verification Register IDs:** P18-P08-C01, C02, C03, C04, C05, C06.
+**Technical DoD Status:** IN_PROGRESS — FULL_SCOPE_NOT_SATISFIED.
+**Production Release Status:** NOT_READY.
