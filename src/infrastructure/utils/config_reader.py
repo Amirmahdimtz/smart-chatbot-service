@@ -92,6 +92,17 @@ class IngestionSettings(StrictModel):
     max_attempts: int = Field(default=3, ge=1, le=10)
 
 
+class ProcessingSettings(StrictModel):
+    max_chunk_chars: int = Field(default=1200, ge=256, le=4000)
+    chunk_overlap_chars: int = Field(default=0, ge=0, le=256)
+
+    @model_validator(mode="after")
+    def validate_chunking(self):
+        if self.chunk_overlap_chars > self.max_chunk_chars // 4:
+            raise ValueError("Processing overlap exceeds chunk size")
+        return self
+
+
 class Settings(StrictModel):
     environment: Literal["development", "integration", "staging", "production"]
     deployment_zone: Literal["public", "internal"]
@@ -102,6 +113,7 @@ class Settings(StrictModel):
     database: DatabaseSettings = DatabaseSettings()
     qdrant: QdrantSettings = QdrantSettings()
     ingestion: IngestionSettings = IngestionSettings()
+    processing: ProcessingSettings = ProcessingSettings()
 
     @model_validator(mode="after")
     def validate_security(self):
@@ -304,6 +316,13 @@ class ConfigReader:
             ):
                 if name in os.environ:
                     ingestion[field] = os.environ[name]
+            processing = data.setdefault("processing", {})
+            for name, field in (
+                ("SCB_PROCESSING_MAX_CHUNK_CHARS", "max_chunk_chars"),
+                ("SCB_PROCESSING_CHUNK_OVERLAP_CHARS", "chunk_overlap_chars"),
+            ):
+                if name in os.environ:
+                    processing[field] = int(os.environ[name])
             self.settings = Settings.model_validate(data)
         except (OSError, ValueError, KeyError, yaml.YAMLError, ValidationError, TypeError):
             raise ConfigurationError() from None
