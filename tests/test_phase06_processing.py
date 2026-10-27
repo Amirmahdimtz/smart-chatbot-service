@@ -6,14 +6,16 @@ import asyncio
 import hashlib
 import io
 import shutil
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
 from docx import Document
 from PIL import Image, ImageDraw, ImageFont
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
+from src.core.services.ingestion.ingestion_worker_service import IngestionWorkerService
 from src.core.services.ingestion.upload_validation import UploadRejected, validate_content
 from src.core.services.persian_text.persian_processing import (
     ExtractedPage,
@@ -22,6 +24,7 @@ from src.core.services.persian_text.persian_processing import (
     normalize_persian,
 )
 from src.infrastructure.providers.document.document_extractor import DocumentExtractor
+from src.infrastructure.utils.config_reader import ProcessingSettings
 
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
@@ -99,6 +102,74 @@ def test_real_digital_pdf_extraction_page_and_span():
     assert "digital PDF evidence" in pages[0].text
     pieces = chunk_pages(uuid4(), pages)
     assert pieces[0].original == pages[0].text[pieces[0].start : pieces[0].end]
+
+
+def test_custom_pdf_page_limit_reaches_real_extractor_child():
+    writer = PdfWriter()
+    page = PdfReader(io.BytesIO(_digital_pdf())).pages[0]
+    writer.add_page(page)
+    writer.add_page(page)
+    output = io.BytesIO()
+    writer.write(output)
+    data = output.getvalue()
+
+    denied_limits = ProcessingSettings(max_pdf_pages=1, max_ocr_pages=1)
+    with pytest.raises(ProcessingRejected, match="extraction_failed"):
+        asyncio.run(DocumentExtractor().extract_async(data, "application/pdf", limits=denied_limits))
+
+    allowed_limits = ProcessingSettings(max_pdf_pages=2, max_ocr_pages=1)
+    pages = asyncio.run(DocumentExtractor().extract_async(data, "application/pdf", limits=allowed_limits))
+    assert [item.number for item in pages] == [1, 2]
+
+
+def test_scanned_worker_forwards_resource_limits_after_malware_gate():
+    data = b"Synthetic safe content for config propagation"
+    version_id = uuid4()
+    job_id = uuid4()
+    checksum = hashlib.sha256(data).hexdigest()
+    processing = ProcessingSettings(max_pdf_pages=1, max_ocr_pages=1, max_chunk_chars=256)
+    events = []
+
+    class Repository:
+        async def claim_async(self, worker_id, scope, lease_seconds):
+            assert scope == "internal"
+            return job_id, "synthetic-lease", "synthetic-key", checksum, len(data), version_id, "text/plain"
+
+        async def finish_async(self, received_id, token, ok, code, retriable, *, chunks):
+            assert received_id == job_id and token == "synthetic-lease"
+            assert ok and code is None and not retriable
+            assert len(chunks) == 1 and chunks[0].canonical == "سلام"
+            events.append("finish")
+            return True
+
+    class Storage:
+        async def get_async(self, key):
+            events.append("storage")
+            return data
+
+    class Scanner:
+        async def scan_async(self, contents):
+            assert contents == data
+            events.append("scan")
+
+    class Extractor:
+        async def extract_async(self, contents, mime, *, limits):
+            assert contents == data and mime == "text/plain"
+            assert limits is processing
+            events.append("extract")
+            return [ExtractedPage(None, "سلام", "utf8_text")]
+
+    worker = object.__new__(IngestionWorkerService)
+    worker._repo = Repository()
+    worker._storage = Storage()
+    worker._scanner = Scanner()
+    worker._extractor = Extractor()
+    worker._cfg = SimpleNamespace(lease_seconds=90)
+    worker._scope = "internal"
+    worker._processing = processing
+
+    assert asyncio.run(worker.run_once_async("config-test"))
+    assert events == ["storage", "scan", "extract", "finish"]
 
 
 def test_real_docx_paragraphs_and_table_extraction():
@@ -182,6 +253,34 @@ def test_real_scanned_persian_pdf_ocr(expected: str, language: str):
     print(f"Phase06 scanned-PDF {language} OCR synthetic CER={cer:.3f}")
     assert cer <= 0.20, (observed, expected, cer)
     assert chunk_pages(uuid4(), pages)[0].method == "tesseract_ocr"
+
+
+@pytest.mark.skipif(
+    not shutil.which("pdftoppm") or not shutil.which("tesseract"),
+    reason="Real Poppler and Tesseract OCR binaries not provisioned",
+)
+def test_mixed_digital_and_raster_pdf_uses_real_ocr():
+    image = Image.new("RGB", (1300, 1800), "white")
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 95)
+    ImageDraw.Draw(image).text((100, 900), "RASTER KNOWLEDGE", font=font, fill="black")
+    raster_pdf = io.BytesIO()
+    image.save(raster_pdf, format="PDF", resolution=180)
+    image_page = PdfReader(io.BytesIO(raster_pdf.getvalue())).pages[0]
+    text_page = PdfReader(io.BytesIO(_digital_pdf())).pages[0]
+    image_page.merge_page(text_page)
+    writer = PdfWriter()
+    writer.add_page(image_page)
+    output = io.BytesIO()
+    writer.write(output)
+
+    pages = asyncio.run(DocumentExtractor().extract_async(output.getvalue(), "application/pdf"))
+    assert len(pages) == 1 and pages[0].number == 1
+    assert pages[0].method == "hybrid_pdf_ocr"
+    assert "Hello digital PDF evidence" in pages[0].text
+    assert "RASTER KNOWLEDGE" in pages[0].text
+    assert "tesseract" in pages[0].engine_version
+    chunks = chunk_pages(uuid4(), pages)
+    assert all(pages[0].text[item.start : item.end] == item.original for item in chunks)
 
 
 @pytest.mark.skipif(
