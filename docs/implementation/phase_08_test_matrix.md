@@ -15,3 +15,5 @@
 | P08-B08 | B | Dense-only vs sparse-only vs hybrid vs rerank Recall/nDCG/MRR and p95 | Gold Dataset and D-12 | REQUIRED_NOT_RUN |
 
 Group C `P18-P08-C01..C06` deferred exclusively to Phase18, never counted PASS. This matrix is a plan; outcomes reside in `phase_08_evidence.md`.
+
+| P08-A04 | A | Whole-excerpt evidence budget, no-source abstention hints, checksum/conflict rejection | `tests/test_phase08_evidence_budget.py` | PENDING_SAME_SHA_CI |
