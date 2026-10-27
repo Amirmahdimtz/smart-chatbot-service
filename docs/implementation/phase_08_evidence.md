@@ -33,3 +33,15 @@
 **Production Release Status:** `NOT_READY`.
 
 Subsequent evidence-only commits are not asserted to be the same source SHA. Any exact final branch HEAD can be checked in its own CI run.
+
+
+## Bounded handoff to dependent Phase09 development — 2026-10-27
+
+**Exact Phase08 enhanced source SHA:** `65128df11e7c51f7b74937113c2c4784d714e099`; **actual completed CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40508470092 — **6/6 SUCCESS**. A: **111 PASS / 31 SKIP**, compile, Ruff, strict pip-audit, SBOM, Docker and Gitleaks SUCCESS. B: inherited isolated Qdrant/PG/S3/ClamAV/real OCR/Recovery test suites successful; no new real model benchmark executed.
+
+Implemented one further dependency-independent A-slice: deterministic `EvidenceWindow` keeps whole validated canonical excerpts, rejects checksum/provenance contradictions, enforces max chunks/chars and returns `no_authorized_evidence` / `evidence_over_budget` hints. It does NOT detect semantic contradictions or stale facts and does NOT demonstrate any real Reranker. Model-dependent Phase08 B03–B08, D-03, D-04 and D-12 evidence remain REQUIRED/MISSING; independent technical acceptance is also missing. No Phase08 `CLOSED` decision, no merge. A stacked Phase09 development branch may start from this point because its independent prompt/citation contracts can be implemented without a live model, **not** because Phase08 is complete.
+
+**Tests C Deferred to Phase18 / IDs:** `P18-P08-C01..C06`, NOT_RUN, NOT_PASSED.
+**Technical DoD:** `PARTIAL_A_B_VERIFIED — MODEL_DEPENDENCIES_BLOCK_FULL_DOD`.
+**Phase Status Before/After:** `IN_PROGRESS → IN_PROGRESS`.
+**Production Release:** `NOT_READY`.
