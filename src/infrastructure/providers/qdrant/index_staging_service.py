@@ -27,9 +27,7 @@ class IndexStagingService:
         self._qdrant = qdrant_provider
         self._config = config_reader.settings
 
-    async def stage_async(
-        self, manifest: IndexManifest, vectors: Sequence[ValidatedVector]
-    ) -> list[str]:
+    async def stage_async(self, manifest: IndexManifest, vectors: Sequence[ValidatedVector]) -> list[str]:
         """Idempotent wait=True upsert, always unpublished, bounded by provider batch size.
 
         This method never switches aliases, marks a version published, or
