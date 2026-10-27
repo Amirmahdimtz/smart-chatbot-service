@@ -34,7 +34,11 @@ class DocumentExtractor:
             try:
                 stdout, _ = await asyncio.wait_for(process.communicate(data), timeout=38)
             except (TimeoutError, asyncio.CancelledError):
-                process.kill()
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    # Child may have exited between timeout and process termination.
+                    pass
                 await process.wait()
                 raise
             if process.returncode != 0 or len(stdout) > 8_000_000:
