@@ -343,11 +343,15 @@ class IngestionRepository(BaseRepository[IngestionJob]):
             ):
                 return False
             version = await session.get(DocumentVersion, job.version_id)
+            # Defensive fallback for any worker version that violates the
+            # bounded chunk contract. This is a terminal, auditable failure,
+            # not an abandoned lease with a misleading timeout diagnosis.
+            if success and (not chunks or len(chunks) > 4096):
+                success, retriable = False, False
+                error_code = "too_many_chunks" if chunks else "empty_chunk_batch"
             if success:
                 # All source-mapped chunks and the final job/version states commit
                 # under the same valid lease token and PostgreSQL transaction.
-                if not chunks or len(chunks) > 4096:
-                    return False
                 await session.execute(
                     delete(KnowledgeChunk).where(
                         KnowledgeChunk.version_id == version.id,
