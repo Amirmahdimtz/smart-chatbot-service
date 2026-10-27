@@ -17,7 +17,6 @@ NORMALIZER_VERSION = "fa-nfc-normalizer-v1"
 _TRANSLATION = str.maketrans(
     {
         "ي": "ی",
-        "ى": "ی",
         "ك": "ک",
         **{chr(ord("۰") + i): str(i) for i in range(10)},
         **{chr(ord("٠") + i): str(i) for i in range(10)},
@@ -75,8 +74,13 @@ def _split_span(text: str, start: int, end: int, max_chars: int):
     while end - start > max_chars:
         upper = start + max_chars
         portion = text[start:upper]
+        # Prefer an actual source line/row boundary to avoid splitting
+        # table rows or list items when a line break is available.
+        linebreak = portion.rfind("\n")
         breaks = [m.end() for m in _SENTENCE_END.finditer(portion)]
-        cut = start + breaks[-1] if breaks else -1
+        cut = start + linebreak + 1 if linebreak >= max_chars // 3 else -1
+        if cut < 0:
+            cut = start + breaks[-1] if breaks else -1
         if cut <= start + max_chars // 3:
             cut = start + max(portion.rfind(" "), portion.rfind("\n")) + 1
         if cut <= start + max_chars // 3:
