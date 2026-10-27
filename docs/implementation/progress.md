@@ -242,3 +242,19 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Technical DoD:** `ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING`.
 **Phase Status Before/After:** `IMPLEMENTED_AWAITING_VERIFICATION → IMPLEMENTED_AWAITING_VERIFICATION` (no CLOSED marker).
 **Production Release Status:** `NOT_READY`. No Phase18 tests claimed.
+
+
+## Phase07 — initial implementation / 2026-10-27
+
+**Authorization:** owner explicitly requested Phase07 start. **Branch:** feat/phase07-index-lifecycle stacked on feat/phase06-persian-processing at SHA 3f4643143012da7aa029fba382cde7fc1ca04215; PRs #3/#4 unchanged and unmerged.
+
+**Technical implementation:** Phase06 multi-page extraction offsets corrected in dependent branch only with regression; initial deterministic manifest and strict embedding vector validation in Core; actual QdrantProvider-based bounded synthetic-only staging with published=false, batch replay test and synthetic authenticated Qdrant Group B test added. This does NOT constitute model embedding, durable job, atomic publication or final index/reindex implementation.
+
+**Tests A Executed + Actual Results:** pending PR-head GitHub CI; NOT YET REPORTED PASSED.
+**Tests B Executed + Actual Results:** pending CI Group B Qdrant; actual model benchmark and publication/outage E2E not run.
+**Tests A/B Required but Missing:** D-03 at least two genuine model benchmarks and approved model/dimension/metric/license, D-04 sparse strategy, real encoder/batch warmup, durable PG indexing jobs and manifests, consistency readback/retry, source-revision and model-revision-safe reindex/alias rollback, fenced publish/revoke, no stale citation and independent acceptance.
+**Tests C Deferred to Phase18:** P18-P07-C01 through P18-P07-C07, NOT_RUN/NOT_PASSED.
+**Phase 18 Verification Register IDs:** P18-P07-C01, C02, C03, C04, C05, C06, C07.
+**Technical DoD:** IN_PROGRESS / FULL_SCOPE_NOT_IMPLEMENTED.
+**Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+**Production Release Status:** NOT_READY. No production data or organizational server tests, no PR merge.
