@@ -9,7 +9,12 @@ from __future__ import annotations
 import math
 from uuid import UUID
 
-from src.core.services.retrieval.retrieval_contract import CandidateHit, RetrievalContractError, fuse_rrf, normalize_query
+from src.core.services.retrieval.retrieval_contract import (
+    CandidateHit,
+    RetrievalContractError,
+    fuse_rrf,
+    normalize_query,
+)
 from src.infrastructure.di.inject import inject
 from src.infrastructure.providers.qdrant.qdrant_provider import QdrantProvider
 from src.infrastructure.repositories.retrieval.retrieval_evidence_repository import (
