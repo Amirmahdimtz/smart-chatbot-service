@@ -46,9 +46,7 @@ def test_real_qdrant_filtered_candidates_cannot_bypass_deny_all_authority(monkey
             return []
 
     deny = DenyAllAuthority()
-    enabled = cfg.settings.model_copy(
-        update={"database": cfg.settings.database.model_copy(update={"enabled": True})}
-    )
+    enabled = cfg.settings.model_copy(update={"database": cfg.settings.database.model_copy(update={"enabled": True})})
     service = RetrievalQueryService(qdrant, deny, SimpleNamespace(settings=enabled))
 
     async def exercise():
