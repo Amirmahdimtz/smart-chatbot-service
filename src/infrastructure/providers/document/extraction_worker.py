@@ -153,7 +153,7 @@ def extract(data: bytes, mime: str) -> list[dict]:
         text = data.decode("utf-8-sig")
         if any(ord(c) < 32 and c not in "\t\r\n" for c in text):
             raise ValueError("invalid_document")
-        return [{"number": None, "text": text, "method": "utf8_text", "engine_version": "utf8-sig/python-3.12"}]
+        return [{"number": None, "text": text, "method": "utf8_text", "engine_version": f"utf8-sig/python/{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"}]
     raise ValueError("unsupported_format")
 
 
