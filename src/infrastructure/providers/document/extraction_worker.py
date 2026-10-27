@@ -63,7 +63,15 @@ def _docx(data: bytes) -> list[dict]:
     sections = []
     for item in document.element.body.iterchildren():
         if isinstance(item, CT_P):
-            text = Paragraph(item, document._body).text.strip()
+            paragraph = Paragraph(item, document._body)
+            text = paragraph.text.strip()
+            style = paragraph.style.name if paragraph.style is not None else ""
+            if text and style.startswith("Heading "):
+                level = style.removeprefix("Heading ")
+                if level.isdigit() and 1 <= int(level) <= 6:
+                    # Mark real OOXML heading semantics in the linear transcript;
+                    # the source remains the original immutable DOCX object.
+                    text = "#" * int(level) + " " + text
         elif isinstance(item, CT_Tbl):
             table = Table(item, document._body)
             text = "\n".join(
