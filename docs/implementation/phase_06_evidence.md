@@ -72,3 +72,32 @@ All **6/6 CI jobs SUCCESS** on that exact implementation source. This supersedes
 **Technical DoD:** ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING.
 **Phase status handoff:** NOT_STARTED → IMPLEMENTED_AWAITING_VERIFICATION (development work finished but independent quality/security review pending), subject to latest GitHub PR head verification.
 **Production Release Status:** NOT_READY. PR#3 and PR#4 must remain Draft and unmerged without explicit reviewer/owner decisions.
+
+
+## Focused remediation and exact-source CI verification — 2026-10-27
+
+**Code SHA:** `730a04d807f2ced5a5ac61696cb97704a1886101` (subsequent evidence/documentation commits must be checked separately).
+**Actual completed CI:** https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40475859190 — **6/6 jobs SUCCESS**: verify, ingestion-integration, postgres-integration, qdrant-integration, docker-build, secret-scan.
+
+**Scope corrected (without affecting Phase05 status or merging PRs):**
+1. `IngestionWorkerService` now passes the validated `ProcessingSettings` to the real `DocumentExtractor`; a new unit test checks the exact Worker → scan → extract ordering and config identity, and a genuine two-page PDF subprocess test proves the configured page cap is enforced.
+2. The parser runs bounded local OCR on PDF pages with raster images even when digital text is extractable. The `hybrid_pdf_ocr` raw transcript retains the digital layer and recognized image text; real synthetic mixed-PDF OCR, true page index, runtime version and truthful raw offsets are covered. Potential text duplication, decorative image OCR and complex layout quality still require broader Gold Fixtures/review.
+3. Phase05 `disable_source` semantics were confirmed rather than changed: no new uploads, while previously accepted jobs may complete to `awaiting_approval` without publication. A new real authenticated PostgreSQL/S3/ClamAV/Worker integration test verifies this.
+4. An intermediate source CI run https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40475287944 had **5/6 jobs SUCCESS**, with **2 failures / 6 passes** in the real service-outage test group caused by `StorageUnavailable` on S3 PUT immediately after CI-only service recreation. The failure is retained here, **not erased or claimed PASS**. The test now requires a genuinely successful immutable S3 PUT with bounded retry (max 25 attempts) before independent ClamAV/PostgreSQL cold restart exercises; persistent unavailability still fails the test.
+
+**Tests A Executed + Actual Results** (CI above, Python 3.12 on GitHub ubuntu runner): compile/import and contracts successful, Ruff check/format successful, general pytest **93 PASSED / 28 SKIPPED / 2 warnings**, strict pip-audit `No known vulnerabilities found`, Docker build, SBOM and secret scan jobs SUCCESS. Skipped tests are not PASS.
+
+**Tests B Executed + Actual Results** (real isolated synthetic integrations in the above CI):
+- Actual PostgreSQL/S3/ClamAV/independent Worker ingestion, DOCX/PDF/chunk persistence, Source-disable policy: **13 PASSED / 1 warning**.
+- Real Tesseract and Poppler Persian and Arabic scanned-PDF Gold Fixtures: **2 PASSED**, each synthetic CER=0.000; this is **not** a corpus-wide quality claim.
+- Actual Docker fault injection, restart/recovery, lease and storage/scanner cases: **8 PASSED**.
+- Real PostgreSQL regression: **4 PASSED**; real Qdrant regression: **9 PASSED**.
+- Migration/check/reverse/reupgrade checks are covered by the successful isolated jobs.
+
+**Tests A/B Required but Missing / Review:** representative mixed Persian/Arabic scanned corpora (beyond clean synthetic fixtures), complex PDF tables/reading order, religious/legal quote continuity, quality criteria D-10/D-12; attributable independent Architecture/Security technical review and scoped OCR/OCI license and runtime-risk disposition. The corrected test failures do **not** waive these technical acceptance requirements.
+
+**Tests C Deferred to Phase18:** P18-P06-C01 through P18-P06-C06 are `DEFERRED_TO_PHASE_18`, NOT_RUN, NOT_PASSED. Phase05 deferred IDs remain unchanged.
+
+**Technical DoD Status:** `ENGINEERING_AB_VERIFIED — ACCEPTANCE_PENDING`.
+**Phase Status Before / After this remediation:** `IMPLEMENTED_AWAITING_VERIFICATION → IMPLEMENTED_AWAITING_VERIFICATION`.
+**Production Release Status:** `NOT_READY`. PR #3/#4 still Draft/unmerged; no organizational server access, real corporate data, publication, Qdrant indexing or model serving approved or performed.
