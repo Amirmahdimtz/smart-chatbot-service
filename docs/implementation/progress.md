@@ -258,3 +258,13 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Technical DoD:** IN_PROGRESS / FULL_SCOPE_NOT_IMPLEMENTED.
 **Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
 **Production Release Status:** NOT_READY. No production data or organizational server tests, no PR merge.
+
+### Phase07 kickoff A/B evidence — 2026-10-27
+
+**Exact tested source SHA** `e4e4bc522470402089e97f8e9842011ed759dc20`. **GitHub Actions 40482953105**: https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40482953105 — **6/6 jobs SUCCESS** after a previous failed Ruff-format-only run 40482772838. Group A **103 PASS / 29 SKIP**; Ruff, Compile, strict pip-audit, Docker, SBOM and secret scan PASS. Group B real isolated Qdrant old 9 PASS and new Phase07 hidden-stage 1 PASS with **synthetic numeric vectors (NOT actual embedding output)**, actual ingestion 13 PASS, genuine OCR 2 PASS, recovery 8 PASS, PostgreSQL 4 PASS and schema migration/drift/reverse checks PASS.
+
+**Tests A/B Required but Missing:** two or more real candidate model benchmark runs and model selection D-03, sparse choice D-04, real model provider, durable PG index Job/Manifest with retry/fence and consistency, indexed version cutover and safe publish/revoke, versioned reindex and rollback, source-model drift tests and attributable independent technical acceptance. Full Phase07 DoD not satisfied.
+**Tests C Deferred to Phase18:** P18-P07-C01..C07, all NOT_RUN/NOT_PASSED.
+**Technical DoD:** INITIAL_ENGINEERING_AB_VERIFIED — FULL_SCOPE_IN_PROGRESS.
+**Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
+**Production Release:** NOT_READY.
