@@ -174,4 +174,6 @@ class KnowledgeChunk(Base):
     section_title: Mapped[str | None] = mapped_column(String(200))
     extractor_method: Mapped[str | None] = mapped_column(String(32))
     processor_version: Mapped[str | None] = mapped_column(String(64))
+    normalizer_version: Mapped[str | None] = mapped_column(String(64))
+    engine_version: Mapped[str | None] = mapped_column(String(180))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
