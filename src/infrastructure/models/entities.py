@@ -153,6 +153,11 @@ class KnowledgeChunk(Base):
         ),
         CheckConstraint("deployment_scope IN ('public', 'internal')", name="ck_chunk_scope"),
         CheckConstraint("ordinal >= 0", name="ck_chunk_ordinal"),
+        CheckConstraint(
+            "(source_start IS NULL AND source_end IS NULL) OR "
+            "(source_start >= 0 AND source_end > source_start)", name="ck_chunk_source_span"
+        ),
+        CheckConstraint("page_number IS NULL OR page_number > 0", name="ck_chunk_page_number"),
         UniqueConstraint("version_id", "ordinal", name="uq_chunk_ordinal"),
     )
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
