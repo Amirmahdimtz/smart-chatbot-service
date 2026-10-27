@@ -108,9 +108,7 @@ def test_real_postgres_authorization_deny_prepublication_and_revoke():
             assert await fetch() == []
             async with db.transaction_async() as session:
                 await session.execute(
-                    update(DocumentVersion)
-                    .where(DocumentVersion.id == version_id)
-                    .values(state="published")
+                    update(DocumentVersion).where(DocumentVersion.id == version_id).values(state="published")
                 )
             # Manual fixture state is NOT evidence of Phase07 approval.
             assert await fetch(actor_name=other) == []
@@ -124,21 +122,15 @@ def test_real_postgres_authorization_deny_prepublication_and_revoke():
 
             async with db.transaction_async() as session:
                 await session.execute(
-                    update(DocumentVersion)
-                    .where(DocumentVersion.id == version_id)
-                    .values(state="revoked")
+                    update(DocumentVersion).where(DocumentVersion.id == version_id).values(state="revoked")
                 )
             assert await fetch() == []
             async with db.transaction_async() as session:
                 await session.execute(
-                    update(DocumentVersion)
-                    .where(DocumentVersion.id == version_id)
-                    .values(state="published")
+                    update(DocumentVersion).where(DocumentVersion.id == version_id).values(state="published")
                 )
                 await session.execute(
-                    update(KnowledgeSource)
-                    .where(KnowledgeSource.id == source_id)
-                    .values(status="disabled")
+                    update(KnowledgeSource).where(KnowledgeSource.id == source_id).values(status="disabled")
                 )
             assert await fetch() == []
         finally:
