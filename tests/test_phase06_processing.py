@@ -130,10 +130,6 @@ def test_malformed_word_and_pdf_fail_closed():
         asyncio.run(DocumentExtractor().extract_async(b"not a PDF", "application/pdf"))
 
 
-@pytest.mark.skipif(
-    not shutil.which("pdftoppm") or not shutil.which("tesseract"),
-    reason="Real Poppler and Tesseract OCR binaries not provisioned",
-)
 def _character_error_rate(actual: str, expected: str) -> float:
     """Levenshtein distance divided by ground-truth codepoint count."""
     previous = list(range(len(expected) + 1))
@@ -151,11 +147,16 @@ def _character_error_rate(actual: str, expected: str) -> float:
     return previous[-1] / len(expected)
 
 
-def test_real_scanned_persian_pdf_ocr():
+@pytest.mark.skipif(
+    not shutil.which("pdftoppm") or not shutil.which("tesseract"),
+    reason="Real Poppler and Tesseract OCR binaries not provisioned",
+)
+@pytest.mark.parametrize("expected, language", [("سلام دنیا", "fa"), ("مرحبا بالعالم", "ar")])
+def test_real_scanned_persian_pdf_ocr(expected: str, language: str):
     # PIL raster-only PDF: no hidden text layer and no simulated OCR response.
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 75)
     image = Image.new("RGB", (1300, 240), "white")
-    ImageDraw.Draw(image).text((1240, 48), "سلام دنیا", font=font, fill="black", anchor="ra", direction="rtl")
+    ImageDraw.Draw(image).text((1240, 48), expected, font=font, fill="black", anchor="ra", direction="rtl")
     pdf = io.BytesIO()
     image.save(pdf, format="PDF", resolution=180)
     data = pdf.getvalue()
@@ -163,14 +164,17 @@ def test_real_scanned_persian_pdf_ocr():
     pages = asyncio.run(DocumentExtractor().extract_async(data, "application/pdf"))
     assert pages[0].method == "tesseract_ocr"
     assert pages[0].number == 1
-    expected = "سلام دنیا"
     observed = normalize_persian(pages[0].text)
     cer = _character_error_rate(observed, expected)
-    print(f"Phase06 scanned-PDF Persian OCR synthetic CER={cer:.3f}")
+    print(f"Phase06 scanned-PDF {language} OCR synthetic CER={cer:.3f}")
     assert cer <= 0.20, (observed, expected, cer)
     assert chunk_pages(uuid4(), pages)[0].method == "tesseract_ocr"
 
 
+@pytest.mark.skipif(
+    not shutil.which("pdftoppm") or not shutil.which("tesseract"),
+    reason="Real Poppler and Tesseract OCR binaries not provisioned",
+)
 def test_real_blank_scanned_pdf_is_rejected_before_approval():
     image = Image.new("RGB", (800, 200), "white")
     pdf = io.BytesIO()
