@@ -871,6 +871,115 @@ def test_real_digital_pdf_upload_scan_and_approval_wait(client):
     asyncio.run(assert_real_pdf_chunks())
 
 
+@pytest.mark.parametrize("kind", ["docx", "scanned_pdf"])
+def test_real_phase06_source_storage_scanner_worker_and_chunk_spans(client, kind):
+    """Actual synthetic API/S3/ClamAV/PostgreSQL and OCR or DOCX parser E2E."""
+    import hashlib
+    import io
+
+    from sqlalchemy import select
+
+    from src.core.services.persian_text.persian_processing import chunk_pages, normalize_persian
+    from src.infrastructure.models.entities import KnowledgeChunk
+    from src.infrastructure.providers.document.document_extractor import DocumentExtractor
+
+    http, token, _ = client
+    owner = "synthetic-" + uuid4().hex
+    bearer = {"Authorization": "Bearer " + token(owner, ["knowledge:test:ingest"])}
+    response = http.post("/api/v1/knowledge/sources", headers=bearer, json={"domain": "research"})
+    assert response.status_code == 201
+    source_id = response.json()["id"]
+
+    if kind == "docx":
+        from docx import Document
+
+        document = Document()
+        document.add_heading("بخش پژوهش", level=1)
+        document.add_paragraph("سؤال: چه اقدامی لازم است؟")
+        document.add_paragraph("پاسخ: تایید کارشناس ضروری است.")
+        table = document.add_table(rows=2, cols=2)
+        table.cell(0, 0).text, table.cell(0, 1).text = "عنوان", "پاسخ"
+        table.cell(1, 0).text, table.cell(1, 1).text = "آیین‌نامه", "تاییدشده"
+        stream = io.BytesIO()
+        document.save(stream)
+        filename = "synthetic.docx"
+        mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        data = stream.getvalue()
+    else:
+        from PIL import Image, ImageDraw, ImageFont
+
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 75)
+        image = Image.new("RGB", (1300, 240), "white")
+        ImageDraw.Draw(image).text((1240, 48), "سلام دنیا", font=font, fill="black", anchor="ra", direction="rtl")
+        output = io.BytesIO()
+        image.save(output, format="PDF", resolution=180)
+        filename, mime, data = "synthetic-scanned.pdf", "application/pdf", output.getvalue()
+
+    uploaded = http.post(
+        f"/api/v1/knowledge/sources/{source_id}/documents",
+        headers={**bearer, "Idempotency-Key": uuid4().hex},
+        files={"file": (filename, data, mime)},
+    )
+    assert uploaded.status_code == 202, uploaded.text
+    version_id = UUID(uploaded.json()["version_id"])
+    job_id = uploaded.json()["id"]
+
+    container = bootstrap_di()
+    db = container.resolve(PsqlDbContext)
+    store = container.resolve(QuarantineStorage)
+    worker = container.resolve(IngestionWorkerService)
+
+    async def run_actual_worker_and_verify():
+        await db.start_async()
+        await store.start_async()
+        try:
+            assert await worker.run_once_async("phase06-live-" + kind)
+            async with db.transaction_async() as session:
+                persisted = (
+                    await session.scalars(
+                        select(KnowledgeChunk)
+                        .where(
+                            KnowledgeChunk.version_id == version_id,
+                            KnowledgeChunk.deployment_scope == "internal",
+                        )
+                        .order_by(KnowledgeChunk.ordinal)
+                    )
+                ).all()
+                assert persisted
+                original_pages = await DocumentExtractor().extract_async(data, mime)
+                expected = chunk_pages(version_id, original_pages)
+                assert [item.id for item in persisted] == [item.id for item in expected]
+                for saved, item in zip(persisted, expected, strict=True):
+                    assert saved.original_text == item.original
+                    assert saved.canonical_text == normalize_persian(saved.original_text)
+                    assert saved.source_start == item.start
+                    assert saved.source_end == item.end
+                    assert saved.page_number == item.page
+                    assert saved.checksum_sha256 == hashlib.sha256(saved.canonical_text.encode()).hexdigest()
+                    original_page = next(page for page in original_pages if page.number == saved.page_number)
+                    assert original_page.text[saved.source_start : saved.source_end] == saved.original_text
+                text = "\n".join(row.canonical_text for row in persisted)
+                if kind == "docx":
+                    assert "عنوان | پاسخ" in text
+                    assert "تاییدشده" in text
+                    assert all(item.page_number is None and item.extractor_method == "docx" for item in persisted)
+                else:
+                    assert "سلام دنیا" in text
+                    assert all(item.page_number == 1 and item.extractor_method == "tesseract_ocr" for item in persisted)
+        finally:
+            await store.close_async()
+            await db.close_async()
+
+    asyncio.run(run_actual_worker_and_verify())
+    status = http.get(f"/api/v1/knowledge/jobs/{job_id}", headers=bearer)
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed"
+    version = http.get(f"/api/v1/knowledge/versions/{version_id}", headers=bearer)
+    assert version.status_code == 200
+    assert version.json()["state"] == "awaiting_approval"
+    assert "published" not in version.text
+
+
 def test_real_source_metadata_limit_and_disable_lifecycle(client):
     """Synthetic policy cannot be escalated; owner can stop future uploads."""
     http, token, app = client
