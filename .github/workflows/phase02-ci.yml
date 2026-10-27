@@ -221,6 +221,8 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
       - run: python -m pytest -q tests/test_phase05_integration.py
+      - name: Phase06 real PostgreSQL invalid chunk terminal state and audit
+        run: python -m pytest -q tests/test_phase06_chunk_limit_integration.py
       - name: Phase06 real scanned-PDF Persian OCR Gold Fixture CER
         run: |
           tesseract --version | head -n 1
