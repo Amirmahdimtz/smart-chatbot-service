@@ -9,7 +9,6 @@ from uuid import uuid4
 
 import pytest
 
-from src.core.services.persian_text.persian_processing import normalize_persian
 from src.core.services.answering.grounded_answer import (
     AnswerContractError,
     CitationSource,
@@ -17,6 +16,7 @@ from src.core.services.answering.grounded_answer import (
     build_grounded_prompt,
     validate_model_answer,
 )
+from src.core.services.persian_text.persian_processing import normalize_persian
 
 
 def _source(text: str = "ماده ۱۲ معتبر است.") -> CitationSource:
