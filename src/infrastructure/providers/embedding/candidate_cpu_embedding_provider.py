@@ -107,24 +107,19 @@ class CandidateCpuEmbeddingProvider:
                 show_progress_bar=False,
             )
             vectors = arr.tolist()
-            if (
-                len(vectors) != len(texts)
-                or any(
-                    not isinstance(v, list)
-                    or len(v) != self.DIMENSION
-                    or not all(isinstance(x, (int, float)) and math.isfinite(x) for x in v)
-                    or not any(x != 0 for x in v)
-                    for v in vectors
-                )
+            if len(vectors) != len(texts) or any(
+                not isinstance(v, list)
+                or len(v) != self.DIMENSION
+                or not all(isinstance(x, (int, float)) and math.isfinite(x) for x in v)
+                or not any(x != 0 for x in v)
+                for v in vectors
             ):
                 raise ValueError("bad_model_vector")
             return vectors
         except Exception:
             raise CandidateModelUnavailable() from None
 
-    async def embed_async(
-        self, texts: Sequence[str], *, kind: str, batch_size: int = 4
-    ) -> list[list[float]]:
+    async def embed_async(self, texts: Sequence[str], *, kind: str, batch_size: int = 4) -> list[list[float]]:
         if (
             kind not in {"query", "passage"}
             or isinstance(texts, (str, bytes))
