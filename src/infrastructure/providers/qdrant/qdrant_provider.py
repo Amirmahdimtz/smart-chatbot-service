@@ -336,15 +336,19 @@ class QdrantProvider:
             with_payload=True,
             with_vectors=False,
         )
-        return len(stored) == len(point_ids) and {str(item.id) for item in stored} == set(point_ids) and all(
-            item.payload
-            and item.payload.get("document_id") == str(document_id)
-            and item.payload.get("document_version_id") == str(version_id)
-            and item.payload.get("domain") == domain
-            and item.payload.get("deployment_scope") == self._zone
-            and item.payload.get("published") is published
-            and item.payload.get("index_version") == self._cfg.schema_version
-            for item in stored
+        return (
+            len(stored) == len(point_ids)
+            and {str(item.id) for item in stored} == set(point_ids)
+            and all(
+                item.payload
+                and item.payload.get("document_id") == str(document_id)
+                and item.payload.get("document_version_id") == str(version_id)
+                and item.payload.get("domain") == domain
+                and item.payload.get("deployment_scope") == self._zone
+                and item.payload.get("published") is published
+                and item.payload.get("index_version") == self._cfg.schema_version
+                for item in stored
+            )
         )
 
     async def mark_manifest_visible_async(
@@ -352,8 +356,11 @@ class QdrantProvider:
     ) -> None:
         """Change only fully verified points from a single source version."""
         if not await self.verify_manifest_points_async(
-            point_ids=point_ids, document_id=document_id, version_id=version_id,
-            domain=domain, published=not visible,
+            point_ids=point_ids,
+            document_id=document_id,
+            version_id=version_id,
+            domain=domain,
+            published=not visible,
         ):
             raise QdrantContractError()
         operation = await self._call_async(
@@ -364,8 +371,11 @@ class QdrantProvider:
             wait=True,
         )
         if operation.status != models.UpdateStatus.COMPLETED or not await self.verify_manifest_points_async(
-            point_ids=point_ids, document_id=document_id, version_id=version_id,
-            domain=domain, published=visible,
+            point_ids=point_ids,
+            document_id=document_id,
+            version_id=version_id,
+            domain=domain,
+            published=visible,
         ):
             raise QdrantUnavailable()
 
