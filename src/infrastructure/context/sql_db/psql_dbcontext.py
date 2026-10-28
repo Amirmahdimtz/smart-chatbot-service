@@ -95,7 +95,7 @@ class PsqlDbContext:
             async with engine.connect() as connection:
                 await connection.execute(text("SELECT 1"))
                 revision = await connection.scalar(text("SELECT version_num FROM alembic_version"))
-                if revision != "0001_foundation":
+                if revision != "0002_ingestion_job":
                     raise DatabaseUnavailable()
         except Exception:
             if engine is not None:

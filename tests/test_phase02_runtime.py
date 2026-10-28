@@ -86,7 +86,7 @@ def test_discovery_is_deterministic_and_singletons_are_per_app(monkeypatch):
     assert a.state.container.resolve(ConfigReader) is a.state.container.resolve(ConfigReader)
     assert a.state.container.resolve(ConfigReader) is not b.state.container.resolve(ConfigReader)
     container = bootstrap_di()
-    assert len(container._providers) == 9
+    assert len(container._providers) == 11  # Phase 05 adds scoped ingestion service and repository
     assert QdrantProvider in container._providers
 
 

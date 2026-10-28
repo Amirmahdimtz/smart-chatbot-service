@@ -36,3 +36,11 @@ This register records Group C checks originating in Phase 03 and Phase 04. No or
 | P18-P04-C10 | 04 | SCB-PLAN-04-OPS | Final operational security/UAT, audit, monitoring and incident runbook | Operations/security acceptance with alerting, rollback and response proof | Approved organization infrastructure/identity, synthetic or separately authorized test data | Phase18-Qdrant-P18-P04-C10 signed runbook | Security + Operations + Product Owners | Signed acceptance, audit review, alert and rollback drill; release SHA | DEFERRED_TO_PHASE_18 | D-05,D-07,D-08 |
 
 The Phase 04 tests above do not imply any organizational approval or test execution; owner titles are roles to be assigned in Phase 18.
+
+## Phase 05 Group C — deferred, not performed
+
+| verification_id | originating_phase | requirement_id | scenario/control | expected_result | prerequisites/environment | test_command_or_runbook | owner | evidence_required | status | related_decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| P18-P05-C01 | 05 | SCB-PLAN-05-STORAGE | On-Prem quarantine/object storage scanning and data lifecycle | Only malware-cleared approved content leaves quarantine; storage credentials remain isolated | Organizational object storage, AV and approved test-only content | Phase18-Storage-Quarantine runbook | Security + Storage Owners | signed scan traces, content checksum, deny logs, storage policy | DEFERRED_TO_PHASE_18 | D-08 |
+| P18-P05-C02 | 05 | SCB-PLAN-05-ISOLATION | Public/Internal upload, worker and storage network boundary | Requests, credentials and objects cannot cross deployment zone | Authorized organizational topology and synthetic identities | Phase18-Ingestion-Network runbook | Network + IAM + Security Owners | configuration and real negative network/access probes | DEFERRED_TO_PHASE_18 | D-07,D-08 |
+| P18-P05-C03 | 05 | SCB-PLAN-05-RESILIENCE | On-Prem worker crash recovery, backup/PITR and capacity | No duplicate materialized content, jobs resume safely and recovery meets agreed objectives | Release candidate, backed-up organization test services and approved traffic model | Phase18-Ingestion-Resilience runbook | DBA + Operations + Performance Owners | restart/failover traces, restore checksums, load and RPO/RTO evidence | DEFERRED_TO_PHASE_18 | D-01,D-05,D-11 |
