@@ -107,9 +107,12 @@ class DurableIndexLifecycleService:
                 published=False,
             ):
                 raise IndexContractError("qdrant_partial_or_drifted")
-            if await self._sources.read_unpublished_async(
-                version_id=manifest.version_id, principal_id=principal_id, domain=manifest.domain
-            ) != before:
+            if (
+                await self._sources.read_unpublished_async(
+                    version_id=manifest.version_id, principal_id=principal_id, domain=manifest.domain
+                )
+                != before
+            ):
                 raise IndexContractError("source_changed_after_upsert")
             if not await self._jobs.finish_async(job_id, lease_token=token, manifest=manifest, point_ids=ids):
                 raise IndexContractError("stale_index_lease_or_source")
