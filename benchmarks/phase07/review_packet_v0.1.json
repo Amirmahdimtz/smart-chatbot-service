@@ -1,0 +1,428 @@
+{
+  "review_packet_version": "phase07-persian-arabic-candidate-v0.1",
+  "status": "REVIEW_REQUIRED_NOT_GOLD",
+  "seed_dataset_version": "p07-synthetic-seed-v0.1",
+  "blind_annotation_required": true,
+  "final_acceptance": false,
+  "records": [
+    {
+      "query_id": "Q01",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R01"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R01",
+          "preview": "قانون نمونه: گزارش پژوهشی پس از تأیید دو داور ثبت می‌شود و شناسه پیگیری دریافت می‌کند."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q02",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R02"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R02",
+          "preview": "در سامانه آزمایشی، مهلت پاسخ داوری مقاله ۱۴ روز از تاریخ ثبت درخواست است."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q03",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R03"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R03",
+          "preview": "اصلاح عنوان پژوهش فقط تا پیش از صدور تأیید نهایی امکان‌پذیر است."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q04",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R04"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R04",
+          "preview": "برای نسخه جدید سند پژوهشی، نسخه قبلی بایگانی می‌شود و شناسه نسخه تغییر می‌کند."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q05",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R05"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R05",
+          "preview": "در مثال ساختگی، نسخه منسوخ راهنما قابل استناد برای پاسخ رسمی نیست."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q06",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R06"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R06",
+          "preview": "نسخه پشتیبان داده‌های پژوهشی هر شب ساعت ۲۳ ایجاد می‌شود و هفت روز نگهداری می‌شود."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q07",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R07"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R07",
+          "preview": "درخواست دسترسی به مجموعه پژوهشی باید به مالک منبع ارسال شود؛ مالک تصمیم نهایی را ثبت می‌کند."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q08",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R08"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R08",
+          "preview": "خطای بررسی اعتبار داده با پیام 'checksum mismatch' گزارش می‌شود، نه با تأیید موفق."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q09",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "R09"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "R09",
+          "preview": "گزارش‌های آماری پژوهش فقط پس از کنترل کیفیت خروجی به اشتراک گذاشته می‌شوند."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q10",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "H01"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "H01",
+          "preview": "آیین‌نامه فرضی منابع انسانی: درخواست مرخصی باید سه روز کاری پیش از تاریخ آغاز ثبت شود."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q11",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "H02"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "H02",
+          "preview": "در مثال آموزشی، فرم تغییر شماره تماس کارکنان توسط مدیر واحد تأیید می‌شود."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q12",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "H03"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "H03",
+          "preview": "زمان اعتبار کارت آموزشی کارکنان تا پایان سال ۱۴۰۶ درج شده است."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q13",
+      "domain": "public",
+      "authorized_scope": "public",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "P01"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "P01",
+          "preview": "راهنمای عمومی آزمایشی: کتابخانه هر روز از ساعت ۸ تا ۱۸ باز است."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q14",
+      "domain": "public",
+      "authorized_scope": "public",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "P02"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "P02",
+          "preview": "ثبت‌نام کارگاه نمونه از طریق فرم عمومی و بدون ارسال مدارک هویتی انجام می‌شود."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q15",
+      "domain": "religion",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "A01"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "A01",
+          "preview": "متن آموزشی عربی: يُراجَعُ النصّ الأصليّ قبل اعتماد الترجمة، وتُحفظ علامات الوقف كما وردت."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q16",
+      "domain": "religion",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "A02"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "A02",
+          "preview": "در نمونه پژوهشی، نقل قول عربی و برگردان فارسی با شناسه‌های استنادی مستقل ذخیره می‌شوند."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q17",
+      "domain": "religion",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [
+        "A03"
+      ],
+      "proposed_evidence_snippets": [
+        {
+          "document_id": "A03",
+          "preview": "آیه و ترجمه نمونه باید بدون حذف علائم و با ذکر شماره سند بررسی شوند."
+        }
+      ],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q18",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [],
+      "proposed_evidence_snippets": [],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q19",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [],
+      "proposed_evidence_snippets": [],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    },
+    {
+      "query_id": "Q20",
+      "domain": "public",
+      "authorized_scope": "public",
+      "query_sha256": "MUST_FILL_FROM_REVIEW_EXPORT",
+      "proposed_relevance": [],
+      "proposed_evidence_snippets": [],
+      "label_status": "UNREVIEWED_SYNTHETIC",
+      "reviewer_A": null,
+      "reviewer_B": null,
+      "adjudicator": null,
+      "data_owner_approval": null,
+      "security_approval": null,
+      "notes": "Do not use for acceptance until independent, blinded labeling and approved licensed source snapshot."
+    }
+  ]
+}
