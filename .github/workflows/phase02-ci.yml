@@ -23,6 +23,8 @@ jobs:
       - run: python scripts/validate_phase01.py
       - run: python -O scripts/validate_phase01.py
       - run: python -m pytest -q
+      - name: Show actionable Ruff import diff without modifying CI source
+        run: ruff check --diff src tests || true
       - run: ruff check src tests
       - name: Formatter diff for audit
         run: ruff format --diff src tests || true
