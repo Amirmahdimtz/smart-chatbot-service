@@ -64,9 +64,7 @@ class DurableIndexLifecycleService:
         job_id = await self._jobs.enqueue_async(manifest, principal_id=principal_id)
         return job_id, manifest
 
-    async def stage_claimed_async(
-        self, *, job_id: UUID, manifest: IndexManifest, principal_id: str
-    ) -> tuple[str, ...]:
+    async def stage_claimed_async(self, *, job_id: UUID, manifest: IndexManifest, principal_id: str) -> tuple[str, ...]:
         token = await self._jobs.claim_async(job_id, principal_id=principal_id)
         if token is None:
             raise IndexContractError("index_job_not_claimable")
@@ -93,9 +91,12 @@ class DurableIndexLifecycleService:
                 [chunk.canonical_text for chunk in before.chunks], kind="passage"
             )
             checked = validate_embedding_vectors(manifest, vectors)
-            if await self._sources.read_unpublished_async(
-                version_id=manifest.version_id, principal_id=principal_id, domain=manifest.domain
-            ) != before:
+            if (
+                await self._sources.read_unpublished_async(
+                    version_id=manifest.version_id, principal_id=principal_id, domain=manifest.domain
+                )
+                != before
+            ):
                 raise IndexContractError("source_changed_before_upsert")
             ids = await self._staging.stage_async(manifest, checked)
             if not await self._qdrant.verify_manifest_points_async(
@@ -110,21 +111,15 @@ class DurableIndexLifecycleService:
                 version_id=manifest.version_id, principal_id=principal_id, domain=manifest.domain
             ) != before:
                 raise IndexContractError("source_changed_after_upsert")
-            if not await self._jobs.finish_async(
-                job_id, lease_token=token, manifest=manifest, point_ids=ids
-            ):
+            if not await self._jobs.finish_async(job_id, lease_token=token, manifest=manifest, point_ids=ids):
                 raise IndexContractError("stale_index_lease_or_source")
             return tuple(ids)
         except Exception:
             # A failed/partial Qdrant write is always untrusted and unpublished.
-            await self._jobs.fail_async(
-                job_id, lease_token=token, error_code="index_stage_failed", retriable=True
-            )
+            await self._jobs.fail_async(job_id, lease_token=token, error_code="index_stage_failed", retriable=True)
             raise
 
-    async def approve_synthetic_async(
-        self, *, job_id: UUID, approver_id: str, approval_ref: str, digest: str
-    ) -> bool:
+    async def approve_synthetic_async(self, *, job_id: UUID, approver_id: str, approval_ref: str, digest: str) -> bool:
         return await self._jobs.approve_synthetic_async(
             job_id, approver_id=approver_id, approval_ref=approval_ref, expected_digest=digest
         )
@@ -172,12 +167,8 @@ class DurableIndexLifecycleService:
         # even if the old Qdrant cleanup outbox has not yet run.
         return True
 
-    async def revoke_first_async(
-        self, *, version_id: UUID, owner_id: str, domain: str
-    ) -> RevocationResult:
-        revoked = await self._jobs.revoke_authoritative_async(
-            version_id, owner_id=owner_id, domain=domain
-        )
+    async def revoke_first_async(self, *, version_id: UUID, owner_id: str, domain: str) -> RevocationResult:
+        revoked = await self._jobs.revoke_authoritative_async(version_id, owner_id=owner_id, domain=domain)
         if not revoked:
             return RevocationResult(False, False)
         try:
