@@ -8,11 +8,12 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import os
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
 from qdrant_client import models
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from src.core.services.indexing.index_manifest import IndexContractError
 from src.core.services.persian_text.persian_processing import normalize_persian
@@ -115,6 +116,25 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
                 0
             ] == job_id
             assert await jobs.claim_async(job_id, principal_id="other") is None
+            # Fenced claim recovery: a genuine expired PostgreSQL lease must
+            # never allow an old worker to complete a newer claim.
+            first_token = await jobs.claim_async(job_id, principal_id=owner)
+            assert first_token is not None
+            async with db.transaction_async() as session:
+                await session.execute(
+                    update(IndexJob)
+                    .where(IndexJob.id == job_id)
+                    .values(lease_expires_at=datetime.now(UTC) - timedelta(seconds=5))
+                )
+            second_token = await jobs.claim_async(job_id, principal_id=owner)
+            assert second_token is not None and second_token != first_token
+            valid_ids = [str(uuid4()) for _ in range(manifest.chunk_count)]
+            assert not await jobs.finish_async(
+                job_id, lease_token=first_token, manifest=manifest, point_ids=valid_ids
+            )
+            assert await jobs.fail_async(
+                job_id, lease_token=second_token, error_code="retry_test", retriable=True
+            )
             wrong_token = uuid4()
             assert not await jobs.finish_async(
                 job_id,
@@ -129,7 +149,7 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
                 receipt = await session.scalar(select(IndexManifestRecord).where(IndexManifestRecord.job_id == job_id))
                 assert stored_job.status == "staged"
                 assert stored_job.lease_token is None
-                assert stored_job.attempts == 1
+                assert stored_job.attempts == 3
                 assert receipt.manifest_json["model_revision"] == manifest.model_revision
                 assert len(receipt.point_ids) == 2
                 assert receipt.manifest_sha256 == manifest.canonical_checksum_sha256
