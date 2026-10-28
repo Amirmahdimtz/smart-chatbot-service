@@ -41,6 +41,7 @@ def upgrade() -> None:
         sa.Column("lease_token", _uuid()),
         sa.Column("lease_expires_at", sa.DateTime(timezone=True)),
         sa.Column("error_code", sa.String(48)),
+        sa.Column("cleanup_pending", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("approved_by", sa.String(255)),
         sa.Column("approval_ref", sa.String(128)),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
