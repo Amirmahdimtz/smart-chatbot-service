@@ -241,7 +241,7 @@ jobs:
 
   phase07-d03-cpu-benchmark:
     name: Phase07 D03 actual model PG Qdrant staging
-    if: github.head_ref == 'feat/phase07-real-embedding-index-staging'
+    if: github.head_ref == 'feat/phase07-real-embedding-index-staging' || github.head_ref == 'feat/phase07-durable-index-publication'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
