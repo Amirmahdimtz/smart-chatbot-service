@@ -1,0 +1,112 @@
+name: Phase07 Real CPU Embedding Benchmark (synthetic / development)
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/phase07/**"
+      - "tests/test_phase07_benchmark_metrics.py"
+      - ".github/workflows/phase07-real-embedding.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-embedding:
+    name: Actual local inference / ${{ matrix.model }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [e5-small, minilm-l12]
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      HF_HUB_DOWNLOAD_TIMEOUT: "180"
+      HF_HOME: ${{ runner.temp }}/phase07-hf
+      CUDA_VISIBLE_DEVICES: ""
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install genuine CPU model inference dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install sentence-transformers==5.1.2 psutil==7.1.0 numpy==2.2.6
+      - name: Download pinned public safetensors and execute REAL model on synthetic corpus
+        run: |
+          python -m benchmarks.phase07.run_real_embedding \
+            --model ${{ matrix.model }} \
+            --dataset benchmarks/phase07/gold_synthetic_v0.1.json \
+            --output results/${{ matrix.model }}.json
+      - name: Upload measured or blocked result, never fabricate metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase07-embedding-${{ matrix.model }}
+          path: results/${{ matrix.model }}.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  compare:
+    name: Require both real model runs / preserve comparison evidence
+    needs: real-embedding
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: phase07-embedding-*
+          path: model-evidence
+          merge-multiple: true
+      - name: Generate evidence from actual model artifacts only
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          evidence = {}
+          for slug in ("e5-small", "minilm-l12"):
+              path = Path("model-evidence") / f"{slug}.json"
+              if not path.is_file():
+                  raise SystemExit(f"BLOCKED: missing actual model inference artifact for {slug}")
+              data = json.loads(path.read_text(encoding="utf-8"))
+              if data.get("status") != "EXECUTED_REAL_CPU_INFERENCE":
+                  raise SystemExit(f"BLOCKED: model {slug} has not executed actual inference")
+              evidence[slug] = {
+                  "id": data["model_id"],
+                  "revision": data["revision_full"],
+                  "weights_sha256": data["weights_sha256"],
+                  "license": data["license_declared_by_hub"],
+                  "metrics": data["evaluation"]["metrics"],
+                  "query_encode_ms": data["timings_ms"]["query_encode"],
+                  "peak_rss_mb": data["memory_mb"]["process_peak_rss_maxrss_linux"],
+                  "dataset_sha256": data["dataset_sha256"],
+              }
+          if evidence["e5-small"]["dataset_sha256"] != evidence["minilm-l12"]["dataset_sha256"]:
+              raise SystemExit("BLOCKED: model runs used different evaluation datasets")
+          output = Path("model-evidence/comparison.json")
+          output.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print("BOTH_REAL_MODEL_RUNS_COMPLETE")
+          print(json.dumps(evidence, ensure_ascii=False, indent=2))
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fp:
+              fp.write("## Phase07 D-03: real CPU model comparison on synthetic seed (NOT final approval)\n\n")
+              for slug, row in evidence.items():
+                  fp.write(f"- **{slug}** ({row['revision']}): metrics {row['metrics']}; CPU query p95={row['query_encode_ms']['p95']} ms; peak process RSS={row['peak_rss_mb']} MB\n")
+              fp.write("\nResults are synthetic; no model selection, approved Gold Dataset or Phase18 capacity claim.\n")
+          PY
+      - name: Preserve benchmark comparison artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase07-d03-aggregate
+          path: model-evidence/
+          if-no-files-found: warn
+          retention-days: 14
