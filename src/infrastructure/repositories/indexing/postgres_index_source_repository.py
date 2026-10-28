@@ -35,9 +35,7 @@ class PostgresIndexSourceRepository:
         self._db = db_context
         self._settings = config_reader.settings
 
-    async def read_unpublished_async(
-        self, *, version_id: UUID, principal_id: str, domain: str
-    ) -> IndexSourceSnapshot:
+    async def read_unpublished_async(self, *, version_id: UUID, principal_id: str, domain: str) -> IndexSourceSnapshot:
         s = self._settings
         if (
             not isinstance(version_id, UUID)
