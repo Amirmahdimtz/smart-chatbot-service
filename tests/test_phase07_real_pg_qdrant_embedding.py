@@ -23,7 +23,9 @@ from src.infrastructure.providers.embedding.candidate_cpu_embedding_provider imp
 from src.infrastructure.providers.qdrant.index_staging_service import IndexStagingService
 from src.infrastructure.providers.qdrant.qdrant_provider import QdrantProvider
 from src.infrastructure.repositories.indexing.postgres_index_source_repository import PostgresIndexSourceRepository
-from src.infrastructure.services.indexing.synthetic_candidate_index_coordinator import SyntheticCandidateIndexCoordinator
+from src.infrastructure.services.indexing.synthetic_candidate_index_coordinator import (
+    SyntheticCandidateIndexCoordinator,
+)
 from src.infrastructure.utils.config_reader import ConfigReader
 
 
