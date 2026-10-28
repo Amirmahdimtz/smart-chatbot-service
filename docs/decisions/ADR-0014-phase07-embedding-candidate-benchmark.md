@@ -27,3 +27,10 @@ License metadata is checked again at runtime; **legal approval is not yet grante
 After both model artifacts are verified, add an independently reviewed domain-specific permitted Gold Set (incl real relevance judgments), repeat N times and evaluate confidence and false positive cases, compare against lexical baseline and actual Qdrant transport, record license and resource review, perform genuine approved D-03 decision including dimension/metric/schema and later versioned reindex. Phase07 durable jobs/publication/revoke A/B remain missing. Corporate GPU verification stays Phase18 (P18-P07-C01..C07).
 
 **Phase07 status remains IN_PROGRESS; Full Technical DoD NOT_SATISFIED; Production NOT_READY.** No prior PR merge, review, production data or Group C test is implied.
+
+
+## Evidence update / decision after two genuine CPU evaluations — 2026-10-28
+
+See `docs/implementation/phase_07_d03_benchmark_evidence.md` for complete exact SHA, four artifact IDs, two 8/8 CI executions and metrics. Both public 384D models actually loaded pinned safetensors on GitHub CPU twice, measured Recall@1=0.941176, Recall@5=1.0, MRR@10=0.970588 and nDCG@10=0.97829 on the same 17-positive synthetic seed; neither was a hosted API mock. Their CPU p95 encoding latency **reversed order across two runners**, invalidating a speed-based winner. Because all labels are authored synthetic, do not treat either result as sign-off for Persian domain acceptance.
+
+**D-03 remains OPEN / NOT APPROVED:** benchmark harness and narrow synthetic B inference are now verified; candidate selection, deployment dimension/metric/schema version freeze, legal decision, real Gold corpus, embedding Provider, full Phase07 integration and accountable independent acceptance are still REQUIRED_NOT_RUN. Real corporate GPU/VRAM and final SLO tests remain deferred exclusively to Phase18.
