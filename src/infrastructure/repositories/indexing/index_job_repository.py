@@ -93,10 +93,12 @@ class IndexJobRepository:
         ):
             raise IndexContractError("invalid_index_job_request")
         async with self._db.transaction_async() as session:
-            authority = await self._authority(
-                session, manifest.version_id, principal_id, manifest.domain, lock=True
-            )
-            if authority is None or authority[0].state != "awaiting_approval" or authority[1].id != manifest.document_id:
+            authority = await self._authority(session, manifest.version_id, principal_id, manifest.domain, lock=True)
+            if (
+                authority is None
+                or authority[0].state != "awaiting_approval"
+                or authority[1].id != manifest.document_id
+            ):
                 raise IndexContractError("index_source_not_eligible")
             existing = await session.scalar(
                 select(IndexJob).where(IndexJob.version_id == manifest.version_id).with_for_update()
@@ -284,15 +286,15 @@ class IndexJobRepository:
             job = await session.scalar(select(IndexJob).where(IndexJob.id == job_id).with_for_update())
             if job is None or job.status != "approved" or not job.approved_by or not job.approval_ref:
                 return False, None
-            authority = await self._authority(
-                session, job.version_id, job.owner_principal_id, job.domain, lock=True
-            )
+            authority = await self._authority(session, job.version_id, job.owner_principal_id, job.domain, lock=True)
             if authority is None or authority[0].state != "awaiting_approval":
                 return False, None
-            receipt = await session.scalar(
-                select(IndexManifestRecord).where(IndexManifestRecord.job_id == job.id)
-            )
-            if receipt is None or receipt.manifest_sha256 != job.manifest_sha256 or len(receipt.point_ids) != job.chunk_count:
+            receipt = await session.scalar(select(IndexManifestRecord).where(IndexManifestRecord.job_id == job.id))
+            if (
+                receipt is None
+                or receipt.manifest_sha256 != job.manifest_sha256
+                or len(receipt.point_ids) != job.chunk_count
+            ):
                 return False, None
             pointer = await session.get(IndexPublication, document.id)
             previous = pointer.active_version_id if pointer else None
@@ -342,9 +344,7 @@ class IndexJobRepository:
                 pointer.active_version_id = None
                 pointer.generation += 1
             authority[0].state = "revoked"
-            job = await session.scalar(
-                select(IndexJob).where(IndexJob.version_id == version_id).with_for_update()
-            )
+            job = await session.scalar(select(IndexJob).where(IndexJob.version_id == version_id).with_for_update())
             if job is not None:
                 job.status = "revoked"
                 job.lease_token = None
