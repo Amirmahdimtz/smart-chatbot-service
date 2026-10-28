@@ -307,6 +307,8 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --check
       - name: Actual Embedding CPU inference + PG source + hidden Qdrant E2E
         run: python -m pytest -q -s tests/test_phase07_real_pg_qdrant_embedding.py
+      - name: Phase07 real durable PostgreSQL manifest, fenced lease, synthetic publish and revoke-first
+        run: python -m pytest -q -s tests/test_phase07_durable_lifecycle.py
       - name: Benchmark same exact pinned model and synthetic corpus
         run: python -m benchmarks.phase07.run_real_embedding --model ${{ matrix.model }} --output results/${{ matrix.model }}.json
       - uses: actions/upload-artifact@v4
