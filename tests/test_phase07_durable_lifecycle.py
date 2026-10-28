@@ -129,12 +129,8 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
             second_token = await jobs.claim_async(job_id, principal_id=owner)
             assert second_token is not None and second_token != first_token
             valid_ids = [str(uuid4()) for _ in range(manifest.chunk_count)]
-            assert not await jobs.finish_async(
-                job_id, lease_token=first_token, manifest=manifest, point_ids=valid_ids
-            )
-            assert await jobs.fail_async(
-                job_id, lease_token=second_token, error_code="retry_test", retriable=True
-            )
+            assert not await jobs.finish_async(job_id, lease_token=first_token, manifest=manifest, point_ids=valid_ids)
+            assert await jobs.fail_async(job_id, lease_token=second_token, error_code="retry_test", retriable=True)
             wrong_token = uuid4()
             assert not await jobs.finish_async(
                 job_id,
