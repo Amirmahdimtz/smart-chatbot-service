@@ -14,7 +14,6 @@ import json
 import os
 import platform
 import resource
-import sys
 import time
 from pathlib import Path
 
@@ -26,7 +25,7 @@ from benchmarks.phase07.metrics import evaluate, load_dataset
 MODELS = {
     "e5-small": {
         "id": "intfloat/multilingual-e5-small",
-        "revision": "614241f",
+        "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
         "license": "mit",
         "dimension": 384,
         "query_prefix": "query: ",
@@ -114,7 +113,8 @@ def run(model_slug: str, dataset_path: Path) -> dict:
     process = psutil.Process()
     rss_loaded_mb = round(process.memory_info().rss / 1048576, 2)
     weights_path = hf_hub_download(config["id"], "model.safetensors", revision=revision)
-    digest = hashlib.file_digest(open(weights_path, "rb"), "sha256").hexdigest()
+    with open(weights_path, "rb") as weights:
+        digest = hashlib.file_digest(weights, "sha256").hexdigest()
     documents = dataset["documents"]
     queries = dataset["queries"]
     # Warm model in the same process, never per-request loading.
