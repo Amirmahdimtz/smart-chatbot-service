@@ -39,8 +39,7 @@ class IngestionJobRepository(BaseRepository[IngestionJob]):
         raise PermissionError("Ingestion jobs cannot be removed through generic CRUD")
 
     async def enqueue_owned_async(
-        self, *, principal: str, scope: str, source_id: UUID, version_id: UUID,
-        idempotency_key: str, max_attempts: int
+        self, *, principal: str, scope: str, source_id: UUID, version_id: UUID, idempotency_key: str, max_attempts: int
     ) -> IngestionJob:
         async with self._db.transaction_async() as session:
             allowed = await session.scalar(
@@ -146,9 +145,7 @@ class IngestionJobRepository(BaseRepository[IngestionJob]):
             await session.flush()
             return job
 
-    async def heartbeat_async(
-        self, *, job_id: UUID, scope: str, lease_token: UUID, lease_seconds: int
-    ) -> bool:
+    async def heartbeat_async(self, *, job_id: UUID, scope: str, lease_token: UUID, lease_seconds: int) -> bool:
         async with self._db.transaction_async() as session:
             now = await session.scalar(select(func.now()))
             result = await session.execute(
@@ -177,15 +174,17 @@ class IngestionJobRepository(BaseRepository[IngestionJob]):
                     IngestionJob.lease_expires_at > now,
                 )
                 .values(
-                    status="completed", lease_owner=None, lease_token=None,
-                    lease_expires_at=None, error_code=None, updated_at=now,
+                    status="completed",
+                    lease_owner=None,
+                    lease_token=None,
+                    lease_expires_at=None,
+                    error_code=None,
+                    updated_at=now,
                 )
             )
             return result.rowcount == 1
 
-    async def fail_async(
-        self, *, job_id: UUID, scope: str, lease_token: UUID, error_code: str
-    ) -> bool:
+    async def fail_async(self, *, job_id: UUID, scope: str, lease_token: UUID, error_code: str) -> bool:
         async with self._db.transaction_async() as session:
             now = await session.scalar(select(func.now()))
             job = await session.scalar(
@@ -203,7 +202,7 @@ class IngestionJobRepository(BaseRepository[IngestionJob]):
                 return False
             exhausted = job.attempts >= job.max_attempts
             job.status = "dead_letter" if exhausted else "retry_wait"
-            job.available_at = now if exhausted else now + timedelta(seconds=min(2 ** job.attempts, 300))
+            job.available_at = now if exhausted else now + timedelta(seconds=min(2**job.attempts, 300))
             job.lease_owner = None
             job.lease_token = None
             job.lease_expires_at = None

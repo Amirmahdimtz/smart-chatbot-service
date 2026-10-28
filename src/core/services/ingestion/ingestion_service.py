@@ -23,8 +23,14 @@ class IngestionService:
         return scope
 
     async def enqueue_async(
-        self, *, principal: str, scope: str, source_id: UUID, version_id: UUID,
-        idempotency_key: str, max_attempts: int = 5
+        self,
+        *,
+        principal: str,
+        scope: str,
+        source_id: UUID,
+        version_id: UUID,
+        idempotency_key: str,
+        max_attempts: int = 5,
     ) -> IngestionJob:
         self._scope(scope)
         if not isinstance(principal, str) or not principal.strip() or len(principal) > 255:
@@ -36,8 +42,12 @@ class IngestionService:
         if not isinstance(max_attempts, int) or isinstance(max_attempts, bool) or not 1 <= max_attempts <= 20:
             raise ValueError("Invalid retry limit")
         return await self._jobs.enqueue_owned_async(
-            principal=principal, scope=scope, source_id=source_id, version_id=version_id,
-            idempotency_key=idempotency_key, max_attempts=max_attempts,
+            principal=principal,
+            scope=scope,
+            source_id=source_id,
+            version_id=version_id,
+            idempotency_key=idempotency_key,
+            max_attempts=max_attempts,
         )
 
     async def claim_next_async(self, *, scope: str, worker_id: str, lease_seconds: int = 60) -> IngestionJob | None:
@@ -52,9 +62,7 @@ class IngestionService:
         if not isinstance(seconds, int) or isinstance(seconds, bool) or not 5 <= seconds <= 300:
             raise ValueError("Invalid lease duration")
 
-    async def heartbeat_async(
-        self, *, scope: str, job_id: UUID, lease_token: UUID, lease_seconds: int = 60
-    ) -> bool:
+    async def heartbeat_async(self, *, scope: str, job_id: UUID, lease_token: UUID, lease_seconds: int = 60) -> bool:
         self._scope(scope)
         self._identity(job_id, lease_token)
         self._lease(lease_seconds)
@@ -72,9 +80,7 @@ class IngestionService:
         self._identity(job_id, lease_token)
         if not isinstance(error_code, str) or not re.fullmatch(r"[A-Z][A-Z0-9_]{0,63}", error_code):
             raise ValueError("Invalid structured ingestion error code")
-        return await self._jobs.fail_async(
-            job_id=job_id, scope=scope, lease_token=lease_token, error_code=error_code
-        )
+        return await self._jobs.fail_async(job_id=job_id, scope=scope, lease_token=lease_token, error_code=error_code)
 
     @staticmethod
     def _identity(job_id: UUID, lease_token: UUID) -> None:

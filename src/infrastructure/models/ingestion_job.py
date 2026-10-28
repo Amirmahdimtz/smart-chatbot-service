@@ -32,8 +32,9 @@ class IngestionJob(Base):
             "status IN ('queued', 'processing', 'retry_wait', 'completed', 'dead_letter', 'cancelled')",
             name="ck_ingestion_status",
         ),
-        CheckConstraint("attempts >= 0 AND max_attempts BETWEEN 1 AND 20 AND attempts <= max_attempts",
-                        name="ck_ingestion_attempts"),
+        CheckConstraint(
+            "attempts >= 0 AND max_attempts BETWEEN 1 AND 20 AND attempts <= max_attempts", name="ck_ingestion_attempts"
+        ),
         CheckConstraint(
             "(status = 'processing' AND lease_owner IS NOT NULL AND lease_token IS NOT NULL "
             "AND lease_expires_at IS NOT NULL) OR "

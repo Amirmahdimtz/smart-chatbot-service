@@ -38,13 +38,19 @@ def test_ingestion_di_and_guarded_generic_crud():
 
 
 def test_phase05_fail_closed_validation():
-    service = IngestionService(RejectingRepository(), SimpleNamespace(settings=SimpleNamespace(deployment_zone="public")))
+    service = IngestionService(
+        RejectingRepository(), SimpleNamespace(settings=SimpleNamespace(deployment_zone="public"))
+    )
     source_id, version_id = uuid4(), uuid4()
 
     async def exercise():
         base = dict(
-            principal="synthetic-owner", scope="public", source_id=source_id,
-            version_id=version_id, idempotency_key="key", max_attempts=2,
+            principal="synthetic-owner",
+            scope="public",
+            source_id=source_id,
+            version_id=version_id,
+            idempotency_key="key",
+            max_attempts=2,
         )
         for change, error in [
             ({"scope": "internal"}, PermissionError),

@@ -23,8 +23,10 @@ def _disposable_url() -> str:
     if not url:
         pytest.skip("No real isolated PostgreSQL configured")
     parsed = make_url(url)
-    if parsed.drivername != "postgresql+asyncpg" or parsed.host not in {"127.0.0.1", "localhost"} or not (
-        parsed.database and parsed.database.endswith("_test")
+    if (
+        parsed.drivername != "postgresql+asyncpg"
+        or parsed.host not in {"127.0.0.1", "localhost"}
+        or not (parsed.database and parsed.database.endswith("_test"))
     ):
         pytest.fail("Refusing integration against non-disposable PostgreSQL")
     return url
@@ -52,7 +54,9 @@ def test_durable_job_lease_recovery_and_idempotency(monkeypatch):
                 session.add(doc)
                 await session.flush()
                 version = DocumentVersion(
-                    document_id=doc.id, deployment_scope="public", version_number=1,
+                    document_id=doc.id,
+                    deployment_scope="public",
+                    version_number=1,
                     checksum_sha256="f" * 64,
                 )
                 session.add(version)
@@ -60,12 +64,14 @@ def test_durable_job_lease_recovery_and_idempotency(monkeypatch):
                 source_id, version_id = source.id, version.id
 
             kwargs = dict(
-                principal=principal, scope="public", source_id=source_id,
-                version_id=version_id, idempotency_key="first", max_attempts=2,
+                principal=principal,
+                scope="public",
+                source_id=source_id,
+                version_id=version_id,
+                idempotency_key="first",
+                max_attempts=2,
             )
-            first, duplicate = await asyncio.gather(
-                service.enqueue_async(**kwargs), service.enqueue_async(**kwargs)
-            )
+            first, duplicate = await asyncio.gather(service.enqueue_async(**kwargs), service.enqueue_async(**kwargs))
             assert first.id == duplicate.id
             assert first.status == "queued"
             with pytest.raises(ValueError):
@@ -76,8 +82,7 @@ def test_durable_job_lease_recovery_and_idempotency(monkeypatch):
                 await service.enqueue_async(**(kwargs | {"scope": "internal"}))
 
             claims = await asyncio.gather(
-                *(service.claim_next_async(scope="public", worker_id=f"worker-{i}", lease_seconds=30)
-                  for i in range(4))
+                *(service.claim_next_async(scope="public", worker_id=f"worker-{i}", lease_seconds=30) for i in range(4))
             )
             active = [claim for claim in claims if claim is not None]
             assert len(active) == 1
@@ -86,9 +91,7 @@ def test_durable_job_lease_recovery_and_idempotency(monkeypatch):
             assert await service.heartbeat_async(
                 scope="public", job_id=first.id, lease_token=original_token, lease_seconds=30
             )
-            assert not await service.complete_async(
-                scope="public", job_id=first.id, lease_token=uuid4()
-            )
+            assert not await service.complete_async(scope="public", job_id=first.id, lease_token=uuid4())
             async with db.transaction_async() as session:
                 now = await session.scalar(select(func.now()))
                 await session.execute(
@@ -99,9 +102,7 @@ def test_durable_job_lease_recovery_and_idempotency(monkeypatch):
             recovered = await service.claim_next_async(scope="public", worker_id="worker-recover", lease_seconds=30)
             assert recovered and recovered.id == first.id and recovered.attempts == 2
             assert recovered.lease_token != original_token
-            assert not await service.complete_async(
-                scope="public", job_id=first.id, lease_token=original_token
-            )
+            assert not await service.complete_async(scope="public", job_id=first.id, lease_token=original_token)
             assert not await service.fail_async(
                 scope="public", job_id=first.id, lease_token=original_token, error_code="TEST_FAILURE"
             )
@@ -117,12 +118,8 @@ def test_durable_job_lease_recovery_and_idempotency(monkeypatch):
             followup = await service.enqueue_async(**(kwargs | {"idempotency_key": "second"}))
             claim2 = await service.claim_next_async(scope="public", worker_id="worker-done")
             assert claim2 and claim2.id == followup.id
-            assert await service.complete_async(
-                scope="public", job_id=claim2.id, lease_token=claim2.lease_token
-            )
-            assert not await service.complete_async(
-                scope="public", job_id=claim2.id, lease_token=claim2.lease_token
-            )
+            assert await service.complete_async(scope="public", job_id=claim2.id, lease_token=claim2.lease_token)
+            assert not await service.complete_async(scope="public", job_id=claim2.id, lease_token=claim2.lease_token)
             async with db.transaction_async() as session:
                 assert (await session.get(IngestionJob, claim2.id)).status == "completed"
 
