@@ -162,9 +162,7 @@ def test_real_experimental_embedding_pg_qdrant_e2e_and_revoke(monkeypatch):
                 )
             with pytest.raises(IndexContractError):
                 await service.stage_version_async(version_id=version_id, principal_id=principal, domain="research")
-            stored = await qdrant._client.retrieve(
-                collection_name=qdrant.collection_name, ids=ids, with_payload=True
-            )
+            stored = await qdrant._client.retrieve(collection_name=qdrant.collection_name, ids=ids, with_payload=True)
             assert len(stored) == 3
             assert all(p.payload["published"] is False for p in stored)
         finally:
