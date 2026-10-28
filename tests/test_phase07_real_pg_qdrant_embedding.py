@@ -128,9 +128,9 @@ def test_real_experimental_embedding_pg_qdrant_e2e_and_revoke(monkeypatch):
             assert manifest.chunk_ids == tuple(chunk_ids)
             assert len(ids) == 3
             assert encoder.load_count == 1
-            assert (await service.stage_version_async(
-                version_id=version_id, principal_id=principal, domain="research"
-            ))[1] == ids
+            assert (
+                await service.stage_version_async(version_id=version_id, principal_id=principal, domain="research")
+            )[1] == ids
             assert encoder.load_count == 1
 
             points = await qdrant._client.retrieve(
@@ -158,9 +158,7 @@ def test_real_experimental_embedding_pg_qdrant_e2e_and_revoke(monkeypatch):
             assert hidden.points == []
             async with db.transaction_async() as session:
                 await session.execute(
-                    update(DocumentVersion)
-                    .where(DocumentVersion.id == version_id)
-                    .values(state="revoked")
+                    update(DocumentVersion).where(DocumentVersion.id == version_id).values(state="revoked")
                 )
             with pytest.raises(IndexContractError):
                 await service.stage_version_async(version_id=version_id, principal_id=principal, domain="research")
