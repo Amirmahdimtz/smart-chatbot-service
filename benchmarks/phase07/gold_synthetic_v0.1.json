@@ -1,0 +1,351 @@
+{
+  "dataset_version": "p07-synthetic-seed-v0.1",
+  "purpose": "Smoke benchmark for candidate selection; NOT independently reviewed domain Gold or acceptance threshold",
+  "classification": "synthetic_unclassified",
+  "documents": [
+    {
+      "id": "R01",
+      "domain": "research",
+      "scope": "internal",
+      "text": "قانون نمونه: گزارش پژوهشی پس از تأیید دو داور ثبت می‌شود و شناسه پیگیری دریافت می‌کند."
+    },
+    {
+      "id": "R02",
+      "domain": "research",
+      "scope": "internal",
+      "text": "در سامانه آزمایشی، مهلت پاسخ داوری مقاله ۱۴ روز از تاریخ ثبت درخواست است."
+    },
+    {
+      "id": "R03",
+      "domain": "research",
+      "scope": "internal",
+      "text": "اصلاح عنوان پژوهش فقط تا پیش از صدور تأیید نهایی امکان‌پذیر است."
+    },
+    {
+      "id": "R04",
+      "domain": "research",
+      "scope": "internal",
+      "text": "برای نسخه جدید سند پژوهشی، نسخه قبلی بایگانی می‌شود و شناسه نسخه تغییر می‌کند."
+    },
+    {
+      "id": "R05",
+      "domain": "research",
+      "scope": "internal",
+      "text": "در مثال ساختگی، نسخه منسوخ راهنما قابل استناد برای پاسخ رسمی نیست."
+    },
+    {
+      "id": "R06",
+      "domain": "research",
+      "scope": "internal",
+      "text": "نسخه پشتیبان داده‌های پژوهشی هر شب ساعت ۲۳ ایجاد می‌شود و هفت روز نگهداری می‌شود."
+    },
+    {
+      "id": "R07",
+      "domain": "research",
+      "scope": "internal",
+      "text": "درخواست دسترسی به مجموعه پژوهشی باید به مالک منبع ارسال شود؛ مالک تصمیم نهایی را ثبت می‌کند."
+    },
+    {
+      "id": "R08",
+      "domain": "research",
+      "scope": "internal",
+      "text": "خطای بررسی اعتبار داده با پیام 'checksum mismatch' گزارش می‌شود، نه با تأیید موفق."
+    },
+    {
+      "id": "R09",
+      "domain": "research",
+      "scope": "internal",
+      "text": "گزارش‌های آماری پژوهش فقط پس از کنترل کیفیت خروجی به اشتراک گذاشته می‌شوند."
+    },
+    {
+      "id": "H01",
+      "domain": "hr",
+      "scope": "internal",
+      "text": "آیین‌نامه فرضی منابع انسانی: درخواست مرخصی باید سه روز کاری پیش از تاریخ آغاز ثبت شود."
+    },
+    {
+      "id": "H02",
+      "domain": "hr",
+      "scope": "internal",
+      "text": "در مثال آموزشی، فرم تغییر شماره تماس کارکنان توسط مدیر واحد تأیید می‌شود."
+    },
+    {
+      "id": "H03",
+      "domain": "hr",
+      "scope": "internal",
+      "text": "زمان اعتبار کارت آموزشی کارکنان تا پایان سال ۱۴۰۶ درج شده است."
+    },
+    {
+      "id": "P01",
+      "domain": "public",
+      "scope": "public",
+      "text": "راهنمای عمومی آزمایشی: کتابخانه هر روز از ساعت ۸ تا ۱۸ باز است."
+    },
+    {
+      "id": "P02",
+      "domain": "public",
+      "scope": "public",
+      "text": "ثبت‌نام کارگاه نمونه از طریق فرم عمومی و بدون ارسال مدارک هویتی انجام می‌شود."
+    },
+    {
+      "id": "P03",
+      "domain": "public",
+      "scope": "public",
+      "text": "آدرس پشتیبانی عمومی این مثال فقط در بخش تماس با ما نوشته می‌شود."
+    },
+    {
+      "id": "A01",
+      "domain": "religion",
+      "scope": "internal",
+      "text": "متن آموزشی عربی: يُراجَعُ النصّ الأصليّ قبل اعتماد الترجمة، وتُحفظ علامات الوقف كما وردت."
+    },
+    {
+      "id": "A02",
+      "domain": "religion",
+      "scope": "internal",
+      "text": "در نمونه پژوهشی، نقل قول عربی و برگردان فارسی با شناسه‌های استنادی مستقل ذخیره می‌شوند."
+    },
+    {
+      "id": "A03",
+      "domain": "religion",
+      "scope": "internal",
+      "text": "آیه و ترجمه نمونه باید بدون حذف علائم و با ذکر شماره سند بررسی شوند."
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q01",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "چند نفر باید گزارش پژوهش رو داوری کنن؟",
+      "relevant_ids": [
+        "R01"
+      ],
+      "category": "colloquial",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q02",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "مدت زمان پاسخ بررسی مقاله چند روز است؟",
+      "relevant_ids": [
+        "R02"
+      ],
+      "category": "direct",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q03",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "آیا پس از تأیید نهایی می‌توان عنوان را تغییر داد؟",
+      "relevant_ids": [
+        "R03"
+      ],
+      "category": "negation",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q04",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "نسخه قدیمی سند بعد از ایجاد ورژن تازه چه می‌شود؟",
+      "relevant_ids": [
+        "R04"
+      ],
+      "category": "mixed",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q05",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "آیا راهنمای منسوخ برای پاسخ رسمی معتبره؟",
+      "relevant_ids": [
+        "R05"
+      ],
+      "category": "outdated",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q06",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "Backup پژوهش چه ساعتی گرفته می‌شود؟",
+      "relevant_ids": [
+        "R06"
+      ],
+      "category": "fa_en",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q07",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "چه کسی اجازه دسترسی به داده پژوهشی را تعیین می‌کند؟",
+      "relevant_ids": [
+        "R07"
+      ],
+      "category": "auth_concept",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q08",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "خطای checksum mismatch چه معنایی دارد؟",
+      "relevant_ids": [
+        "R08"
+      ],
+      "category": "fa_en",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q09",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "اشتراک‌گذاری statistics گزارش چه شرطی دارد؟",
+      "relevant_ids": [
+        "R09"
+      ],
+      "category": "fa_en",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q10",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "text": "مرخصی رو چند روز قبل باید ثبت کنیم؟",
+      "relevant_ids": [
+        "H01"
+      ],
+      "category": "colloquial",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q11",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "text": "مدیر واحد کدام تغییر اطلاعات کارمند را تأیید می‌کند؟",
+      "relevant_ids": [
+        "H02"
+      ],
+      "category": "direct",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q12",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "text": "اعتبار کارت آموزشی تا چه سالی است؟",
+      "relevant_ids": [
+        "H03"
+      ],
+      "category": "number",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q13",
+      "domain": "public",
+      "authorized_scope": "public",
+      "text": "ساعت باز بودن کتابخانه چیست؟",
+      "relevant_ids": [
+        "P01"
+      ],
+      "category": "direct",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q14",
+      "domain": "public",
+      "authorized_scope": "public",
+      "text": "برای ثبت نام کارگاه مدارک شناسایی لازم است؟",
+      "relevant_ids": [
+        "P02"
+      ],
+      "category": "negation",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q15",
+      "domain": "religion",
+      "authorized_scope": "internal",
+      "text": "ماذا يجب أن يحدث قبل اعتماد الترجمة؟",
+      "relevant_ids": [
+        "A01"
+      ],
+      "category": "arabic",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q16",
+      "domain": "religion",
+      "authorized_scope": "internal",
+      "text": "برای نقل قول عربی و ترجمه فارسی شناسه مشترک داریم؟",
+      "relevant_ids": [
+        "A02"
+      ],
+      "category": "fa_ar",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q17",
+      "domain": "religion",
+      "authorized_scope": "internal",
+      "text": "علائم آیه و ترجمه نمونه چگونه نگهداری می‌شوند؟",
+      "relevant_ids": [
+        "A03"
+      ],
+      "category": "religious_structure",
+      "should_abstain": false,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q18",
+      "domain": "research",
+      "authorized_scope": "internal",
+      "text": "چگونه رمز عبور حساب کاربری را بازیابی کنم؟",
+      "relevant_ids": [],
+      "category": "no_ground_truth",
+      "should_abstain": true,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q19",
+      "domain": "hr",
+      "authorized_scope": "internal",
+      "text": "روش لغو سند منسوخ پژوهشی چیست؟",
+      "relevant_ids": [],
+      "category": "out_of_domain",
+      "should_abstain": true,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    },
+    {
+      "id": "Q20",
+      "domain": "public",
+      "authorized_scope": "public",
+      "text": "آیا درخواست مرخصی کارکنان نیاز به تأیید دارد؟",
+      "relevant_ids": [],
+      "category": "out_of_scope",
+      "should_abstain": true,
+      "reviewer": "SYNTHETIC_AUTHOR_UNREVIEWED"
+    }
+  ]
+}
