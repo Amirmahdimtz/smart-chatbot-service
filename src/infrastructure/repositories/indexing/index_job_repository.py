@@ -268,35 +268,44 @@ class IndexJobRepository:
             ).one_or_none()
             return row
 
-    async def publish_authoritative_async(self, job_id: UUID) -> UUID | None:
-        """Atomically change PG visible version after Qdrant has been prepared.
-
-        A Qdrant flag alone can NEVER authorize retrieval; every consumer must
-        use current PostgreSQL publication state and live source policy.
-        """
+    async def publish_authoritative_async(self, job_id: UUID) -> tuple[bool, UUID | None]:
+        """PG-visible version cutover is atomic; Qdrant alone NEVER authorizes."""
         self._guard()
         async with self._db.transaction_async() as session:
-            job = await session.scalar(select(IndexJob).where(IndexJob.id == job_id).with_for_update())
-            if job is None or job.status != "approved" or not job.approved_by or not job.approval_ref:
-                return None
-            authority = await self._authority(session, job.version_id, job.owner_principal_id, job.domain, lock=True)
-            if authority is None or authority[0].state != "awaiting_approval":
-                return None
-            # Lock document across competing version switches and revoke.
+            initial = await session.get(IndexJob, job_id)
+            if initial is None:
+                return False, None
+            # Document is the serialization mutex for publish/revoke/reindex.
             document = await session.scalar(
-                select(KnowledgeDocument).where(KnowledgeDocument.id == job.document_id).with_for_update()
+                select(KnowledgeDocument).where(KnowledgeDocument.id == initial.document_id).with_for_update()
             )
             if document is None:
-                return None
-            pointer = await session.get(IndexPublication, job.document_id)
+                return False, None
+            job = await session.scalar(select(IndexJob).where(IndexJob.id == job_id).with_for_update())
+            if job is None or job.status != "approved" or not job.approved_by or not job.approval_ref:
+                return False, None
+            authority = await self._authority(
+                session, job.version_id, job.owner_principal_id, job.domain, lock=True
+            )
+            if authority is None or authority[0].state != "awaiting_approval":
+                return False, None
+            receipt = await session.scalar(
+                select(IndexManifestRecord).where(IndexManifestRecord.job_id == job.id)
+            )
+            if receipt is None or receipt.manifest_sha256 != job.manifest_sha256 or len(receipt.point_ids) != job.chunk_count:
+                return False, None
+            pointer = await session.get(IndexPublication, document.id)
             previous = pointer.active_version_id if pointer else None
             if previous is not None and previous != job.version_id:
                 prior = await session.get(DocumentVersion, previous)
                 if prior and prior.state == "published":
                     prior.state = "superseded"
-                previous_job = await session.scalar(select(IndexJob).where(IndexJob.version_id == previous))
-                if previous_job and previous_job.status == "published":
+                previous_job = await session.scalar(
+                    select(IndexJob).where(IndexJob.version_id == previous).with_for_update()
+                )
+                if previous_job is not None and previous_job.status == "published":
                     previous_job.status = "revoked"
+                    previous_job.cleanup_pending = True
             if pointer is None:
                 session.add(
                     IndexPublication(
@@ -311,28 +320,62 @@ class IndexJobRepository:
                 pointer.generation += 1
             authority[0].state = "published"
             job.status = "published"
-            return previous
+            return True, previous
 
     async def revoke_authoritative_async(self, version_id: UUID, *, owner_id: str, domain: str) -> bool:
-        """PG-first revoke remains effective if Qdrant cleanup crashes."""
+        """PG-first revoke is authoritative even when Qdrant cleanup is offline."""
         self._guard()
         async with self._db.transaction_async() as session:
-            authority = await self._authority(session, version_id, owner_id, domain, lock=True)
-            if authority is None or authority[0].state not in {"published", "awaiting_approval"}:
+            prelim = await session.get(DocumentVersion, version_id)
+            if prelim is None:
                 return False
             doc = await session.scalar(
-                select(KnowledgeDocument).where(KnowledgeDocument.id == authority[1].id).with_for_update()
+                select(KnowledgeDocument).where(KnowledgeDocument.id == prelim.document_id).with_for_update()
             )
             if doc is None:
+                return False
+            authority = await self._authority(session, version_id, owner_id, domain, lock=True)
+            if authority is None or authority[0].state not in {"published", "awaiting_approval"}:
                 return False
             pointer = await session.get(IndexPublication, doc.id)
             if pointer is not None and pointer.active_version_id == version_id:
                 pointer.active_version_id = None
                 pointer.generation += 1
             authority[0].state = "revoked"
-            job = await session.scalar(select(IndexJob).where(IndexJob.version_id == version_id).with_for_update())
+            job = await session.scalar(
+                select(IndexJob).where(IndexJob.version_id == version_id).with_for_update()
+            )
             if job is not None:
                 job.status = "revoked"
                 job.lease_token = None
                 job.lease_expires_at = None
+                job.cleanup_pending = True
             return True
+
+    async def cleanup_receipt_async(self, version_id: UUID) -> tuple[IndexJob, IndexManifestRecord] | None:
+        """Durable Qdrant cleanup outbox; can be retried after a service outage."""
+        self._guard()
+        async with self._db.transaction_async() as session:
+            return (
+                await session.execute(
+                    select(IndexJob, IndexManifestRecord)
+                    .join(IndexManifestRecord, IndexManifestRecord.job_id == IndexJob.id)
+                    .where(IndexJob.version_id == version_id, IndexJob.cleanup_pending.is_(True))
+                )
+            ).one_or_none()
+
+    async def finish_cleanup_async(self, job_id: UUID) -> bool:
+        self._guard()
+        async with self._db.transaction_async() as session:
+            job = await session.scalar(select(IndexJob).where(IndexJob.id == job_id).with_for_update())
+            if job is None or not job.cleanup_pending or job.status != "revoked":
+                return False
+            job.cleanup_pending = False
+            return True
+
+    async def current_version_async(self, document_id: UUID) -> UUID | None:
+        """Authoritative public-facing gates must check source and version too."""
+        self._guard()
+        async with self._db.transaction_async() as session:
+            pointer = await session.get(IndexPublication, document_id)
+            return pointer.active_version_id if pointer is not None else None
