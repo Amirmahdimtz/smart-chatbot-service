@@ -46,6 +46,9 @@ def test_metadata_and_dependency_discovery(monkeypatch):
         "knowledge_chunk",
         "ingestion_job",
         "ingestion_audit_event",
+        "index_job",
+        "index_manifest",
+        "index_publication",
     }
     assert IngestionJob.__tablename__ == "ingestion_job"
     assert IngestionAuditEvent.__tablename__ == "ingestion_audit_event"

@@ -25,6 +25,10 @@ jobs:
       - run: python -m pytest -q
       - name: Show actionable Ruff import diff without modifying CI source
         run: ruff check --diff src tests || true
+      - name: Preview exact Ruff import and format diffs
+        run: |
+          ruff check --diff src tests || true
+          ruff format --diff src tests || true
       - run: ruff check src tests
       - name: Formatter diff for audit
         run: ruff format --diff src tests || true
@@ -241,7 +245,7 @@ jobs:
 
   phase07-d03-cpu-benchmark:
     name: Phase07 D03 actual model PG Qdrant staging
-    if: github.head_ref == 'feat/phase07-real-embedding-index-staging'
+    if: github.head_ref == 'feat/phase07-real-embedding-index-staging' || github.head_ref == 'feat/phase07-durable-index-publication'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -307,6 +311,8 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --check
       - name: Actual Embedding CPU inference + PG source + hidden Qdrant E2E
         run: python -m pytest -q -s tests/test_phase07_real_pg_qdrant_embedding.py
+      - name: Phase07 real durable PostgreSQL manifest, fenced lease, synthetic publish and revoke-first
+        run: python -m pytest -q -s tests/test_phase07_durable_lifecycle.py
       - name: Benchmark same exact pinned model and synthetic corpus
         run: python -m benchmarks.phase07.run_real_embedding --model ${{ matrix.model }} --output results/${{ matrix.model }}.json
       - uses: actions/upload-artifact@v4

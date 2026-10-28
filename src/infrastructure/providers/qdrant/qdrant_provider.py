@@ -315,6 +315,70 @@ class QdrantProvider:
         )
         return response.points
 
+    async def verify_manifest_points_async(
+        self, *, point_ids: list[str], document_id: UUID, version_id: UUID, domain: str, published: bool
+    ) -> bool:
+        """Real Qdrant verification, not permission to disclose a document."""
+        if (
+            not point_ids
+            or len(point_ids) > 4096
+            or len(set(point_ids)) != len(point_ids)
+            or not all(isinstance(value, str) for value in point_ids)
+            or not isinstance(document_id, UUID)
+            or not isinstance(version_id, UUID)
+            or not _safe_token(domain)
+        ):
+            raise QdrantContractError()
+        stored = await self._call_async(
+            "retrieve",
+            collection_name=self.collection_name,
+            ids=point_ids,
+            with_payload=True,
+            with_vectors=False,
+        )
+        return (
+            len(stored) == len(point_ids)
+            and {str(item.id) for item in stored} == set(point_ids)
+            and all(
+                item.payload
+                and item.payload.get("document_id") == str(document_id)
+                and item.payload.get("document_version_id") == str(version_id)
+                and item.payload.get("domain") == domain
+                and item.payload.get("deployment_scope") == self._zone
+                and item.payload.get("published") is published
+                and item.payload.get("index_version") == self._cfg.schema_version
+                for item in stored
+            )
+        )
+
+    async def mark_manifest_visible_async(
+        self, *, point_ids: list[str], document_id: UUID, version_id: UUID, domain: str, visible: bool
+    ) -> None:
+        """Change only fully verified points from a single source version."""
+        if not await self.verify_manifest_points_async(
+            point_ids=point_ids,
+            document_id=document_id,
+            version_id=version_id,
+            domain=domain,
+            published=not visible,
+        ):
+            raise QdrantContractError()
+        operation = await self._call_async(
+            "set_payload",
+            collection_name=self.collection_name,
+            payload={"published": visible},
+            points=models.PointIdsList(points=point_ids),
+            wait=True,
+        )
+        if operation.status != models.UpdateStatus.COMPLETED or not await self.verify_manifest_points_async(
+            point_ids=point_ids,
+            document_id=document_id,
+            version_id=version_id,
+            domain=domain,
+            published=visible,
+        ):
+            raise QdrantUnavailable()
+
     async def delete_document_points_async(self, document_id: UUID, *, domain: str) -> None:
         if not isinstance(document_id, UUID) or not _safe_token(domain):
             raise QdrantContractError()
