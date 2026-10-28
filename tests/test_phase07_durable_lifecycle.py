@@ -111,17 +111,18 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
             job_id, manifest = await lifecycle.enqueue_async(
                 version_id=version_id, principal_id=owner, domain="research"
             )
-            assert (await lifecycle.enqueue_async(
-                version_id=version_id, principal_id=owner, domain="research"
-            ))[0] == job_id
+            assert (await lifecycle.enqueue_async(version_id=version_id, principal_id=owner, domain="research"))[
+                0
+            ] == job_id
             assert await jobs.claim_async(job_id, principal_id="other") is None
             wrong_token = uuid4()
             assert not await jobs.finish_async(
-                job_id, lease_token=wrong_token, manifest=manifest, point_ids=[str(uuid4()) for _ in range(manifest.chunk_count)]
+                job_id,
+                lease_token=wrong_token,
+                manifest=manifest,
+                point_ids=[str(uuid4()) for _ in range(manifest.chunk_count)],
             )
-            assert await lifecycle.stage_claimed_async(
-                job_id=job_id, manifest=manifest, principal_id=owner
-            )
+            assert await lifecycle.stage_claimed_async(job_id=job_id, manifest=manifest, principal_id=owner)
             assert encoder.load_count == 1
             async with db.transaction_async() as session:
                 stored_job = await session.get(IndexJob, job_id)
@@ -162,9 +163,7 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
             assert len(hits.points) == 2
             # Simulate Qdrant outage AFTER authoritative PG-first revocation.
             await qdrant.close_async()
-            outcome = await lifecycle.revoke_first_async(
-                version_id=version_id, owner_id=owner, domain="research"
-            )
+            outcome = await lifecycle.revoke_first_async(version_id=version_id, owner_id=owner, domain="research")
             assert outcome.pg_revoked and outcome.qdrant_cleanup_pending
             assert await jobs.current_version_async(document_id) is None
             async with db.transaction_async() as session:
@@ -183,9 +182,7 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
             )
             assert after.points == []
             assert not await lifecycle.publish_synthetic_async(job_id=job_id)
-            repeated = await lifecycle.revoke_first_async(
-                version_id=version_id, owner_id=owner, domain="research"
-            )
+            repeated = await lifecycle.revoke_first_async(version_id=version_id, owner_id=owner, domain="research")
             assert repeated.pg_revoked is False
         finally:
             await encoder.close_async()
