@@ -183,9 +183,10 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
             )
             assert after.points == []
             assert not await lifecycle.publish_synthetic_async(job_id=job_id)
-            assert not await lifecycle.revoke_first_async(
+            repeated = await lifecycle.revoke_first_async(
                 version_id=version_id, owner_id=owner, domain="research"
-            ) == __import__("src.infrastructure.services.indexing.durable_index_lifecycle_service", fromlist=["RevocationResult"]).RevocationResult(True, False)
+            )
+            assert repeated.pg_revoked is False
         finally:
             await encoder.close_async()
             await qdrant.close_async()
