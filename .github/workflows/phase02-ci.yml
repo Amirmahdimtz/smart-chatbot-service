@@ -238,28 +238,82 @@ jobs:
           docker volume rm scb-phase05-seaweed-data || true
 
   phase07-d03-cpu-benchmark:
-    name: Phase07 D03 pinned CPU model inference
-    if: github.head_ref == 'feat/phase07-d03-evaluation-validated'
+    name: Phase07 D03 actual model PG Qdrant staging
+    if: github.head_ref == 'feat/phase07-real-embedding-index-staging'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         model: [e5-small, minilm-l12]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_DB: scb_phase07_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci -d scb_phase07_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SCB_ENV: development
+      SCB_ZONE: internal
+      SCB_DATABASE_ENABLED: 'true'
+      SCB_DATABASE_URL: postgresql+asyncpg://ci:@127.0.0.1:5432/scb_phase07_test
+      SCB_QDRANT_ENABLED: 'true'
+      SCB_QDRANT_ZONE: internal
+      SCB_QDRANT_URL: http://127.0.0.1:6333
+      SCB_QDRANT_DIMENSION: '384'
+      SCB_QDRANT_DISTANCE: Cosine
+      SCB_PHASE07_REAL_TEST_ENABLED: 'true'
+      SCB_PHASE07_REAL_CANDIDATE: ${{ matrix.model }}
+      SCB_PHASE04_TEST_QDRANT_URL: http://127.0.0.1:6333
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HUB_DOWNLOAD_TIMEOUT: '180'
+      TOKENIZERS_PARALLELISM: 'false'
+      OMP_NUM_THREADS: '2'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install actual local CPU embedding framework
+      - name: Start isolated authenticated Qdrant
+        shell: bash
+        run: |
+          key="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          echo "::add-mask::$key"
+          echo "SCB_QDRANT_API_KEY=$key" >> "$GITHUB_ENV"
+          echo "SCB_PHASE04_TEST_QDRANT_KEY=$key" >> "$GITHUB_ENV"
+          docker run -d --rm --name scb-phase07-real-d03 \
+            -e QDRANT__SERVICE__API_KEY="$key" \
+            -p 127.0.0.1:6333:6333 qdrant/qdrant:v1.20.0
+      - name: Install actual local CPU model and database/runtime dependencies
         run: |
           python -m pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
           python -m pip install sentence-transformers==5.1.2 psutil==7.1.0 numpy==2.2.6
-      - name: Load model weights and benchmark real embeddings
+          python -m pip install --requirement requirements-dev.txt
+      - name: Verify Qdrant and migrate REAL isolated PostgreSQL schema
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS -H "api-key: $SCB_QDRANT_API_KEY" http://127.0.0.1:6333/collections >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS -H "api-key: $SCB_QDRANT_API_KEY" http://127.0.0.1:6333/collections >/dev/null
+          python src/infrastructure/scripts/run_migrations.py --upgrade
+          python src/infrastructure/scripts/run_migrations.py --check
+      - name: Actual Embedding CPU inference + PG source + hidden Qdrant E2E
+        run: python -m pytest -q -s tests/test_phase07_real_pg_qdrant_embedding.py
+      - name: Benchmark same exact pinned model and synthetic corpus
         run: python -m benchmarks.phase07.run_real_embedding --model ${{ matrix.model }} --output results/${{ matrix.model }}.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: measured-model-${{ matrix.model }}
           path: results/
+          if-no-files-found: warn
           retention-days: 14
+      - name: Cleanup synthetic Qdrant
+        if: always()
+        run: docker rm -f scb-phase07-real-d03 || true
