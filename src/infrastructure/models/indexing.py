@@ -5,8 +5,19 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKeyConstraint, Index, Integer, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PgUUID
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.context.sql_db.psql_dbcontext import Base
@@ -32,7 +43,9 @@ class IndexJob(Base):
             "status IN ('queued','leased','staged','approved','published','revoked','dead')",
             name="ck_index_job_status",
         ),
-        CheckConstraint("attempts >= 0 AND attempts <= max_attempts AND max_attempts > 0", name="ck_index_job_attempts"),
+        CheckConstraint(
+            "attempts >= 0 AND attempts <= max_attempts AND max_attempts > 0", name="ck_index_job_attempts"
+        ),
         CheckConstraint("chunk_count BETWEEN 1 AND 4096", name="ck_index_job_chunk_count"),
         UniqueConstraint("version_id", "deployment_scope", name="uq_index_job_version_scope"),
         Index("ix_index_job_claim", "deployment_scope", "status", "lease_expires_at"),
