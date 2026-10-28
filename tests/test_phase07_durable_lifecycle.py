@@ -117,7 +117,7 @@ def test_real_pg_fenced_index_job_publish_revoke_and_outage_cleanup(monkeypatch)
             assert await jobs.claim_async(job_id, principal_id="other") is None
             wrong_token = uuid4()
             assert not await jobs.finish_async(
-                job_id, lease_token=wrong_token, manifest=manifest, point_ids=["bad"] * manifest.chunk_count
+                job_id, lease_token=wrong_token, manifest=manifest, point_ids=[str(uuid4()) for _ in range(manifest.chunk_count)]
             )
             assert await lifecycle.stage_claimed_async(
                 job_id=job_id, manifest=manifest, principal_id=owner
