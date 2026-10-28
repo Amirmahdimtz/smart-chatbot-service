@@ -59,9 +59,7 @@ class SyntheticCandidateIndexCoordinator:
             schema_version=self._settings.qdrant.schema_version,
             chunks=snapshot.chunks,
         )
-        vectors = await self._embedding.embed_async(
-            [item.canonical_text for item in snapshot.chunks], kind="passage"
-        )
+        vectors = await self._embedding.embed_async([item.canonical_text for item in snapshot.chunks], kind="passage")
         validated = validate_embedding_vectors(manifest, vectors)
         # Re-read after CPU inference: concurrent source changes/revocation must
         # fail closed before even unpublished vectors are written.
