@@ -239,7 +239,7 @@ jobs:
 
 
   phase07-real-embedding:
-    if: github.event_name == 'pull_request' && github.head_ref == 'feat/phase07-d03-evaluation'
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/phase07-d03-evaluation')
     name: Phase07 actual CPU model inference / ${{ matrix.candidate }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -278,7 +278,7 @@ jobs:
           retention-days: 14
 
   phase07-compare-models:
-    if: github.event_name == 'pull_request' && github.head_ref == 'feat/phase07-d03-evaluation' && always()
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/phase07-d03-evaluation') && always()
     needs: [phase07-real-embedding]
     runs-on: ubuntu-latest
     steps:
