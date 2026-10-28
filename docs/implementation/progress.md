@@ -268,3 +268,17 @@ Historic intermediate CI failures (formatter, unpublished image tag, unsigned-im
 **Technical DoD:** INITIAL_ENGINEERING_AB_VERIFIED — FULL_SCOPE_IN_PROGRESS.
 **Phase Status Before/After:** NOT_STARTED → IN_PROGRESS.
 **Production Release:** NOT_READY.
+
+
+### Phase07 D-03 genuine candidate execution — two real CPU runs on 2026-10-28
+
+Draft PR #10 (no merge) now has **actual** two-model repeated GitHub CPU inference, not merely a planned benchmark. Tested SHA `c7669d764eedcda135380f4192336db6fa824ee2`, CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40655542808 **8/8 SUCCESS**; tested SHA `412ff5bfaccafe92734583106b364c4192108454`, CI https://github.com/Amirmahdimtz/smart-chatbot-service/actions/runs/40655824049 **8/8 SUCCESS**. Earlier invalid zero-job push workflows and Ruff failure are retained in original evidence and NOT counted successful.
+
+**Tests A Executed + Actual Results:** both `verify` runs **106 PASS / 29 SKIP**, Ruff, Compile, strict pip-audit, SBOM, Docker and Secret Scan success.
+**Tests B Executed + Actual Results:** actual pinned-weight model load, 384D embedding, query/passage CPU inference and measured Recall@1/3/5, MRR/nDCG, p95 and RSS for both E5-small and multilingual MiniLM-L12-v2 repeated twice; identical weights/dataset SHA across their two runs. Original isolated real PostgreSQL/Qdrant/Ingestion regression jobs also passed. E5 and MiniLM each Recall@1=0.941176, Recall@5=1.0, MRR@10=0.970588 and nDCG@10=0.97829 on only 17 positively labeled synthetic questions. CPU p95 speed advantage was NOT stable across separate CI runners.
+**Tests A/B Required but Missing:** independent authorized Persian Gold Set, legal/license approval, model selection D-03, true Embedding Provider, D-04 sparse decision, actual durable Indexing, atomic Publication/Revoke/Reindex and expert acceptance. No Qdrant ANN, GPU or no-answer abstention benchmark is claimed.
+**Tests C Deferred to Phase18:** P18-P07-C01..C07 DEFERRED_TO_PHASE_18 / NOT_RUN / NOT_PASSED.
+**Phase 18 Verification Register IDs:** P18-P07-C01, C02, C03, C04, C05, C06, C07.
+**Technical DoD Status:** REAL_D03_SYNTHETIC_CPU_BENCHMARK_B_VERIFIED; PHASE07_FULL_DOD_NOT_SATISFIED.
+**Phase Status Before/After:** IN_PROGRESS → IN_PROGRESS.
+**Production Release Status:** NOT_READY.
