@@ -27,6 +27,7 @@ from src.infrastructure.models.entities import (
     KnowledgeSource,
     Message,
 )
+from src.infrastructure.models.ingestion_job import IngestionJob
 from src.infrastructure.repositories.base.base_repository import BaseRepository
 from src.infrastructure.utils.config_reader import ConfigReader, ConfigurationError
 
@@ -43,6 +44,7 @@ def test_metadata_and_dependency_discovery(monkeypatch):
         "knowledge_document",
         "document_version",
         "knowledge_chunk",
+        "ingestion_job",
     }
     assert len(Base.metadata.tables["message"].foreign_key_constraints) == 1
     assert Conversation.__mapper__.version_id_col is Conversation.__table__.c.revision

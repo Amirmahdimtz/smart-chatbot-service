@@ -73,7 +73,7 @@ jobs:
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --upgrade
           python src/infrastructure/scripts/run_migrations.py --check
-      - run: python -m pytest -q tests/test_phase03_postgresql.py
+      - run: python -m pytest -q tests/test_phase03_postgresql.py tests/test_phase05_postgresql.py
       - name: Disposable test-only reverse strategy and restore
         run: |
           python src/infrastructure/scripts/run_migrations.py --downgrade-test-only
