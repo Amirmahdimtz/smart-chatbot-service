@@ -16,9 +16,7 @@ def test_synthetic_fixture_integrity_and_authorization_scoping():
     rankings = {}
     for q in data["queries"]:
         rankings[q["id"]] = [
-            d["id"]
-            for d in data["documents"]
-            if d["domain"] == q["domain"] and d["scope"] == q["authorized_scope"]
+            d["id"] for d in data["documents"] if d["domain"] == q["domain"] and d["scope"] == q["authorized_scope"]
         ]
     result = evaluate(data, rankings)
     assert result["evaluated_queries"] == 17
