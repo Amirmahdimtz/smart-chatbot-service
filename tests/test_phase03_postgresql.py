@@ -27,7 +27,6 @@ from src.infrastructure.models.entities import (
     KnowledgeSource,
     Message,
 )
-from src.infrastructure.models.ingestion_job import IngestionJob
 from src.infrastructure.repositories.base.base_repository import BaseRepository
 from src.infrastructure.utils.config_reader import ConfigReader, ConfigurationError
 
